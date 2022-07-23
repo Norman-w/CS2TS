@@ -14,12 +14,19 @@ public static class TypeMapDefine
     {
       return type.FullName;
     }
+
     switch (type.Name.ToLower())
     {
       case "string":
         ret = "string";
         break;
       case "int":
+      case "int64":
+      case "int32":
+      case "uint":
+      case "uint16":
+      case "uint32":
+      case "uint64":
       case "long":
       case "double":
       case "decimal":

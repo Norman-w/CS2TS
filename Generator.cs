@@ -27,24 +27,36 @@ public class Generator
 
     public string CreateTsFile(CodeFile codeFile)
     {
-      foreach (var codeFileNamespace in codeFile.Namespaces)
+      if (codeFile.Namespaces != null)
       {
-        processNamespace(codeFileNamespace);
+        foreach (var codeFileNamespace in codeFile.Namespaces)
+        {
+          processNamespace(codeFileNamespace);
+        }
       }
 
-      foreach (var cls in codeFile.Classes)
+      if (codeFile.Classes != null)
       {
-        processClassCode(cls);
+        foreach (var cls in codeFile.Classes)
+        {
+          processClassCode(cls);
+        }
       }
 
-      foreach (var codeFileEnum in codeFile.Enums)
+      if (codeFile.Enums != null)
       {
-        processEnum(codeFileEnum);
+        foreach (var codeFileEnum in codeFile.Enums)
+        {
+          processEnum(codeFileEnum);
+        }
       }
 
-      foreach (var codeFileFunction in codeFile.Functions)
+      if (codeFile.Functions != null)
       {
-        processFunction(codeFileFunction);
+        foreach (var codeFileFunction in codeFile.Functions)
+        {
+          processFunction(codeFileFunction);
+        }
       }
 
       return _currentCode.ToString();
@@ -110,7 +122,11 @@ public class Generator
             {
               foreach (var variable in cls.Variables)
               {
-                processVariable(variable);
+                if (variable.Permission == null)
+                {
+                  continue;
+                }
+                processVariable(variable, true,true);
               }
             }
 
@@ -190,58 +206,66 @@ public class Generator
       _currentLayerDepth--;
     }
 
-    private void processVariable(Variable variable)
+    private void processVariable(Variable variable,
+      bool ignorePermission,
+      bool ignoreStatic
+    )
     {
       if (variable is VariableNoStructure)
       {
-        processVariableNoStructure(variable as VariableNoStructure);
+        processVariableNoStructure(variable as VariableNoStructure, ignorePermission,ignoreStatic);
       }
       else if (variable is VariableWithStructure)
       {
-        processVariableWithStructure(variable as VariableWithStructure);
+        processVariableWithStructure(variable as VariableWithStructure, ignorePermission,ignoreStatic);
       }
     }
 
-    private void processVariableNoStructure(VariableNoStructure? vns)
+    private void processVariableNoStructure(VariableNoStructure? vns,
+    bool ignorePermission,
+    bool ignoreStatic)
     {
       _currentLayerDepth++;
       var tab = getTab(_currentLayerDepth);
 
       _currentCode.Append(tab);
-      if (vns.Permission!= null)
+      if (vns.Permission!= null && !ignorePermission)
       {
         _currentCode.Append(vns.Permission.ToString()).Append(' ');
       }
 
-      if (vns.IsStatic == true)
+      if (vns.IsStatic == true && !ignoreStatic)
       {
         _currentCode.Append("static ");
       }
 
       var typeName = TypeMapDefine.GetTypeScriptTypeName(vns.Type);
-      _currentCode.Append(typeName).Append(' ').Append(vns.Name).AppendLine(";");
+      _currentCode.Append(vns.Name).Append(" :").Append(typeName).AppendLine(";");
       _currentLayerDepth--;
     }
 
-    private void processVariableWithStructure(VariableWithStructure? vws)
+    private void processVariableWithStructure(VariableWithStructure? vws,
+      bool ignorePermission,
+      bool ignoreStatic
+      )
     {
       _currentLayerDepth++;
       var tab = getTab(_currentLayerDepth);
 
       _currentCode.Append(tab);
-      if (vws.Permission!= null)
+      if (vws.Permission!= null && !ignorePermission)
       {
-        _currentCode.Append(vws.Permission.ToString()).Append(' ');
+        _currentCode.Append(vws.Permission.ToString().ToLower()).Append(' ');
       }
 
-      if (vws.IsStatic == true)
+      if (vws.IsStatic == true && !ignoreStatic)
       {
         _currentCode.Append("static ");
       }
 
       var typeName = TypeMapDefine.GetTypeScriptTypeName(vws.Type);
 
-      _currentCode.Append(typeName).Append(' ').Append(vws.Name).AppendLine("{");
+      _currentCode.Append(vws.Name).Append(" :").Append(typeName).AppendLine("{");
 
       #region 添加大括号内部的代码内容部分
 

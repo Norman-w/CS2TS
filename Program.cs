@@ -20,6 +20,10 @@ namespace CS2TS
       var codeFile = ps.ParseCsFile(testFile);
       var json = JsonConvert.SerializeObject(codeFile, Formatting.Indented);
       Console.WriteLine(json);
+
+      var generator = new Generator();
+      var tsCode = generator.CreateTsFile(codeFile);
+      Console.WriteLine(tsCode);
     }
   }
 }
