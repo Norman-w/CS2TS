@@ -1,14 +1,17 @@
-cs file to .ts file converter
+# cs file to .ts file converter
 
-一个用于将Csharp/C#.Net编程语言中的cs文件,转换为TypeScripts编程语言中的ts文件
+(convert c#.net class, interface, namespace, enum, variable and function etc to typescript code file)
+
+一个用于将Csharp/C#.Net编程语言中的cs文件,转换为TypeScripts编程语言中的ts文件的工具
+可以转换命名空间,类,接口,枚举,变量,函数等
 
 目前只为从C#开发的后端程序中导出SDK中的Domain和Request & Response
 方便在TS中使用.
 
 后期若时间充裕且确有重要使用场景时,会加入双向转换和代码全量转换(包括逻辑部分)
 
+## **How to use**
 
-How to use
 如何使用
 
 build this project you'll got CS2TS.exe
