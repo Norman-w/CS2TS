@@ -108,12 +108,31 @@ public class Function
     /// </summary>
     public List<Statement> Statements { get; set; }
 }
+
+public class TypeDefine
+{
+  /// <summary>
+  /// 携带泛型等的完整类型名称
+  /// </summary>
+  public string FullName { get; set; }
+  /// <summary>
+  /// 该类型的名字
+  /// </summary>
+  public string Name { get; set; }
+  /// <summary>
+  /// 该类型是否为泛型类型
+  /// </summary>
+  public bool IsGeneric { get; set; }
+  /// <summary>
+  /// 作为泛型时的泛型内参数的个数,比如 List<T> 就是只有一个T Dictioary<string,object> 就是两个.
+  /// </summary>
+  public List<TypeDefine> GenericParamTypeList { get; set; }
+}
 public class Parameter
 {
-    public int Index { get; set; }
+    // public int Index { get; set; }
     public string Name { get; set; }
-    public string Type { get; set; }
-    public bool IsNullable { get; set; }
+    public TypeDefine Type { get; set; }
     public bool IsRef { get; set; }
     public bool IsOut { get; set; }
 }
@@ -235,7 +254,7 @@ public class Variable
         this.Notes.AddRange(notes);
     }
     public string Name { get; set; }
-    public string Type { get; set; }
+    public TypeDefine Type { get; set; }
 
     /// <summary>
     /// 代码内容

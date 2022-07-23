@@ -1,9 +1,14 @@
 # cs file to .ts file converter
+Tiny, not based on Roslyn or any other library,just parse code file characters one by one.
 
 (convert c#.net class, interface, namespace, enum, variable and function etc to typescript code file)
 
+
 一个用于将Csharp/C#.Net编程语言中的cs文件,转换为TypeScripts编程语言中的ts文件的工具
 可以转换命名空间,类,接口,枚举,变量,函数等
+
+事实上我们可以通过很多种方式解析CS文件,但他们都没有办法读取和使用[Summary]注释以及[Region]区块标记,还有//, /**/ 这些,然而这些备注或者注释非常有用,尤其是对于非英语母语的编程者们.
+这是我写这个项目的最根本理由.
 
 目前只为从C#开发的后端程序中导出SDK中的Domain和Request & Response
 方便在TS中使用.

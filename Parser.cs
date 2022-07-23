@@ -362,7 +362,7 @@ namespace CS2TS
       }
 
       va.Name = _unProcessWords[nameDefinePos];
-      va.Type = typeBuilder.ToString();
+      va.Type = new TypeDefine() {Name = typeBuilder.ToString()};
 
       va.AddNotes(_noOwnerNotes);
       _noOwnerNotes.Clear();
@@ -441,7 +441,7 @@ namespace CS2TS
               var type = _unProcessWords[kuohaoIndex - 2];
               fn.Name = name;
               fn.ReturnParameter = new Parameter();
-              fn.ReturnParameter.Type = type;
+              fn.ReturnParameter.Type = new TypeDefine() {Name = type};
               if (itf.Functions == null)
               {
                 itf.Functions = new List<Function>();
@@ -806,7 +806,7 @@ namespace CS2TS
             var varParent = varParentObj as VariableWithStructure;
             fn.Name = string.Format("set{0}", varParent.Name);
             fn.ReturnParameter = new Parameter();
-            fn.ReturnParameter.Type = "void";
+            fn.ReturnParameter.Type =new TypeDefine() {Name = "void"};
             varParent.Setter = fn;
             fn.AddNotes(_noOwnerNotes);
             _noOwnerNotes.Clear();
@@ -949,7 +949,7 @@ namespace CS2TS
           //class 标记后面的一个为类名称
           fn.Name = name.Replace("\r\n", "").Trim();
           fn.ReturnParameter = new Parameter();
-          fn.ReturnParameter.Type = returnType.ToString();
+          fn.ReturnParameter.Type = new TypeDefine() {Name = returnType.ToString()};
 
 
           if (parent is CodeFile)
