@@ -1,4 +1,6 @@
-﻿namespace CS2TS
+﻿using Newtonsoft.Json;
+
+namespace CS2TS
 {
   static class Program
   {
@@ -15,7 +17,8 @@
         testFile = args[0];
       }
       var codeFile = ps.ParseCsFile(testFile);
-      Console.WriteLine(codeFile);
+      var json = JsonConvert.SerializeObject(codeFile, Formatting.Indented);
+      Console.WriteLine(json);
     }
   }
 }
