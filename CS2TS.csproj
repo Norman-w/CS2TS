@@ -5,6 +5,13 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <LangVersion>10</LangVersion>
     </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="TestCsFiles" />
+      <Folder Include="TestCsFiles\Domain\ItemInventory" />
+      <Folder Include="TestCsFiles\Domain\TOP" />
+    </ItemGroup>
 
 </Project>
