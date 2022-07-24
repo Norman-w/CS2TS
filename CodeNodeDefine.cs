@@ -12,8 +12,8 @@ public class CodeFile
     /// <summary>
     /// 所有的标记信息
     /// </summary>
-    public List<object> Notes { get; set; }
-    public void AddNotes(List<object> notes)
+    public List<NoteBase> Notes { get; set; }
+    public void AddNotes(List<NoteBase> notes)
     {
         if (notes.Count == 0)
         {
@@ -21,7 +21,7 @@ public class CodeFile
         }
         if (this.Notes == null)
         {
-            this.Notes = new List<object>();
+            this.Notes = new List<NoteBase>();
         }
         this.Notes.AddRange(notes);
     }
