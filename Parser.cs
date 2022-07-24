@@ -14,7 +14,7 @@ namespace CS2TS
     /// <summary>
     /// 没有主的注释集合
     /// </summary>
-    private readonly List<object> _noOwnerNotes = new List<object>();
+    private readonly List<NoteBase> _noOwnerNotes = new List<NoteBase>();
 
     private readonly List<string> _unProcessWords = new List<string>();
     private StringBuilder _tempWord = new StringBuilder();
@@ -361,7 +361,7 @@ namespace CS2TS
         typeBuilder.Append(_unProcessWords[i].Trim(new[] {'\t'}));
       }
 
-      va.Name = _unProcessWords[nameDefinePos];
+      va.Name = _unProcessWords[nameDefinePos].Replace("\n","").Replace("\r","");
       va.Type = new TypeDefine() {Name = typeBuilder.ToString()};
 
       va.AddNotes(_noOwnerNotes);

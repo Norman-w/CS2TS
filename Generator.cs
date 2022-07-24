@@ -31,7 +31,7 @@ public class Generator
       {
         foreach (var codeFileNamespace in codeFile.Namespaces)
         {
-          processNamespace(codeFileNamespace);
+          ProcessNamespace(codeFileNamespace);
         }
       }
 
@@ -39,7 +39,7 @@ public class Generator
       {
         foreach (var cls in codeFile.Classes)
         {
-          processClassCode(cls);
+          ProcessClassCode(cls);
         }
       }
 
@@ -47,7 +47,7 @@ public class Generator
       {
         foreach (var codeFileEnum in codeFile.Enums)
         {
-          processEnum(codeFileEnum);
+          ProcessEnum(codeFileEnum);
         }
       }
 
@@ -55,7 +55,7 @@ public class Generator
       {
         foreach (var codeFileFunction in codeFile.Functions)
         {
-          processFunction(codeFileFunction);
+          ProcessFunction(codeFileFunction);
         }
       }
 
@@ -66,7 +66,7 @@ public class Generator
 
     #region 私有函数
 
-    private string getTab(int layerDepth)
+    private static string GetTab(int layerDepth)
     {
         var tab = new StringBuilder();
         for (int i = 0; i < layerDepth; i++)
@@ -76,45 +76,92 @@ public class Generator
 
         return tab.ToString();
     }
+    private void ProcessNamespace(NameSpace nameSpace)
+    {
+      if (nameSpace.Notes!= null)
+      {
+        foreach (var nameSpaceNote in nameSpace.Notes)
+        {
+          ProcessNotes(nameSpaceNote);
+        }
+      }
+      _currentCode.Append($"namespace {nameSpace.Name}").AppendLine(" {");
+      if (nameSpace.Classes != null)
+      {
+        foreach (var cClass in nameSpace.Classes)
+        {
+          ProcessClassCode(cClass);
+        }
+      }
 
-    private void processInterface(Interface @interface)
+      if (nameSpace.Enums != null)
+      {
+        foreach (var enumDefine in nameSpace.Enums)
+        {
+          ProcessEnum(enumDefine);
+        }
+      }
+
+      if (nameSpace.Interfaces != null)
+      {
+        foreach (var iInterface in nameSpace.Interfaces)
+        {
+          ProcessInterface(iInterface);
+        }
+      }
+
+      //end namespace code
+      _currentCode.AppendLine("}");
+    }
+
+    private void ProcessInterface(Interface @interface)
     {
       _currentLayerDepth++;
-      // var classCode = new StringBuilder();
-      var tab = getTab(_currentLayerDepth);
+      var tab = GetTab(_currentLayerDepth);
 
-      _currentCode.Append(tab).AppendLine($"{tab}interface {@interface.Name}\r\n");
-      _currentCode.Append(tab).AppendLine("{");
+      if (@interface.Notes!= null)
+      {
+        foreach (var interfaceNote in @interface.Notes)
+        {
+          ProcessNotes(interfaceNote);
+        }
+      }
+      _currentCode.Append(tab).Append($"interface {@interface.Name}").AppendLine(" {");
 
       if (@interface.Functions != null)
       {
         foreach (var function in @interface.Functions)
         {
-          processFunction(function);
+          ProcessFunction(function);
         }
       }
 
-      //end namespace code
-      _currentCode.AppendLine(getTab(_currentLayerDepth)).Append('}');
+      _currentCode.Append(tab).AppendLine("}");
       _currentLayerDepth--;
     }
-    private void processClassCode(Class cls)
+
+    private void ProcessClassCode(Class cls)
     {
         _currentLayerDepth++;
-        // var classCode = new StringBuilder();
-        var tab = getTab(_currentLayerDepth);
+        var tab = GetTab(_currentLayerDepth);
         var toInterface = false || cls.Variables!= null && cls.Variables.Count>0 && cls.Classes == null && cls.Functions == null;
+
+        if (cls.Notes!= null)
+        {
+          foreach (var clsNote in cls.Notes)
+          {
+            ProcessNotes(clsNote);
+          }
+        }
 
         if (toInterface)
         {
-            _currentCode.Append(tab).AppendLine($"{tab}interface {cls.Name}\r\n");
-            _currentCode.Append(tab).AppendLine("{");
-
+            _currentCode.Append(tab).Append($"interface {cls.Name}").AppendLine(" {");
             if (cls.Classes != null)
             {
               foreach (var subCls in cls.Classes)
               {
-                processClassCode(subCls);
+                ProcessClassCode(subCls);
               }
             }
 
@@ -126,7 +173,7 @@ public class Generator
                 {
                   continue;
                 }
-                processVariable(variable, true,true);
+                ProcessVariable(variable, true,true);
               }
             }
 
@@ -134,7 +181,7 @@ public class Generator
             {
               foreach (var function in cls.Functions)
               {
-                processFunction(function);
+                ProcessFunction(function);
               }
             }
         }
@@ -142,91 +189,55 @@ public class Generator
         {
 
         }
-        //end class code
-        _currentCode.AppendLine(getTab(_currentLayerDepth)).Append('}');
+        _currentCode.Append(tab).AppendLine("}");
         _currentLayerDepth--;
     }
 
-    private void processEnum(EnumDefine enumDefine)
+    private void ProcessEnum(EnumDefine enumDefine)
     {
       _currentLayerDepth++;
-      var tab = getTab(_currentLayerDepth);
+      var tab = GetTab(_currentLayerDepth);
 
-      _currentCode.Append(tab);
-      if (enumDefine.Permission!= null)
+      if (enumDefine.Notes!= null)
       {
-        _currentCode.Append(enumDefine.Permission.ToString()).Append(' ');
+        foreach (var enumDefineNote in enumDefine.Notes)
+        {
+          ProcessNotes(enumDefineNote);
+        }
       }
-
-      if (enumDefine.IsStatic == true)
-      {
-        _currentCode.Append("static ");
-      }
-
-      var typeName = TypeMapDefine.GetTypeScriptTypeName(enumDefine.Type);
-      _currentCode.Append(typeName).Append(' ').Append(enumDefine.Name).AppendLine(",");
+      _currentCode.Append(tab).Append($"enum {enumDefine.Name} ").AppendLine(" {");
+      _currentCode.Append(tab).AppendLine("}");
       _currentLayerDepth--;
     }
 
-    private void processNamespace(NameSpace nameSpace)
-    {
-      _currentLayerDepth++;
-      // var classCode = new StringBuilder();
-      var tab = getTab(_currentLayerDepth);
-
-      _currentCode.Append(tab).AppendLine($"{tab}namespace {nameSpace.Name}\r\n");
-      _currentCode.Append(tab).AppendLine("{");
-
-      if (nameSpace.Classes != null)
-      {
-        foreach (var cClass in nameSpace.Classes)
-        {
-          processClassCode(cClass);
-        }
-      }
-
-      if (nameSpace.Enums != null)
-      {
-        foreach (var enumDefine in nameSpace.Enums)
-        {
-          processEnum(enumDefine);
-        }
-      }
-
-      if (nameSpace.Interfaces != null)
-      {
-        foreach (var iInterface in nameSpace.Interfaces)
-        {
-          processInterface(iInterface);
-        }
-      }
-
-      //end namespace code
-      _currentCode.AppendLine(getTab(_currentLayerDepth)).Append('}');
-      _currentLayerDepth--;
-    }
-
-    private void processVariable(Variable variable,
+    private void ProcessVariable(Variable variable,
       bool ignorePermission,
       bool ignoreStatic
     )
     {
+      if (variable.Notes!= null)
+      {
+        foreach (var variableNote in variable.Notes)
+        {
+          ProcessNotes(variableNote);
+        }
+      }
       if (variable is VariableNoStructure)
       {
-        processVariableNoStructure(variable as VariableNoStructure, ignorePermission,ignoreStatic);
+        ProcessVariableNoStructure(variable as VariableNoStructure, ignorePermission,ignoreStatic);
       }
       else if (variable is VariableWithStructure)
       {
-        processVariableWithStructure(variable as VariableWithStructure, ignorePermission,ignoreStatic);
+        ProcessVariableWithStructure(variable as VariableWithStructure, ignorePermission,ignoreStatic);
       }
     }
 
-    private void processVariableNoStructure(VariableNoStructure? vns,
+    private void ProcessVariableNoStructure(VariableNoStructure? vns,
     bool ignorePermission,
     bool ignoreStatic)
     {
       _currentLayerDepth++;
-      var tab = getTab(_currentLayerDepth);
+      var tab = GetTab(_currentLayerDepth);
 
       _currentCode.Append(tab);
       if (vns.Permission!= null && !ignorePermission)
@@ -240,17 +251,17 @@ public class Generator
       }
 
       var typeName = TypeMapDefine.GetTypeScriptTypeName(vns.Type);
-      _currentCode.Append(vns.Name).Append(" :").Append(typeName).AppendLine(";");
+      _currentCode.Append(vns.Name).Append(": ").Append(typeName).AppendLine(";");
       _currentLayerDepth--;
     }
 
-    private void processVariableWithStructure(VariableWithStructure? vws,
+    private void ProcessVariableWithStructure(VariableWithStructure? vws,
       bool ignorePermission,
       bool ignoreStatic
       )
     {
       _currentLayerDepth++;
-      var tab = getTab(_currentLayerDepth);
+      var tab = GetTab(_currentLayerDepth);
 
       _currentCode.Append(tab);
       if (vws.Permission!= null && !ignorePermission)
@@ -265,7 +276,7 @@ public class Generator
 
       var typeName = TypeMapDefine.GetTypeScriptTypeName(vws.Type);
 
-      _currentCode.Append(vws.Name).Append(" :").Append(typeName).AppendLine("{");
+      _currentCode.Append(vws.Name).Append(": ").Append(typeName).AppendLine("{");
 
       #region 添加大括号内部的代码内容部分
 
@@ -275,13 +286,68 @@ public class Generator
       _currentLayerDepth--;
     }
 
-    private void processFunction(Function function)
+    private void ProcessFunction(Function function)
     {
       _currentLayerDepth++;
       // var classCode = new StringBuilder();
-      var tab = getTab(_currentLayerDepth);
+      var tab = GetTab(_currentLayerDepth);
 
+      if (function.Notes!= null)
+      {
+        foreach (var functionNote in function.Notes)
+        {
+          ProcessNotes(functionNote);
+        }
+      }
 
+      _currentLayerDepth--;
+    }
+
+    private void ProcessNotes(NoteBase noteBase)
+    {
+      if (noteBase is NotesArea)
+      {
+        ProcessNotesArea(noteBase as NotesArea);
+      }
+
+      else if (noteBase is NotesLine)
+      {
+        ProcessNoteLine(noteBase as NotesLine);
+      }
+    }
+
+    private void ProcessNotesArea(NotesArea notesArea)
+    {
+      _currentLayerDepth++;
+      var tab = GetTab(_currentLayerDepth);
+      _currentCode.Append(tab).AppendLine("/*");
+      foreach (var notesAreaLine in notesArea.Lines)
+      {
+        _currentCode.Append(tab).AppendLine(notesAreaLine.TrimEnd('\r').TrimEnd('\n'));
+      }
+
+      _currentCode.Append(tab).AppendLine("*/");
+      _currentLayerDepth--;
+    }
+
+    private void ProcessNoteLine(NotesLine notesLine)
+    {
+      if (notesLine is SharpLine)
+      {
+        ProcessSharpLine(notesLine as SharpLine);
+        return;
+      }
+      _currentLayerDepth++;
+      var tab = GetTab(_currentLayerDepth);
+      _currentCode.Append(tab).Append("//").AppendLine(notesLine.Content.TrimEnd('\r').TrimEnd('\n'));
+      _currentLayerDepth--;
+    }
+
+    private void ProcessSharpLine(SharpLine sharpLine)
+    {
+      _currentLayerDepth++;
+      var tab = GetTab(_currentLayerDepth);
+      _currentCode.Append(tab).Append("#").AppendLine(sharpLine.Content.TrimEnd('\r').TrimEnd('\n'));
       _currentLayerDepth--;
     }
     #endregion

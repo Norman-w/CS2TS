@@ -45,8 +45,8 @@ public class NameSpace
     /// <summary>
     /// 所有的标记信息
     /// </summary>
-    public List<object> Notes { get; set; }
-    public void AddNotes(List<object> notes)
+    public List<NoteBase> Notes { get; set; }
+    public void AddNotes(List<NoteBase> notes)
     {
         if (notes.Count == 0)
         {
@@ -54,7 +54,7 @@ public class NameSpace
         }
         if (this.Notes == null)
         {
-            this.Notes = new List<object>();
+            this.Notes = new List<NoteBase>();
         }
         this.Notes.AddRange(notes);
     }
@@ -81,8 +81,8 @@ public class Function
     /// <summary>
     /// 所有的标记信息
     /// </summary>
-    public List<object> Notes { get; set; }
-    public void AddNotes(List<object> notes)
+    public List<NoteBase> Notes { get; set; }
+    public void AddNotes(List<NoteBase> notes)
     {
         if (notes.Count == 0)
         {
@@ -90,7 +90,7 @@ public class Function
         }
         if (this.Notes == null)
         {
-            this.Notes = new List<object>();
+            this.Notes = new List<NoteBase>();
         }
         this.Notes.AddRange(notes);
     }
@@ -141,8 +141,8 @@ public class Statement
     /// <summary>
     /// 所有的标记信息
     /// </summary>
-    public List<object> Notes { get; set; }
-    public void AddNotes(List<object> notes)
+    public List<NoteBase> Notes { get; set; }
+    public void AddNotes(List<NoteBase> notes)
     {
         if (notes.Count == 0)
         {
@@ -150,7 +150,7 @@ public class Statement
         }
         if (this.Notes == null)
         {
-            this.Notes = new List<object>();
+            this.Notes = new List<NoteBase>();
         }
 
         this.Notes.AddRange(notes);
@@ -196,7 +196,12 @@ public class ElseStatement: StatementWithStructure
 {
 
 }
-public class NotesLine
+
+public class NoteBase
+{
+
+}
+public class NotesLine :NoteBase
 {
     public NotesLine()
     {
@@ -220,7 +225,7 @@ public class NotesLine
         sb.AppendFormat(text, args);
     }
 }
-public class NotesArea
+public class NotesArea: NoteBase
 {
     public List<string> Lines = new List<string>();
 }
@@ -240,8 +245,8 @@ public class Variable
     /// <summary>
     /// 所有的标记信息
     /// </summary>
-    public List<object> Notes { get; set; }
-    public void AddNotes(List<object> notes)
+    public List<NoteBase> Notes { get; set; }
+    public void AddNotes(List<NoteBase> notes)
     {
         if (notes.Count == 0)
         {
@@ -249,7 +254,7 @@ public class Variable
         }
         if (this.Notes == null)
         {
-            this.Notes = new List<object>();
+            this.Notes = new List<NoteBase>();
         }
         this.Notes.AddRange(notes);
     }
