@@ -31,3 +31,8 @@ as you know the first parameter is the .cs file source full path
 and the second is the .ts file out going path.
 
 第一个参数是cs文件,第二个参数是生成的ts文件的保存位置.生成的文件名和源文件名相同
+
+### 2022年07月24日11:33:02
+Since "#region" may span regions, it's great for collapsing code most of the time, but worse when dealing with non-standard CS code (or messing with "#region")
+因为 "#region" 可能会跨越区域,他多数时候用来折叠代码很棒,但如果处理不规范的cs代码(或者乱用"#region"),会比较糟糕
+
