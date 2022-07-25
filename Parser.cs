@@ -413,8 +413,9 @@ namespace CS2TS
         }
         else
         {
-          var lastEnumValue = parent.Variables.Count > 0 ? (int) parent.Variables[^1].Value : -1;
-          variable.Value = lastEnumValue +1;
+          //如果枚举没有使用等号赋值,不需要计算该枚举的实际值,因为ts等都会自动计算.会将没有枚举值的枚举项自动设置为上一项+1
+          // var lastEnumValue = parent.Variables.Count > 0 ? (int) parent.Variables[^1].Value : -1;
+          // variable.Value = lastEnumValue +1;
         }
 
         if (parent.Variables == null)
