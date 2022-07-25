@@ -61,7 +61,7 @@ namespace
             format(int a, int b)
         {
             if (a== 0
-                || b == 
+                || b ==
                 0
                 )
             {
@@ -86,5 +86,19 @@ namespace cc
     interface ii
     {
 
+    }
+
+    namespace  dd
+    {
+      namespace ee
+      {
+        namespace ff
+        {
+          interface fii
+          {
+            void fiiFunc(byte b);
+          }
+        }
+      }
     }
 }

@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <TypeScriptCompile Include="GeneratedTSFiles\Test.ts" />
       <TypeScriptCompile Include="TestOut.ts" />
     </ItemGroup>
 

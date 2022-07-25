@@ -27,7 +27,7 @@ namespace CS2TS
     /// <summary>
     /// 断句符号,遇到这个的时候证明前面堆积的单词或者符号可以进行一次处理了.
     /// </summary>
-    private readonly List<string> _breakWords = new List<string>() {";", "{", "}", "\r\n", "*/"};
+    private readonly List<string> _breakWords = new List<string>() {";", "{", "}", "\r\n", "\n", "*/"};
 
     public CodeFile ParseCsFile(string path)
     {
@@ -186,7 +186,7 @@ namespace CS2TS
           #endregion
 
           //如果是一个空换行的话不需要处理了.因为换行能结束一行注释 但是运行到这里已经确认不是在注释中了.所以不算结束注释.
-          if (currentBreakWord == "\r\n" && currentBreakBy == currentBreakWord)
+          if (currentBreakWord == "\n" && currentBreakBy == currentBreakWord)
           {
             _tempWord = new StringBuilder();
             continue;
@@ -231,7 +231,7 @@ namespace CS2TS
 
           #endregion
 
-          var unProcessWord = _tempWord.ToString().Replace("\r\n", "");
+          var unProcessWord = _tempWord.ToString().Replace("\r", "").Replace("\n","");
           if (unProcessWord.Length > 0)
           {
             _unProcessWords.Add(unProcessWord);
@@ -410,7 +410,7 @@ namespace CS2TS
               cls.Variables = new List<Variable>();
             }
 
-            var name = _unProcessWords[^2].Replace("\r\n", "").Trim();
+            var name = _unProcessWords[^2].Replace("\r", "").Replace("\n","").Trim();
             var type = _unProcessWords[^3];
             VariableWithStructure v = new VariableWithStructure();
             ParseVariableInfo(v);
@@ -437,7 +437,7 @@ namespace CS2TS
             {
               Function fn = new Function();
 
-              var name = _unProcessWords[kuohaoIndex - 1].Replace("\r\n", "").Trim();
+              var name = _unProcessWords[kuohaoIndex - 1].Replace("\r", "").Replace("\n","").Trim();
               var type = _unProcessWords[kuohaoIndex - 2];
               fn.Name = name;
               fn.ReturnParameter = new Parameter();
@@ -666,7 +666,7 @@ namespace CS2TS
         var nm = new NameSpace();
         nm.AddNotes(_noOwnerNotes);
         _noOwnerNotes.Clear();
-        nm.Name = _unProcessWords[1].Replace("\r\n", "").Trim();
+        nm.Name = _unProcessWords[1].Replace("\r", "").Replace("\n","").Trim();
         code.Namespaces.Add(nm);
         _spaces.Add(nm);
         _tempWord = new StringBuilder();
@@ -723,10 +723,6 @@ namespace CS2TS
 
         #region 赋值基本参数
 
-        //vbOrInterface.Name = unProcessWords[tagIndex + 1].Replace("\r\n", "").Trim();
-        //vbOrInterface.Type = typeName;
-        //vbOrInterface.Permission = convertString2Permission(unProcessWords[0]);
-        //vbOrInterface.IsOverride = unProcessWords.Contains("new");
         ParseVariableInfo(vbOrInterface);
 
         #endregion
@@ -766,8 +762,6 @@ namespace CS2TS
               vbOrInterface.Extends.Add(extBuilder.ToString());
               extBuilder = null;
             }
-            //string ext = unProcessWords[maohaoIndex + 1 + ei].TrimEnd(new char[] { ',' }).Trim().Replace("\r\n", "");
-            //vbOrInterface.Extends.Add(ext);
           }
         }
 
@@ -947,7 +941,7 @@ namespace CS2TS
           }
 
           //class 标记后面的一个为类名称
-          fn.Name = name.Replace("\r\n", "").Trim();
+          fn.Name = name.Replace("\r", "").Replace("\n","").Trim();
           fn.ReturnParameter = new Parameter();
           fn.ReturnParameter.Type = new TypeDefine() {Name = returnType.ToString()};
 
@@ -1569,7 +1563,7 @@ namespace CS2TS
         usingContent = _unProcessWords[^1];
       }
 
-      if (_spaces[^1] is NotesLine && usingContent.EndsWith("\r\n"))
+      if (_spaces[^1] is NotesLine && usingContent.EndsWith("\n"))
       {
         return true;
       }
@@ -1594,7 +1588,7 @@ namespace CS2TS
         return true;
       }
 
-      if (_spaces[^1] is SharpLine && usingContent.EndsWith("\r\n"))
+      if (_spaces[^1] is SharpLine && usingContent.EndsWith("\n"))
       {
         return true;
       }
