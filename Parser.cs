@@ -408,8 +408,14 @@ namespace CS2TS
         {
           //如果有等号的话,当前枚举选项设置为等号后面的值,并且后面的一项如果没有设定值,为这一项的值+1
           var valStr = _unProcessWords[denghaoIndex + 1];
-          var val = int.Parse(valStr);
-          variable.Value = val;
+          if (parent.Extends.Contains("long"))
+          {
+            variable.Value = long.Parse(valStr);
+          }
+          else
+          {
+            variable.Value = int.Parse(valStr);
+          }
         }
         else
         {
