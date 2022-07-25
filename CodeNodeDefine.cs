@@ -278,6 +278,16 @@ public class Variable
     public Nullable<bool> IsConst { get; set; }
 
     public Nullable<bool> IsOverride { get; set; }
+
+    /// <summary>
+    /// 参数的值是什么(字符串形式)
+    /// </summary>
+    public object Value { get; set; }
+
+    // /// <summary>
+    // /// 默认值是什么.
+    // /// </summary>
+    // public string DefualtValue { get; set; }
 }
 
 /// <summary>

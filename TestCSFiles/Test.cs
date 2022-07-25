@@ -25,8 +25,10 @@ namespace
 #endif
     public enum EnumText
     {
-        E1,
-        E2 = 3,
+        E1,E2 = 3,
+        //这里应该等于4
+        E4,
+        E5
     }
     public enum EnumTest2:long
     {

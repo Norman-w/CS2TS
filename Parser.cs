@@ -22,12 +22,12 @@ namespace CS2TS
     /// <summary>
     /// 分词符号,遇到这个的时候要把前面已经获取到的内容变为一个词条了.
     /// </summary>
-    private readonly List<string> _splitWords = new List<string>() {";", " ", "{", "(", ")", "}", ":", ">", "<"};
+    private readonly List<string> _splitWords = new List<string>() {";", " ", "{", "(", ")", "}", ":", ">", "<", ",", "="};
 
     /// <summary>
     /// 断句符号,遇到这个的时候证明前面堆积的单词或者符号可以进行一次处理了.
     /// </summary>
-    private readonly List<string> _breakWords = new List<string>() {";", "{", "}", "\r\n", "\n", "*/"};
+    private readonly List<string> _breakWords = new List<string>() {";", "{", "}", "\r\n", "\n", "*/", ","};
 
     public CodeFile ParseCsFile(string path)
     {
@@ -191,6 +191,19 @@ namespace CS2TS
             _tempWord = new StringBuilder();
             continue;
           }
+
+          #region 对逗号的处理,比如枚举中逗号是结束一个枚举值的定义
+
+          if (currentBreakWord == ",")
+          {
+            var r = ParseDouhao();
+            if (r)
+            {
+              continue;
+            }
+          }
+
+          #endregion
 
           #region 对分号的处理,会影响引用和变量定义
 
@@ -373,6 +386,47 @@ namespace CS2TS
       }
 
       va.CodeBody += BuildCodeBodyByUnProcessWords();
+    }
+
+    #endregion
+
+    #region 解析逗号
+
+    private bool ParseDouhao()
+    {
+      //上一个枚举的值,因为枚举默认是从0开始
+      if (IsInEnum())
+      {
+        var parent = _spaces[^1] as EnumDefine;
+        //解析枚举的值
+        var variable = new Variable();
+        variable.AddNotes(_noOwnerNotes);
+        _noOwnerNotes.Clear();
+        variable.Name = _unProcessWords[0];
+        var denghaoIndex = _unProcessWords.IndexOf("=");
+        if (denghaoIndex>=0)
+        {
+          //如果有等号的话,当前枚举选项设置为等号后面的值,并且后面的一项如果没有设定值,为这一项的值+1
+          var valStr = _unProcessWords[denghaoIndex + 1];
+          var val = int.Parse(valStr);
+          variable.Value = val;
+        }
+        else
+        {
+          var lastEnumValue = parent.Variables.Count > 0 ? (int) parent.Variables[^1].Value : -1;
+          variable.Value = lastEnumValue +1;
+        }
+
+        if (parent.Variables == null)
+        {
+          parent.Variables = new List<Variable>();
+        }
+        parent.Variables.Add(variable);
+        _tempWord = new StringBuilder();
+        _unProcessWords.Clear();
+        return true;
+      }
+      return false;
     }
 
     #endregion
