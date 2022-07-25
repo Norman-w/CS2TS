@@ -390,6 +390,45 @@ namespace CS2TS
 
     #endregion
 
+    #region 未处理的单词们转换成枚举中的值
+
+    private void unProcessWords2Variable4EnumDefine(EnumDefine enumDefine)
+    {
+      //解析枚举的值
+      var variable = new Variable();
+      variable.AddNotes(_noOwnerNotes);
+      _noOwnerNotes.Clear();
+      variable.Name = _unProcessWords[0];
+      var denghaoIndex = _unProcessWords.IndexOf("=");
+      if (denghaoIndex>=0)
+      {
+        //如果有等号的话,当前枚举选项设置为等号后面的值,并且后面的一项如果没有设定值,为这一项的值+1
+        var valStr = _unProcessWords[denghaoIndex + 1];
+        if (enumDefine.Extends!= null && enumDefine.Extends.Contains("long"))
+        {
+          variable.Value = long.Parse(valStr);
+        }
+        else
+        {
+          variable.Value = int.Parse(valStr);
+        }
+      }
+      else
+      {
+        //如果枚举没有使用等号赋值,不需要计算该枚举的实际值,因为ts等都会自动计算.会将没有枚举值的枚举项自动设置为上一项+1
+        // var lastEnumValue = parent.Variables.Count > 0 ? (int) parent.Variables[^1].Value : -1;
+        // variable.Value = lastEnumValue +1;
+      }
+
+      if (enumDefine.Variables == null)
+      {
+        enumDefine.Variables = new List<Variable>();
+      }
+      enumDefine.Variables.Add(variable);
+    }
+
+    #endregion
+
     #region 解析逗号
 
     private bool ParseDouhao()
@@ -398,37 +437,7 @@ namespace CS2TS
       if (IsInEnum())
       {
         var parent = _spaces[^1] as EnumDefine;
-        //解析枚举的值
-        var variable = new Variable();
-        variable.AddNotes(_noOwnerNotes);
-        _noOwnerNotes.Clear();
-        variable.Name = _unProcessWords[0];
-        var denghaoIndex = _unProcessWords.IndexOf("=");
-        if (denghaoIndex>=0)
-        {
-          //如果有等号的话,当前枚举选项设置为等号后面的值,并且后面的一项如果没有设定值,为这一项的值+1
-          var valStr = _unProcessWords[denghaoIndex + 1];
-          if (parent.Extends.Contains("long"))
-          {
-            variable.Value = long.Parse(valStr);
-          }
-          else
-          {
-            variable.Value = int.Parse(valStr);
-          }
-        }
-        else
-        {
-          //如果枚举没有使用等号赋值,不需要计算该枚举的实际值,因为ts等都会自动计算.会将没有枚举值的枚举项自动设置为上一项+1
-          // var lastEnumValue = parent.Variables.Count > 0 ? (int) parent.Variables[^1].Value : -1;
-          // variable.Value = lastEnumValue +1;
-        }
-
-        if (parent.Variables == null)
-        {
-          parent.Variables = new List<Variable>();
-        }
-        parent.Variables.Add(variable);
+        unProcessWords2Variable4EnumDefine(parent);
         _tempWord = new StringBuilder();
         _unProcessWords.Clear();
         return true;
@@ -800,13 +809,13 @@ namespace CS2TS
           StringBuilder extBuilder = new StringBuilder();
           for (int ei = 0; ei < extentsWordsCount; ei++)
           {
-            var currenntExtWord = _unProcessWords[ei + maohaoIndex + 1];
+            var currentExtWord = _unProcessWords[ei + maohaoIndex + 1];
             if (vbOrInterface.Extends == null)
             {
               vbOrInterface.Extends = new List<string>();
             }
 
-            if (currenntExtWord == ",")
+            if (currentExtWord == ",")
             {
               if (extBuilder.Length > 0)
               {
@@ -817,7 +826,7 @@ namespace CS2TS
               continue;
             }
 
-            extBuilder.Append(currenntExtWord);
+            extBuilder.Append(currentExtWord.Trim(new []{'\r', '\n'}));
             if (ei == extentsWordsCount - 1)
             {
               vbOrInterface.Extends.Add(extBuilder.ToString());
@@ -1116,9 +1125,18 @@ namespace CS2TS
       {
         if (IsValidEndWordForCurrent())
         {
+          //如果还有没有处理的枚举信息的话,再处理一下.因为最后一个枚举值可能不是以逗号结尾的.(通常都是这样)
+          if (_unProcessWords.Count == 1 && _unProcessWords[0] == "}")
+          {
+
+          }
+          else
+          {
+            var parent = _spaces[^1] as EnumDefine;
+            unProcessWords2Variable4EnumDefine(parent);
+          }
           _spaces.RemoveAt(_spaces.Count - 1);
         }
-
         _tempWord = new StringBuilder();
         _unProcessWords.Clear();
         return true;

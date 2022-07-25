@@ -240,7 +240,21 @@ public class TypeScriptCodeGenerator
     _currentCode.Append(tab).Append($"enum {enumDefine.Name} ").AppendLine(" {");
     foreach (var enumDefineVariable in enumDefine.Variables)
     {
-      _currentCode.AppendFormat("{0},", enumDefineVariable.Name);
+      if (enumDefineVariable.Notes!=null)
+      {
+        foreach (var note in enumDefineVariable.Notes)
+        {
+          ProcessNotes(note);
+        }
+      }
+      if (enumDefineVariable.Value!= null)
+      {
+        _currentCode.AppendFormat("{0} = {1}", enumDefineVariable.Name,enumDefineVariable.Value).AppendLine(",");
+      }
+      else
+      {
+        _currentCode.Append(enumDefineVariable.Name).AppendLine(",");
+      }
     }
     _currentCode.Append(tab).AppendLine("}");
     _currentLayerDepth--;
