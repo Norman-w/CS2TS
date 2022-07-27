@@ -1,20 +1,22 @@
 using System.Text;
+using CS2TS.Model;
+
 
 namespace CS2TS
 {
-  public class Parser
+  public class CSharpCodeParser
   {
-    public Parser()
+    public CSharpCodeParser()
     {
       _spaces.Add(new CodeFile());
     }
 
-    private readonly List<object> _spaces = new List<object>();
+    private readonly List<CodeNode> _spaces = new List<CodeNode>();
 
     /// <summary>
     /// 没有主的注释集合
     /// </summary>
-    private readonly List<NoteBase> _noOwnerNotes = new List<NoteBase>();
+    // private readonly List<NoteBase> _noOwnerNotes = new List<NoteBase>();
 
     private readonly List<string> _unProcessWords = new List<string>();
     private StringBuilder _tempWord = new StringBuilder();
@@ -135,7 +137,8 @@ namespace CS2TS
             currentNote.Append(_tempWord.ToString());
             if (IsValidEndWordForCurrent())
             {
-              _noOwnerNotes.Add(currentNote);
+              _spaces[^2].Chirldren.Add(currentNote);
+              // _noOwnerNotes.Add(currentNote);
               _spaces.RemoveAt(_spaces.Count - 1);
             }
 
@@ -155,7 +158,8 @@ namespace CS2TS
             currentNode.Lines.Add(_tempWord.ToString());
             if (IsValidEndWordForCurrent())
             {
-              _noOwnerNotes.Add(currentNode);
+              _spaces[^2].Chirldren.Add(currentNode);
+              // _noOwnerNotes.Add(currentNode);
               _spaces.RemoveAt(_spaces.Count - 1);
             }
 
@@ -170,7 +174,8 @@ namespace CS2TS
             currentNote.Append(_tempWord.ToString());
             if (IsValidEndWordForCurrent())
             {
-              _noOwnerNotes.Add(currentNote);
+              _spaces[^2].Chirldren.Add(currentNote);
+              // _noOwnerNotes.Add(currentNote);
               _spaces.RemoveAt(_spaces.Count - 1);
             }
 
@@ -377,9 +382,6 @@ namespace CS2TS
       va.Name = _unProcessWords[nameDefinePos].Replace("\n","").Replace("\r","");
       va.Type = new TypeDefine() {Name = typeBuilder.ToString()};
 
-      va.AddNotes(_noOwnerNotes);
-      _noOwnerNotes.Clear();
-
       if (va.CodeBody == null)
       {
         va.CodeBody = "";
@@ -395,22 +397,22 @@ namespace CS2TS
     private void unProcessWords2Variable4EnumDefine(EnumDefine enumDefine)
     {
       //解析枚举的值
-      var variable = new Variable();
-      variable.AddNotes(_noOwnerNotes);
-      _noOwnerNotes.Clear();
-      variable.Name = _unProcessWords[0];
+      object value = null;
+      var name = _unProcessWords[0];
       var denghaoIndex = _unProcessWords.IndexOf("=");
+      var isIntValue = true;
       if (denghaoIndex>=0)
       {
         //如果有等号的话,当前枚举选项设置为等号后面的值,并且后面的一项如果没有设定值,为这一项的值+1
         var valStr = _unProcessWords[denghaoIndex + 1];
         if (enumDefine.Extends!= null && enumDefine.Extends.Contains("long"))
         {
-          variable.Value = long.Parse(valStr);
+          isIntValue = true;
+          value = long.Parse(valStr);
         }
         else
         {
-          variable.Value = int.Parse(valStr);
+          value = int.Parse(valStr);
         }
       }
       else
@@ -420,11 +422,10 @@ namespace CS2TS
         // variable.Value = lastEnumValue +1;
       }
 
-      if (enumDefine.Variables == null)
-      {
-        enumDefine.Variables = new List<Variable>();
-      }
-      enumDefine.Variables.Add(variable);
+      var type = new TypeDefine();
+      type.Name = isIntValue ? "int" : "long";
+      var variable = new VariableNoStructure(name,type,null,null,null,null,null,value,null);
+      enumDefine.Chirldren.Add(variable);
     }
 
     #endregion
@@ -455,8 +456,7 @@ namespace CS2TS
       if (IsUsingAddingWords())
       {
         CodeFile code = _spaces[0] as CodeFile;
-        if (code.Usings == null) code.Usings = new List<string>();
-        code.Usings.Add(_unProcessWords[1]);
+        code.GetUsings().Add(_unProcessWords[1]);
         _tempWord = new StringBuilder();
         _unProcessWords.Clear();
         return true;
@@ -475,16 +475,18 @@ namespace CS2TS
           var cls = (_spaces[^1] as Class)!;
           if (cls != null)
           {
-            if (cls.Variables == null)
-            {
-              cls.Variables = new List<Variable>();
-            }
-
             var name = _unProcessWords[^2].Replace("\r", "").Replace("\n","").Trim();
             var type = _unProcessWords[^3];
-            VariableWithStructure v = new VariableWithStructure();
+            VariableWithStructure v = new VariableWithStructure(name,new TypeDefine(){Name = type},
+              null,
+              null,
+              null,
+              null,
+              null,
+              null, null,null,null);
             ParseVariableInfo(v);
-            cls.Variables.Add(v);
+            // cls.Variables.Add(v);
+            cls.Chirldren.Add(v);
             _tempWord = new StringBuilder();
             _unProcessWords.Clear();
             return true;
@@ -512,14 +514,8 @@ namespace CS2TS
               fn.Name = name;
               fn.ReturnParameter = new Parameter();
               fn.ReturnParameter.Type = new TypeDefine() {Name = type};
-              if (itf.Functions == null)
-              {
-                itf.Functions = new List<Function>();
-              }
+              itf.Chirldren.Add(fn);
 
-              itf.Functions.Add(fn);
-              fn.AddNotes(_noOwnerNotes);
-              _noOwnerNotes.Clear();
               _tempWord = new StringBuilder();
               _unProcessWords.Clear();
               return true;
@@ -532,17 +528,12 @@ namespace CS2TS
             else
             {
               //没有括号的时候就是一个标准的变量定义
-              VariableNoStructure vn = new VariableNoStructure();
+              VariableNoStructure vn = new VariableNoStructure(null,null,null,null,null,null,null,null,null);
               ParseVariableInfo(vn);
               if (parent is Class)
               {
                 var clsParent = parent as Class;
-                if (clsParent.Variables == null)
-                {
-                  clsParent.Variables = new List<Variable>();
-                }
-
-                clsParent.Variables.Add(vn);
+                clsParent.Chirldren.Add(vn);
                 _tempWord = new StringBuilder();
                 _unProcessWords.Clear();
                 return true;
@@ -571,8 +562,6 @@ namespace CS2TS
               }
 
               vrParent.Statements.Add(st);
-              st.AddNotes(_noOwnerNotes);
-              _noOwnerNotes.Clear();
               _tempWord = new StringBuilder();
               _unProcessWords.Clear();
               return true;
@@ -586,8 +575,6 @@ namespace CS2TS
               }
 
               vrParent.Statements.Add(st);
-              st.AddNotes(_noOwnerNotes);
-              _noOwnerNotes.Clear();
               _tempWord = new StringBuilder();
               _unProcessWords.Clear();
               return true;
@@ -601,8 +588,6 @@ namespace CS2TS
               //}
               //vsParent.StatementsWithStructure.Add(st);
 
-              st.AddNotes(_noOwnerNotes);
-              _noOwnerNotes.Clear();
               _tempWord = new StringBuilder();
               _unProcessWords.Clear();
               return true;
@@ -623,14 +608,9 @@ namespace CS2TS
           if (parent is Class)
           {
             Class cls = parent as Class;
-            if (cls.Variables == null)
-            {
-              cls.Variables = new List<Variable>();
-            }
-
-            Variable v = new Variable();
+            var v = new VariableNoStructure(null,null,null,null,null,null,null,null,null);
             ParseVariableInfo(v);
-            cls.Variables.Add(v);
+            cls.Chirldren.Add(v);
             _tempWord = new StringBuilder();
             _unProcessWords.Clear();
             return true;
@@ -728,16 +708,10 @@ namespace CS2TS
       if (IsNamespaceAddingWords())
       {
         CodeFile code = _spaces[0] as CodeFile;
-        if (code.Namespaces == null)
-        {
-          code.Namespaces = new List<NameSpace>();
-        }
-
-        var nm = new NameSpace();
-        nm.AddNotes(_noOwnerNotes);
-        _noOwnerNotes.Clear();
-        nm.Name = _unProcessWords[1].Replace("\r", "").Replace("\n","").Trim();
-        code.Namespaces.Add(nm);
+        var parent = _spaces[^1];
+        var name = _unProcessWords[1].Replace("\r", "").Replace("\n","").Trim();
+        var nm = new NameSpace(name);
+        parent.Chirldren.Add(nm);
         _spaces.Add(nm);
         _tempWord = new StringBuilder();
         _unProcessWords.Clear();
@@ -773,18 +747,18 @@ namespace CS2TS
       //如果是带权限(public等)带结构的
       if (isVariable_StructureAddingWords(out typeName, out permission))
       {
-        object parent = _spaces[^1];
-        VariableWithStructure vbOrInterface = new VariableWithStructure();
+        CodeNode parent = _spaces[^1];
+        VariableWithStructure vbOrInterface = new VariableWithStructure(null,null,null,null,null,null,null,null,null,null,null);
         int tagIndex = _unProcessWords.IndexOf(typeName);
 
         //class 标记后面的一个为类名称
         if (IsInterfaceAddingWords())
         {
-          vbOrInterface = new Interface();
+          vbOrInterface = new Interface(null,null);
         }
         else if (typeName == "class")
         {
-          vbOrInterface = new Class();
+          vbOrInterface = new Class(null,null);
         }
         else
         {
@@ -855,8 +829,6 @@ namespace CS2TS
             fn.ReturnParameter = new Parameter();
             fn.ReturnParameter.Type = varParent.Type;
             varParent.Getter = fn;
-            fn.AddNotes(_noOwnerNotes);
-            _noOwnerNotes.Clear();
             _spaces.Add(fn);
           }
 
@@ -872,8 +844,6 @@ namespace CS2TS
             fn.ReturnParameter = new Parameter();
             fn.ReturnParameter.Type =new TypeDefine() {Name = "void"};
             varParent.Setter = fn;
-            fn.AddNotes(_noOwnerNotes);
-            _noOwnerNotes.Clear();
             _spaces.Add(fn);
           }
         }
@@ -884,29 +854,8 @@ namespace CS2TS
 
         else if (vbOrInterface is Class)
         {
-          if (parent is CodeFile)
-          {
-            if ((parent as CodeFile).Classes == null)
-            {
-              (parent as CodeFile).Classes = new List<Class>();
-            }
-
-            (parent as CodeFile).Classes.Add(vbOrInterface as Class);
-          }
-
-          if (parent is NameSpace)
-          {
-            if ((parent as NameSpace).Classes == null)
-            {
-              (parent as NameSpace).Classes = new List<Class>();
-            }
-
-            (parent as NameSpace).Classes.Add(vbOrInterface as Class);
-          }
-
-          vbOrInterface.AddNotes(_noOwnerNotes);
-          _noOwnerNotes.Clear();
-          _spaces.Add(vbOrInterface);
+            parent.Chirldren.Add(vbOrInterface as Class);
+            _spaces.Add(vbOrInterface);
         }
 
         #endregion
@@ -920,14 +869,8 @@ namespace CS2TS
             throw new NotImplementedException("接口只能定义在命名空间中");
           }
 
-          if ((parent as NameSpace).Interfaces == null)
-          {
-            (parent as NameSpace).Interfaces = new List<Interface>();
-          }
 
-          (parent as NameSpace).Interfaces.Add(vbOrInterface as Interface);
-          vbOrInterface.AddNotes(_noOwnerNotes);
-          _noOwnerNotes.Clear();
+          parent.Chirldren.Add(vbOrInterface as Interface);
           _spaces.Add(vbOrInterface);
         }
 
@@ -937,35 +880,14 @@ namespace CS2TS
 
         else if (typeName.ToLower() == "enum")
         {
-          EnumDefine ed = new EnumDefine();
+          EnumDefine ed = new EnumDefine(null,null,null,null,null);
           ParseVariableInfo(ed);
           //ed.Name = vbOrInterface.Name;
           ed.Extends = vbOrInterface.Extends;
           ed.IsStatic = _unProcessWords.Contains("static");
           ed.Permission = vbOrInterface.Permission == null ? PermissionEnum.Private : vbOrInterface.Permission.Value;
-          ed.Variables = new List<Variable>();
-          if (parent is CodeFile)
-          {
-            if ((parent as CodeFile).Enums == null)
-            {
-              (parent as CodeFile).Enums = new List<EnumDefine>();
-            }
 
-            (parent as CodeFile).Enums.Add(ed);
-          }
-
-          if (parent is NameSpace)
-          {
-            if ((parent as NameSpace).Enums == null)
-            {
-              (parent as NameSpace).Enums = new List<EnumDefine>();
-            }
-
-            (parent as NameSpace).Enums.Add(ed);
-          }
-
-          ed.AddNotes(_noOwnerNotes);
-          _noOwnerNotes.Clear();
+           parent.Chirldren.Add(ed);
           _spaces.Add(ed);
         }
 
@@ -1023,16 +945,9 @@ namespace CS2TS
 
           if (parent is Class)
           {
-            if ((parent as Class).Functions == null)
-            {
-              (parent as Class).Functions = new List<Function>();
-            }
 
-            (parent as Class).Functions.Add(fn);
+            parent.Chirldren.Add(fn);
           }
-
-          fn.AddNotes(_noOwnerNotes);
-          _noOwnerNotes.Clear();
           _spaces.Add(fn);
         }
 
@@ -1049,20 +964,13 @@ namespace CS2TS
 
           if (parent is Class)
           {
-            if ((parent as Class).Variables == null)
-            {
-              (parent as Class).Variables = new List<Variable>();
-            }
-
-            (parent as Class).Variables.Add(vbOrInterface);
+            parent.Chirldren.Add(vbOrInterface);
           }
           else
           {
             //这是在往哪里加入带结构的变量呢?
           }
 
-          vbOrInterface.AddNotes(_noOwnerNotes);
-          _noOwnerNotes.Clear();
           _spaces.Add(vbOrInterface);
         }
 
@@ -1181,8 +1089,6 @@ namespace CS2TS
       var parent = _spaces[^1];
       StatementWithStructure forSt = new StatementWithStructure();
       forSt.Type = "for";
-      forSt.AddNotes(_noOwnerNotes);
-      _noOwnerNotes.Clear();
 
       if (parent is Function)
       {

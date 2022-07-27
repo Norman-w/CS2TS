@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿// using CS2TS.Helper;
+using Newtonsoft.Json;
 
 namespace CS2TS
 {
@@ -10,7 +11,7 @@ namespace CS2TS
     [STAThread]
     static void Main(string[]? args)
     {
-      Parser ps = new Parser();
+      CSharpCodeParser ps = new CSharpCodeParser();
       // var testFile = @"/Users/coolking/Downloads/TestCsFiles23/Domain/Bag/BagItemsAlias.cs";
       // var testFile = @"/Volumes/NormanData/Visual Studio 2008/Projects/速配项目/QP/Domain/Account/AccountGroup.cs";
       var testFile = @"../../../TestCSFiles/Test.cs";
@@ -20,7 +21,11 @@ namespace CS2TS
       }
       var codeFile = ps.ParseCsFile(testFile);
       var json = JsonConvert.SerializeObject(codeFile, Formatting.Indented);
-      Console.WriteLine(json);
+      // Console.WriteLine(json);
+
+      // CodeNodeHelper hp = new CodeNodeHelper(codeFile);
+      // hp.FindClass(codeFile, "aSubSub");
+
 
       var generator = new TypeScriptCodeGenerator();
       var tsCode = generator.CreateTsFile(codeFile);

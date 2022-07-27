@@ -18,6 +18,13 @@ namespace
     /// </summary>
     public class a
     {
+      public class aSub
+      {
+        public class aSubSub
+        {
+          public bool Finded { get; set; }
+        }
+      }
         protected int AA;}
     # region 这是一个区域///**/
 #if debug///dddd

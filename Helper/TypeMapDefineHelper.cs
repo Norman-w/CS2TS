@@ -37,6 +37,9 @@ public static class TypeMapDefine
       case "bool":
         ret = "boolean";
         break;
+      default:
+        ret = type.Name;
+        break;
     }
 
     return ret;

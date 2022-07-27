@@ -1,4 +1,7 @@
+using System.Diagnostics;
+using System.Reflection;
 using System.Text;
+using CS2TS.Model;
 
 namespace CS2TS;
 
@@ -42,47 +45,86 @@ public class TypeScriptCodeGenerator
   /// <returns>生成的TypeScripts代码</returns>
   public string CreateTsFile(CodeFile codeFile)
   {
-    if (codeFile.Notes != null)
-    {
-      foreach (var codeFileNote in codeFile.Notes)
-      {
-        ProcessNotes(codeFileNote);
-      }
-    }
-    if (codeFile.Namespaces != null)
-    {
-      foreach (var codeFileNamespace in codeFile.Namespaces)
-      {
-        ProcessNamespace(codeFileNamespace);
-      }
-    }
-    if (codeFile.Classes != null)
-    {
-      foreach (var cls in codeFile.Classes)
-      {
-        ProcessClass(cls);
-      }
-    }
-    if (codeFile.Enums != null)
-    {
-      foreach (var codeFileEnum in codeFile.Enums)
-      {
-        ProcessEnum(codeFileEnum);
-      }
-    }
-    if (codeFile.Functions != null)
-    {
-      foreach (var codeFileFunction in codeFile.Functions)
-      {
-        ProcessFunction(codeFileFunction);
-      }
-    }
+    processChildren(codeFile);
     return _currentCode.ToString();
   }
 
   #endregion
 
   #region 私有函数
+
+  // private void makeClassVisible()
+  // {
+  //
+  // }
+
+  void processChildren(CodeNode parent)
+  {
+    if (parent.Chirldren == null | parent.Chirldren.Count == 0)
+    {
+      return;
+    }
+    foreach (var chirld in parent.Chirldren)
+    {
+      var childType = chirld.GetType();
+      if (childType.IsSubclassOf(typeof(NoteBase)))
+      {
+        ProcessNotes(chirld as NoteBase);
+      }
+      else if(childType == typeof(NameSpace))
+      {
+        ProcessNamespace(chirld as NameSpace);
+      }
+      else if(childType == typeof(Class))
+      {
+        ProcessClass(chirld as Class);
+      }
+      else if (childType == typeof(Interface))
+      {
+        ProcessInterface(chirld as Interface);
+      }
+      else if(childType == typeof(EnumDefine))
+      {
+        ProcessEnum(chirld as EnumDefine);
+      }
+      else if(childType == typeof(Function))
+      {
+        ProcessFunction(chirld as Function);
+      }
+      else if (chirld is Variable)
+      {
+        if (parent is Class)
+        {
+          ProcessVariable(chirld as Variable,
+            true,
+            true,
+            parent,
+            !_config.ConvertClass2Interface && _config.SetDefaultVariableValueForClass
+          );
+        }
+        else if (parent is EnumDefine)
+        {
+          ProcessVariable(chirld as Variable,
+            true,
+            true,
+            parent,
+            !_config.ConvertClass2Interface && _config.SetDefaultVariableValueForClass
+          );
+        }
+        else
+        {
+          ProcessVariable(chirld as Variable, false,false,
+            parent,
+            true
+          );
+        }
+      }
+      else if (chirld is Parameter)
+      {
+
+      }
+    }
+  }
 
   private static string GetTab(int layerDepth)
   {
@@ -97,39 +139,9 @@ public class TypeScriptCodeGenerator
 
   private void ProcessNamespace(NameSpace nameSpace)
   {
-    if (nameSpace.Notes != null)
-    {
-      foreach (var nameSpaceNote in nameSpace.Notes)
-      {
-        ProcessNotes(nameSpaceNote);
-      }
-    }
-
+    var notes = nameSpace.GetNotes();
     _currentCode.Append($"export namespace {nameSpace.Name}").AppendLine(" {");
-    if (nameSpace.Classes != null)
-    {
-      foreach (var cClass in nameSpace.Classes)
-      {
-        ProcessClass(cClass);
-      }
-    }
-
-    if (nameSpace.Enums != null)
-    {
-      foreach (var enumDefine in nameSpace.Enums)
-      {
-        ProcessEnum(enumDefine);
-      }
-    }
-
-    if (nameSpace.Interfaces != null)
-    {
-      foreach (var iInterface in nameSpace.Interfaces)
-      {
-        ProcessInterface(iInterface);
-      }
-    }
-
+    processChildren(nameSpace);
     //end namespace code
     _currentCode.AppendLine("}");
   }
@@ -139,23 +151,9 @@ public class TypeScriptCodeGenerator
     _currentLayerDepth++;
     var tab = GetTab(_currentLayerDepth);
 
-    if (@interface.Notes != null)
-    {
-      foreach (var interfaceNote in @interface.Notes)
-      {
-        ProcessNotes(interfaceNote);
-      }
-    }
-
     _currentCode.Append(tab).Append($"interface {@interface.Name}").AppendLine(" {");
 
-    if (@interface.Functions != null)
-    {
-      foreach (var function in @interface.Functions)
-      {
-        ProcessFunction(function);
-      }
-    }
+    processChildren(@interface);
 
     _currentCode.Append(tab).AppendLine("}");
     _currentLayerDepth--;
@@ -163,18 +161,28 @@ public class TypeScriptCodeGenerator
 
   private void ProcessClass(Class cls)
   {
+    #region ts不支持类中类,要把所有的类都提权出来到这个类上面
+
+    //只要child中有children,把child中的子找出来,在自己所在的列表中,放在自己的前面(或者后面,要看注释或者其他情况,试一下就知道了),然后再往里面找
+    //private void makeClassVisible(CodeNode owner, CodeNode classNode);
+    //在class中遍历子,如果有子,调用makeClassVisible
+    //如果没有 return
+    // makeClassVisible(parent,parent.Chirldren.IndexOf(chirld),parent,chirld);
+
+    // List<CodeNode> needUpgradeClasses = new List<CodeNode>();
+    // CodeNode.GetNodesAllInside<Class>(ref needUpgradeClasses,cls, true);
+
+    List<Class> needUpgradeClasses = cls.GetClasses();
+
+    //从原来的地方删除掉.
+    foreach (var needUpgradeClass in needUpgradeClasses)
+    {
+      cls.Chirldren.Remove(needUpgradeClass);
+    }
+    #endregion
+
     _currentLayerDepth++;
     var tab = GetTab(_currentLayerDepth);
-    // var toInterface = false || cls.Variables != null && cls.Variables.Count > 0 && cls.Classes == null &&
-    //   cls.Functions == null;
-
-    if (cls.Notes != null)
-    {
-      foreach (var clsNote in cls.Notes)
-      {
-        ProcessNotes(clsNote);
-      }
-    }
 
       //转换成类
       _currentCode.Append(tab);
@@ -186,42 +194,20 @@ public class TypeScriptCodeGenerator
       //是按照interface来处理 还是按照class来处理
       var classOrInterface = _config.ConvertClass2Interface ? "interface" : "class";
       _currentCode.Append($"{classOrInterface} {cls.Name}").AppendLine(" {");
-      if (cls.Classes != null)
-      {
-        foreach (var subCls in cls.Classes)
-        {
-          ProcessClass(subCls);
-        }
-      }
-
-      if (cls.Variables != null)
-      {
-        foreach (var variable in cls.Variables)
-        {
-          if (variable.Permission == null)
-          {
-            continue;
-          }
-          //处理类中的变量时,如果类转换成TypeScripts的接口的话,就不需要把字段赋初值,另外如果是转换成类但是没指定要赋初值,也不需要设置.
-          ProcessVariable(variable,
-            true,
-            true,
-            !_config.ConvertClass2Interface && _config.SetDefaultVariableValueForClass
-            );
-        }
-      }
-
-      if (cls.Functions != null)
-      {
-        foreach (var function in cls.Functions)
-        {
-          ProcessFunction(function);
-        }
-      }
-
+      processChildren(cls);
 
     _currentCode.Append(tab).AppendLine("}");
     _currentLayerDepth--;
+
+    //处理提权了的类
+    if (needUpgradeClasses!= null && needUpgradeClasses.Count>0)
+    {
+      // var destIndex = parent.Chirldren.IndexOf(chirld);
+      foreach (var node in needUpgradeClasses)
+      {
+        ProcessClass(node as Class);
+      }
+    }
   }
 
   private void ProcessEnum(EnumDefine enumDefine)
@@ -229,33 +215,13 @@ public class TypeScriptCodeGenerator
     _currentLayerDepth++;
     var tab = GetTab(_currentLayerDepth);
 
-    if (enumDefine.Notes != null)
+    if (enumDefine.Permission == PermissionEnum.Public)
     {
-      foreach (var enumDefineNote in enumDefine.Notes)
-      {
-        ProcessNotes(enumDefineNote);
-      }
+      _currentCode.Append("export ");
     }
 
     _currentCode.Append(tab).Append($"enum {enumDefine.Name} ").AppendLine(" {");
-    foreach (var enumDefineVariable in enumDefine.Variables)
-    {
-      if (enumDefineVariable.Notes!=null)
-      {
-        foreach (var note in enumDefineVariable.Notes)
-        {
-          ProcessNotes(note);
-        }
-      }
-      if (enumDefineVariable.Value!= null)
-      {
-        _currentCode.AppendFormat("{0} = {1}", enumDefineVariable.Name,enumDefineVariable.Value).AppendLine(",");
-      }
-      else
-      {
-        _currentCode.Append(enumDefineVariable.Name).AppendLine(",");
-      }
-    }
+    processChildren(enumDefine);
     _currentCode.Append(tab).AppendLine("}");
     _currentLayerDepth--;
   }
@@ -263,64 +229,96 @@ public class TypeScriptCodeGenerator
   private void ProcessVariable(Variable variable,
     bool ignorePermission,
     bool ignoreStatic,
+    //如果在枚举中,结束符应该是, 其他地方结束符应该是;
+    CodeNode parent,
     bool setDefaultValue = false
   )
   {
-    if (variable.Notes != null)
+    if (variable is VariableWithStructure)
     {
-      foreach (var variableNote in variable.Notes)
-      {
-        ProcessNotes(variableNote);
-      }
+      ProcessVariableWithStructure(variable as VariableWithStructure, ignorePermission, ignoreStatic,parent);
     }
-
-    if (variable is VariableNoStructure)
+    else// if (variable is VariableNoStructure)
     {
-      ProcessVariableNoStructure(variable as VariableNoStructure, ignorePermission, ignoreStatic, setDefaultValue);
-    }
-    else if (variable is VariableWithStructure)
-    {
-      ProcessVariableWithStructure(variable as VariableWithStructure, ignorePermission, ignoreStatic);
+      ProcessVariableNoStructure(variable as VariableNoStructure, ignorePermission, ignoreStatic,parent, setDefaultValue);
     }
   }
 
   private void ProcessVariableNoStructure(VariableNoStructure? vns,
     bool ignorePermission,
     bool ignoreStatic,
+    CodeNode parent,
     bool setDefaultValue
-    )
+  )
   {
     //是否直接把简单定义的变量设置一个默认值.如果不设置的话.eslint可能会检查类中的变量没有给初值问题.
     _currentLayerDepth++;
     var tab = GetTab(_currentLayerDepth);
 
     _currentCode.Append(tab);
-    if (vns.Permission != null && !ignorePermission)
+    if (parent is EnumDefine)
     {
-      _currentCode.Append(vns.Permission.ToString()).Append(' ');
+      if (vns.Value == null)
+      {
+        _currentCode.Append(vns.Name);
+      }
+      else
+      {
+        _currentCode.AppendFormat("{0} = {1}", vns.Name, vns.Value);
+      }
+    }
+    else
+    {
+      if (vns.Permission != null && !ignorePermission)
+      {
+        _currentCode.Append(vns.Permission.ToString()).Append(' ');
+      }
+
+      if (vns.IsStatic == true && !ignoreStatic)
+      {
+        _currentCode.Append("static ");
+      }
+
+      var typeName = TypeMapDefine.GetTypeScriptTypeName(vns.Type);
+      var defaultValue = TypeMapDefine.GetTypeScriptTypeDefaultValue(vns.Type);
+
+      _currentCode.Append(vns.Name);
+      //类中如果变量没有值,那就设置为可为空
+      if (parent.GetType() == typeof(Class) && vns.Value == null)
+      {
+        _currentCode.Append('?');
+      }
+      if (vns.Value != null)
+      {
+        _currentCode.AppendFormat(": {0} = {1}",  typeName, vns.Value);
+      }
+      else if (setDefaultValue && !string.IsNullOrEmpty(defaultValue))
+      {
+        _currentCode.AppendFormat(": {0} = {1}", typeName,
+          defaultValue);
+        // _currentCode.Append(vns.Name).Append(" = ").Append();
+      }
+      else
+      {
+        _currentCode.Append(": ").Append(typeName);
+      }
     }
 
-    if (vns.IsStatic == true && !ignoreStatic)
-    {
-      _currentCode.Append("static ");
-    }
-
-    var typeName = TypeMapDefine.GetTypeScriptTypeName(vns.Type);
-    _currentCode.Append(vns.Name).Append(": ").Append(typeName);
-    if (setDefaultValue)
-    {
-      _currentCode.Append(" = ").Append(TypeMapDefine.GetTypeScriptTypeDefaultValue(vns.Type));
-    }
-
-    _currentCode.AppendLine(";");
+    _currentCode.AppendLine(parent is EnumDefine ? "," : ";");
     _currentLayerDepth--;
   }
 
   private void ProcessVariableWithStructure(VariableWithStructure? vws,
     bool ignorePermission,
-    bool ignoreStatic
+    bool ignoreStatic,
+    CodeNode parent
   )
   {
+    if (parent is Class && vws.Getter == null && vws.Setter == null)
+    {
+      ProcessVariableNoStructure(vws,ignorePermission,ignoreStatic,parent,false);
+      return;
+    }
     _currentLayerDepth++;
     var tab = GetTab(_currentLayerDepth);
 
@@ -344,6 +342,10 @@ public class TypeScriptCodeGenerator
     #endregion
 
     _currentCode.AppendLine(tab).AppendLine("}");
+
+
+    //不用大括号的方式
+    // _currentCode.Append(vws.Name).Append(": ").Append(typeName).AppendLine(";");
     _currentLayerDepth--;
   }
 
@@ -353,13 +355,7 @@ public class TypeScriptCodeGenerator
     // var classCode = new StringBuilder();
     var tab = GetTab(_currentLayerDepth);
 
-    if (function.Notes != null)
-    {
-      foreach (var functionNote in function.Notes)
-      {
-        ProcessNotes(functionNote);
-      }
-    }
+    // processChildren(function);
 
     _currentLayerDepth--;
   }
