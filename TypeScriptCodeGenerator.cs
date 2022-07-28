@@ -16,11 +16,13 @@ public class TypeScriptCodeGenerator
   /// 初始化TypeScripts生成器
   /// </summary>
   /// <param name="config">配置文件.如不指定,使用默认配置</param>
-  public TypeScriptCodeGenerator(TypescriptGeneratorConfig? config = null)
+  public TypeScriptCodeGenerator(CodeFile file, TypescriptGeneratorConfig? config = null)
   {
     _currentCode = new StringBuilder();
     _currentLayerDepth = 0;
     _config = config ?? new TypescriptGeneratorConfig();
+    this._file = file;
+    _currentSpaces = new List<CodeNode>();
   }
 
   #endregion
@@ -31,8 +33,10 @@ public class TypeScriptCodeGenerator
   /// TS文件生成器的配置
   /// </summary>
   private readonly TypescriptGeneratorConfig? _config;
-  private readonly StringBuilder _currentCode;
+  private StringBuilder _currentCode;
   private int _currentLayerDepth;
+  private readonly CodeFile _file;
+  private readonly List<CodeNode> _currentSpaces;
 
   #endregion
 
@@ -43,15 +47,53 @@ public class TypeScriptCodeGenerator
   /// </summary>
   /// <param name="codeFile">由cs解析出来的代码结构</param>
   /// <returns>生成的TypeScripts代码</returns>
-  public string CreateTsFile(CodeFile codeFile)
+  public string CreateTsFile()
   {
-    processChildren(codeFile);
+    _currentCode = new StringBuilder();
+    processChildren(_file);
     return _currentCode.ToString();
   }
 
   #endregion
 
   #region 私有函数
+
+  /// <summary>
+  /// 获取类或接口的实际继承名称(非实际的可能是ns1.ns2.cls1.cls2.cls3,因为ts不支持类嵌套,所以提权查出来以后就是ns1.ns2.cls3)
+  /// </summary>
+  /// <param name="childName"></param>
+  /// <returns></returns>
+  private string FindExtentFullPath(string childName)
+  {
+    var ancestors = CodeNode.FindAncestors(_file, typeof(Class), childName);
+    //ts中命名空间可以嵌套,类不能嵌套  类会被提权到他所在的命名你空间的儿子级.
+    //所以继承的类如果还在某个类当中定义,就不需要那个类
+    //比如ClassG定义在 namespaceA namespace B namespaceC classD classE classF当中.
+    //返回的结果中只需要namespaceA.namespaceB.namespaceC.classF
+    StringBuilder ancestorsPathBuilder = new StringBuilder();
+    for (var index = 0; index < ancestors.Count; index++)
+    {
+      var ancestor = ancestors[index];
+      //如果最后一项是class/interface的话 保留
+      if (ancestor is Interface && index != ancestors.Count-1)
+      {
+        continue;
+      }
+
+      if (ancestorsPathBuilder.Length > 0)
+      {
+        ancestorsPathBuilder.Append('.');
+      }
+
+      ancestorsPathBuilder.Append(ancestor.Name);
+    }
+
+    if (ancestorsPathBuilder.Length>0)
+    {
+      ancestorsPathBuilder.Append('.').Append(childName);
+    }
+    return ancestorsPathBuilder.ToString();
+  }
 
   // private void makeClassVisible()
   // {
@@ -64,10 +106,15 @@ public class TypeScriptCodeGenerator
     {
       return;
     }
+    _currentSpaces.Add(parent);
     foreach (var chirld in parent.Chirldren)
     {
       var childType = chirld.GetType();
-      if (childType.IsSubclassOf(typeof(NoteBase)))
+      if (childType == typeof(Using))
+      {
+        ProcessUsing(chirld as Using);
+      }
+      else if (childType.IsSubclassOf(typeof(NoteBase)))
       {
         ProcessNotes(chirld as NoteBase);
       }
@@ -124,6 +171,7 @@ public class TypeScriptCodeGenerator
 
       }
     }
+    _currentSpaces.RemoveAt(_currentSpaces.Count-1);
   }
 
   private static string GetTab(int layerDepth)
@@ -137,9 +185,14 @@ public class TypeScriptCodeGenerator
     return tab.ToString();
   }
 
+  private void ProcessUsing(Using u)
+  {
+    _currentCode.AppendFormat("import {0}", u.Name).AppendLine(";");
+  }
+
   private void ProcessNamespace(NameSpace nameSpace)
   {
-    var notes = nameSpace.GetNotes();
+    // var notes = nameSpace.GetNotes();
     _currentCode.Append($"export namespace {nameSpace.Name}").AppendLine(" {");
     processChildren(nameSpace);
     //end namespace code
@@ -151,8 +204,16 @@ public class TypeScriptCodeGenerator
     _currentLayerDepth++;
     var tab = GetTab(_currentLayerDepth);
 
-    _currentCode.Append(tab).Append($"interface {@interface.Name}").AppendLine(" {");
+    _currentCode.Append(tab).Append($"export interface {@interface.Name}").AppendLine(" {");
 
+    //当接口有继承的时候,生成他的继承代码.如果继承的接口在本文件中,直接使用 namespaceName.innterfaceName的方式继承.
+    //ts有一个特点是 接口和类的继承方式不一样 而cs是直接:后面跟类和接口名称,多个继承中间用逗号就行.
+    //ts的接口相对简单一些 接口只能继承接口  所以在本文件中找到这个接口即可.但是如果是类,要判断继承的名字是类还是接口
+    if (@interface.Extends!= null && @interface.Extends.Count>0)
+    {
+      // var interfaces = CodeNode.FilterOut<Interface>(_file, false);
+
+    }
     processChildren(@interface);
 
     _currentCode.Append(tab).AppendLine("}");
@@ -193,7 +254,77 @@ public class TypeScriptCodeGenerator
 
       //是按照interface来处理 还是按照class来处理
       var classOrInterface = _config.ConvertClass2Interface ? "interface" : "class";
-      _currentCode.Append($"{classOrInterface} {cls.Name}").AppendLine(" {");
+      _currentCode.Append($"{classOrInterface} {cls.Name}");
+
+      //获取当前这个类所在的位置.  能准吗? 多个命名空间 里面可能有同一个类呀.
+      #region 处理类和接口的继承
+
+      StringBuilder currentSpaceName = new StringBuilder();
+      //获取当前这个类所在的位置
+      for (int i = 0; i < _currentSpaces.Count; i++)
+      {
+        if (currentSpaceName.Length>0)
+        {
+          currentSpaceName.Append('.');
+        }
+
+        var current = _currentSpaces[i];
+        if (current is IClassContainer)
+        {
+          currentSpaceName.Append((current as IClassContainer).Name);
+        }
+      }
+
+      if (cls.Extends is {Count: > 0})
+      {
+        var extendsClassName = "";
+        var implamentInterfaces = new List<string>();
+        #region 获取继承的类
+        extendsClassName = FindExtentFullPath(cls.Extends[0]);
+        if (extendsClassName.StartsWith(currentSpaceName.ToString()) && extendsClassName.Length> currentSpaceName.Length)
+        {
+          extendsClassName = extendsClassName.Substring(currentSpaceName.Length+1);
+        }
+        #endregion
+
+        #region 获取继承的接口
+        //如果第一个不是类继承,那可能就是接口.
+        var startIndex = string.IsNullOrEmpty(extendsClassName) ? 0 : 1;
+        for (int i = startIndex; i < cls.Extends.Count; i++)
+        {
+          var implement = FindExtentFullPath(cls.Extends[i]);
+          //如果找到这个接口了,添加这个接口的绝对路径引用.如果没找到,保留使用引用的原始名称
+          implamentInterfaces.Add(string.IsNullOrEmpty(implement)? cls.Extends[i] : implement);
+        }
+        #endregion
+
+        #region 拼接继承字符串
+
+        if (string.IsNullOrEmpty(extendsClassName) == false)
+        {
+          //如果有继承类
+          _currentCode.AppendFormat(" extends {0}", extendsClassName);
+        }
+
+        if (implamentInterfaces.Count>0)
+        {
+          _currentCode.AppendFormat(" implements");
+          for (var index = 0; index < implamentInterfaces.Count; index++)
+          {
+            if (index>0)
+            {
+              _currentCode.Append(',');
+            }
+            var implement = implamentInterfaces[index];
+            _currentCode.AppendFormat(" {0}", implement);
+          }
+        }
+
+        #endregion
+      }
+
+      #endregion
+      _currentCode.AppendLine(" {");
       processChildren(cls);
 
     _currentCode.Append(tab).AppendLine("}");

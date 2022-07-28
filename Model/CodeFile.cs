@@ -12,21 +12,23 @@ public static class Define
 public class CodeFile : CodeNode,
   INamespaceContainer, IClassContainer, IEnumContainer, IFunctionContainer
 {
-  private readonly List<string> _usings = new List<string>();
+  // private readonly List<string> _usings = new List<string>();
     // public List<string> Usings { get; set; }
     // public List<NameSpace> Namespaces { get; set; }
     // public List<Class> Classes { get; set; }
     // public List<EnumDefine> Enums { get; set; }
     // public List<Function> Functions { get; set; }
-    public List<string> GetUsings()
-    {
-      return this._usings;
-    }
+    // public List<string> GetUsings()
+    // {
+    //   return this._usings;
+    // }
 
     public List<NameSpace> GetNamespaces()
     {
       return GetNodes<NameSpace>();
     }
+
+    public string Name { get; set; }
 
     public List<Class> GetClasses()
     {

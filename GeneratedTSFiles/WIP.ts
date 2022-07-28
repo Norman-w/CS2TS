@@ -1,5 +1,4 @@
-//这里是注释区域,里面我用了{还有/还有;还有其他的 之类的东西./*
-///*注释区里面还可以有注释///////所以如果//或者/**/不再行的开头,都不是新注释行
+
 /*
 
  * 这个一个注释段,命名空间没有summary
@@ -30,7 +29,7 @@ export namespace aa {
     EW = 111111111111111,
   }
   //命名空间内不能有属性
-  export class aa {
+  export class aa extends a implements bb.iii {
     aobj?: aa;
     ct?: number = Number();
     str?: string;
@@ -43,18 +42,20 @@ export namespace aa {
     /// <param name="b">函数的参数2</param>
     /// <returns>返回结果</returns>
   }
+  export class bClass {
+  }
 }
 export namespace bb {
-  interface iii {
+  export interface iii {
   }
 }
 export namespace cc {
-  interface ii {
+  export interface ii {
   }
   export namespace dd {
     export namespace ee {
       export namespace ff {
-        interface fii {
+        export interface fii {
         }
       }
     }

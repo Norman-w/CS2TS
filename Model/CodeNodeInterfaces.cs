@@ -10,8 +10,13 @@ namespace CS2TS.Model;
 // {
 //   List<NoteBase> Notes { get; }
 // }
-public interface IClassContainer
+public interface IExtendAble
 {
+
+}
+public interface IClassContainer :IExtendAble
+{
+  public string Name { get; set; }
   List<Class> GetClasses();
 }
 
@@ -25,7 +30,7 @@ public interface INamespaceContainer
   List<NameSpace> GetNamespaces();
 }
 
-public interface IInterfaceContainer
+public interface IInterfaceContainer :IExtendAble
 {
   List<Interface> GetInterfaces();
 }

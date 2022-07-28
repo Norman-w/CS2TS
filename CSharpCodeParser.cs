@@ -456,7 +456,9 @@ namespace CS2TS
       if (IsUsingAddingWords())
       {
         CodeFile code = _spaces[0] as CodeFile;
-        code.GetUsings().Add(_unProcessWords[1]);
+        var u = new Using(_unProcessWords[1]);
+        code.Chirldren.Add(u);
+        // code.GetUsings().Add(_unProcessWords[1]);
         _tempWord = new StringBuilder();
         _unProcessWords.Clear();
         return true;

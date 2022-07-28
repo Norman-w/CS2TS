@@ -46,6 +46,10 @@ namespace
     //命名空间内不能有属性
     public class aa: a, iii
     {
+      public class bClass
+      {
+
+      }
         aa aobj;
         const int ct = 0;
         public static string str { get; set; }

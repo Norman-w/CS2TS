@@ -1,4 +1,7 @@
 ﻿// using CS2TS.Helper;
+
+using System.Text;
+using CS2TS.Model;
 using Newtonsoft.Json;
 
 namespace CS2TS
@@ -26,9 +29,8 @@ namespace CS2TS
       // CodeNodeHelper hp = new CodeNodeHelper(codeFile);
       // hp.FindClass(codeFile, "aSubSub");
 
-
-      var generator = new TypeScriptCodeGenerator();
-      var tsCode = generator.CreateTsFile(codeFile);
+      var generator = new TypeScriptCodeGenerator(codeFile);
+      var tsCode = generator.CreateTsFile();
       Console.WriteLine(tsCode);
     }
   }

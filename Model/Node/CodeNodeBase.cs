@@ -1,3 +1,4 @@
+using System.Text;
 using CS2TS.Model;
 
 namespace CS2TS;
@@ -7,6 +8,7 @@ namespace CS2TS;
 /// </summary>
 public class CodeNode
 {
+  // public string Name { get; set; }
   public CodeNode()
   {
     Chirldren = new List<CodeNode>();
@@ -85,6 +87,53 @@ public class CodeNode
         retList.Add(current);
       }
       GetNodesAllInside<T>(ref retList, current);
+    }
+  }
+
+  /// <summary>
+  /// 获取类的祖先列表.最年迈的祖宗排在第0位置
+  /// </summary>
+  /// <param name="parent"></param>
+  /// <param name="childType"></param>
+  /// <param name="childName"></param>
+  /// <returns></returns>
+  public static List<IClassContainer> FindAncestors(CodeNode parent, Type childType, string childName)
+  {
+    bool found = false;
+    List<IClassContainer> refPath = new List<IClassContainer>();
+    findAncestorsOfClass(parent,ref found, ref refPath, childType, childName);
+
+    return refPath;
+  }
+
+  private static void findAncestorsOfClass(CodeNode parent,ref bool found, ref List<IClassContainer> refPath, Type childType, string childName)
+  {
+    if (found)
+    {
+      return;
+    }
+    foreach (var codeNode in parent.Chirldren)
+    {
+      var type = codeNode.GetType();
+      if (type == childType)
+      {
+        var clsName = (codeNode as IClassContainer).Name;
+        if (clsName == childName)
+        {
+          found = true;
+          return;
+        }
+      }
+      if (codeNode is IClassContainer)
+      {
+        refPath.Add((codeNode as IClassContainer));
+        findAncestorsOfClass(codeNode, ref found, ref refPath, childType,childName);
+        if (found)
+        {
+          return;
+        }
+        refPath.RemoveAt(refPath.Count-1);
+      }
     }
   }
 }
