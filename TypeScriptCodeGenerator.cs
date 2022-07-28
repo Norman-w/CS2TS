@@ -65,7 +65,39 @@ public class TypeScriptCodeGenerator
   /// <returns></returns>
   private string FindExtentFullPath(string childName)
   {
-    var ancestors = CodeNode.FindAncestors(_file, typeof(Class), childName);
+    var ancestors = CodeNode.FindAncestors<IClassContainer>(_file, typeof(Class), childName);
+    //ts中命名空间可以嵌套,类不能嵌套  类会被提权到他所在的命名你空间的儿子级.
+    //所以继承的类如果还在某个类当中定义,就不需要那个类
+    //比如ClassG定义在 namespaceA namespace B namespaceC classD classE classF当中.
+    //返回的结果中只需要namespaceA.namespaceB.namespaceC.classF
+    StringBuilder ancestorsPathBuilder = new StringBuilder();
+    for (var index = 0; index < ancestors.Count; index++)
+    {
+      var ancestor = ancestors[index];
+      //如果最后一项是class/interface的话 保留
+      if (ancestor is Class && index != ancestors.Count-1)
+      {
+        continue;
+      }
+
+      if (ancestorsPathBuilder.Length > 0)
+      {
+        ancestorsPathBuilder.Append('.');
+      }
+
+      ancestorsPathBuilder.Append(ancestor.Name);
+    }
+
+    if (ancestorsPathBuilder.Length>0)
+    {
+      ancestorsPathBuilder.Append('.').Append(childName);
+    }
+    return ancestorsPathBuilder.ToString();
+  }
+
+  private string FindInterfaceFullPath(string interfaceName)
+  {
+    var ancestors = CodeNode.FindAncestors<IInterfaceContainer>(_file, typeof(Interface), interfaceName);
     //ts中命名空间可以嵌套,类不能嵌套  类会被提权到他所在的命名你空间的儿子级.
     //所以继承的类如果还在某个类当中定义,就不需要那个类
     //比如ClassG定义在 namespaceA namespace B namespaceC classD classE classF当中.
@@ -90,7 +122,7 @@ public class TypeScriptCodeGenerator
 
     if (ancestorsPathBuilder.Length>0)
     {
-      ancestorsPathBuilder.Append('.').Append(childName);
+      ancestorsPathBuilder.Append('.').Append(interfaceName);
     }
     return ancestorsPathBuilder.ToString();
   }
@@ -256,11 +288,11 @@ public class TypeScriptCodeGenerator
       var classOrInterface = _config.ConvertClass2Interface ? "interface" : "class";
       _currentCode.Append($"{classOrInterface} {cls.Name}");
 
-      //获取当前这个类所在的位置.  能准吗? 多个命名空间 里面可能有同一个类呀.
       #region 处理类和接口的继承
 
       StringBuilder currentSpaceName = new StringBuilder();
-      //获取当前这个类所在的位置
+      
+      #region 获取当前这个类所在的位置
       for (int i = 0; i < _currentSpaces.Count; i++)
       {
         if (currentSpaceName.Length>0)
@@ -274,6 +306,7 @@ public class TypeScriptCodeGenerator
           currentSpaceName.Append((current as IClassContainer).Name);
         }
       }
+      #endregion
 
       if (cls.Extends is {Count: > 0})
       {
@@ -292,7 +325,11 @@ public class TypeScriptCodeGenerator
         var startIndex = string.IsNullOrEmpty(extendsClassName) ? 0 : 1;
         for (int i = startIndex; i < cls.Extends.Count; i++)
         {
-          var implement = FindExtentFullPath(cls.Extends[i]);
+          var implement = FindInterfaceFullPath(cls.Extends[i]);
+          if (implement.StartsWith(currentSpaceName.ToString()) && implement.Length> currentSpaceName.Length)
+          {
+            implement = implement.Substring(currentSpaceName.Length+1);
+          }
           //如果找到这个接口了,添加这个接口的绝对路径引用.如果没找到,保留使用引用的原始名称
           implamentInterfaces.Add(string.IsNullOrEmpty(implement)? cls.Extends[i] : implement);
         }

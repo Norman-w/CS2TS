@@ -97,16 +97,16 @@ public class CodeNode
   /// <param name="childType"></param>
   /// <param name="childName"></param>
   /// <returns></returns>
-  public static List<IClassContainer> FindAncestors(CodeNode parent, Type childType, string childName)
+  public static List<T> FindAncestors<T>(CodeNode parent, Type childType, string childName) where T:IExtendAble
   {
     bool found = false;
-    List<IClassContainer> refPath = new List<IClassContainer>();
+    List<T> refPath = new List<T>();
     findAncestorsOfClass(parent,ref found, ref refPath, childType, childName);
 
     return refPath;
   }
 
-  private static void findAncestorsOfClass(CodeNode parent,ref bool found, ref List<IClassContainer> refPath, Type childType, string childName)
+  private static void findAncestorsOfClass<T>(CodeNode parent,ref bool found, ref List<T> refPath, Type childType, string childName) where T:IExtendAble
   {
     if (found)
     {
@@ -114,19 +114,23 @@ public class CodeNode
     }
     foreach (var codeNode in parent.Chirldren)
     {
+      if (codeNode is IExtendAble == false)
+      {
+        continue;
+      }
       var type = codeNode.GetType();
       if (type == childType)
       {
-        var clsName = (codeNode as IClassContainer).Name;
+        var clsName = (codeNode as IExtendAble).Name;
         if (clsName == childName)
         {
           found = true;
           return;
         }
       }
-      if (codeNode is IClassContainer)
+      if (codeNode is T)
       {
-        refPath.Add((codeNode as IClassContainer));
+        refPath.Add((T) (IExtendAble)codeNode);
         findAncestorsOfClass(codeNode, ref found, ref refPath, childType,childName);
         if (found)
         {

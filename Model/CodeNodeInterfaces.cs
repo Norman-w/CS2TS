@@ -12,11 +12,10 @@ namespace CS2TS.Model;
 // }
 public interface IExtendAble
 {
-
+  public string Name { get; set; }
 }
 public interface IClassContainer :IExtendAble
 {
-  public string Name { get; set; }
   List<Class> GetClasses();
 }
 
@@ -25,7 +24,7 @@ public interface IFunctionContainer
   List<Function> GetFunctions();
 }
 
-public interface INamespaceContainer
+public interface INamespaceContainer : IExtendAble
 {
   List<NameSpace> GetNamespaces();
 }

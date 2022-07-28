@@ -6,6 +6,8 @@ using
 System;
 using System.Collections.Generic;
 using System.Text;
+using CS2TS;
+
 /*
  * 这个一个注释段,命名空间没有summary
  */
@@ -92,6 +94,11 @@ namespace bb
     interface iii:ii
     {
         void voidFunc(int a, int b);
+
+        interface iiii4
+        {
+            public string name { get; set; }
+        }
     }
 }
 namespace cc

@@ -866,10 +866,10 @@ namespace CS2TS
 
         else if (vbOrInterface is Interface)
         {
-          if (parent is NameSpace == false)
-          {
-            throw new NotImplementedException("接口只能定义在命名空间中");
-          }
+          // if (parent is NameSpace == false)
+          // {
+          //   throw new NotImplementedException("接口只能定义在命名空间中");
+          // }
 
 
           parent.Chirldren.Add(vbOrInterface as Interface);

@@ -13,7 +13,6 @@ public class NameSpace : CodeNode,
     Name = name;
   }
 
-  public string Name { get; set; }
   public List<NameSpace> GetNamespaces()
   {
     throw new NotImplementedException();
@@ -33,5 +32,7 @@ public class NameSpace : CodeNode,
   {
     throw new NotImplementedException();
   }
+
+  public string Name { get; set; }
 }
 

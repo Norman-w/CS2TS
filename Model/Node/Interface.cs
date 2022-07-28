@@ -4,7 +4,7 @@ namespace CS2TS;
 
 
 public class Interface : VariableWithStructure,
-  IFunctionContainer,IVariableContainer
+  IInterfaceContainer, IFunctionContainer,IVariableContainer
 {
   public List<Function> GetFunctions()
   {
@@ -19,5 +19,10 @@ public class Interface : VariableWithStructure,
   public Interface(string name,
     List<string> extends) : base(name, null, PermissionEnum.Public,null,null,null,null,null, extends,null,null)
   {
+  }
+
+  public List<Interface> GetInterfaces()
+  {
+    return GetNodes<Interface>();
   }
 }
