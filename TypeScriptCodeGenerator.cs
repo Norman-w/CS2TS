@@ -233,6 +233,17 @@ public class TypeScriptCodeGenerator
 
   private void ProcessInterface(Interface @interface)
   {
+    #region TS中也不支持interface的嵌套.但是CS中支持.所以interface要提权到他所在的命名空间的子集或者文件的子集
+
+    List<Interface> needUpgradeInterfaces = @interface.GetInterfaces();
+
+    //从原来的地方删除掉.
+    foreach (var iInterface in needUpgradeInterfaces)
+    {
+      @interface.Chirldren.Remove(iInterface);
+    }
+
+    #endregion
     _currentLayerDepth++;
     var tab = GetTab(_currentLayerDepth);
 
@@ -250,6 +261,16 @@ public class TypeScriptCodeGenerator
 
     _currentCode.Append(tab).AppendLine("}");
     _currentLayerDepth--;
+    #region 处理提权了的接口
+    if (needUpgradeInterfaces is {Count: > 0})
+    {
+      // var destIndex = parent.Chirldren.IndexOf(chirld);
+      foreach (var node in needUpgradeInterfaces)
+      {
+        ProcessInterface(node as Interface);
+      }
+    }
+    #endregion
   }
 
   private void ProcessClass(Class cls)
@@ -367,7 +388,7 @@ public class TypeScriptCodeGenerator
     _currentCode.Append(tab).AppendLine("}");
     _currentLayerDepth--;
 
-    //处理提权了的类
+    #region 处理提权了的类
     if (needUpgradeClasses!= null && needUpgradeClasses.Count>0)
     {
       // var destIndex = parent.Chirldren.IndexOf(chirld);
@@ -376,6 +397,7 @@ public class TypeScriptCodeGenerator
         ProcessClass(node as Class);
       }
     }
+    #endregion
   }
 
   private void ProcessEnum(EnumDefine enumDefine)

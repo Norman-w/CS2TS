@@ -47,8 +47,7 @@ export namespace aa {
 }
 export namespace bb {
   export interface iii {
-    
-}
+  }
   export interface iiii4 {
   }
 }
