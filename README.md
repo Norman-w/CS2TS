@@ -36,3 +36,8 @@ and the second is the .ts file out going path.
 Since "#region" may span regions, it's great for collapsing code most of the time, but worse when dealing with non-standard CS code (or messing with "#region")
 因为 "#region" 可能会跨越区域,他多数时候用来折叠代码很棒,但如果处理不规范的cs代码(或者乱用"#region"),会比较糟糕
 
+### 2022年07月28日12:14:39
+目前
+使用 \TestCSFiles\Test.cs作为csharp待转换源码
+使用 \GeneratedTSFiles\WIP.ts作为typescript的已生成代码.
+namespace, enum, class, interface, using, variable 都已处理完毕.剩余Function生成部分未处理

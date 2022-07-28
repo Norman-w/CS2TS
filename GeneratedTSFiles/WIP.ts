@@ -1,4 +1,11 @@
-
+import bb;
+import cc;
+//这里是注释区域,里面我用了{还有/还有;还有其他的 之类的东西./*
+///*注释区里面还可以有注释///////所以如果//或者/**/不再行的开头,都不是新注释行
+import System;
+import System.Collections.Generic;
+import System.Text;
+import CS2TS;
 /*
 
  * 这个一个注释段,命名空间没有summary
