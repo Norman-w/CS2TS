@@ -11,14 +11,19 @@ namespace CS2TS
       _spaces.Add(new CodeFile());
     }
 
-    private readonly List<CodeNode> _spaces = new List<CodeNode>();
-
     /// <summary>
-    /// 没有主的注释集合
+    /// 领空链,第0个元素为文件.最后一个元素为当前在什么领空中处理字符
     /// </summary>
-    // private readonly List<NoteBase> _noOwnerNotes = new List<NoteBase>();
-
+    private readonly List<CodeNode> _spaces = new List<CodeNode>();
+    
+    /// <summary>
+    /// 没有处理的所有的词素,比如 int a( 这里有三个词素 int a 和 (,  其中(为断句符号.遇到断句符号(或单词)时就需要处理之前没有处理的内容了.
+    /// </summary>
     private readonly List<string> _unProcessWords = new List<string>();
+    
+    /// <summary>
+    /// 当前没有处理的所有的char构成的一个临时的单词,如果单词被打断 比如 a; 我们定义了 分号是断词符号之一,所以当前的 待处理词素集中加入  a和; 分号
+    /// </summary>
     private StringBuilder _tempWord = new StringBuilder();
 
     /// <summary>
@@ -31,6 +36,11 @@ namespace CS2TS
     /// </summary>
     private readonly List<string> _breakWords = new List<string>() {";", "{", "}", "\r\n", "\n", "*/", ","};
 
+    /// <summary>
+    /// 将从文件中加载的CSharp(*.cs)文件解析为CodeFile结构.
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
     public CodeFile ParseCsFile(string path)
     {
       string file = File.ReadAllText(path, Encoding.GetEncoding("UTF-8"));
@@ -50,7 +60,7 @@ namespace CS2TS
 
         //}
 
-        bool isSpiliting = IsSplitWord(currentChar);
+        bool isSpiliting = IsWordBreakSymbol(currentChar);
         if (isSpiliting)
         {
           //这里的逻辑要好好理解并测试一下才可以明白
@@ -127,7 +137,7 @@ namespace CS2TS
 
         //如果当前待处理的内容中,最后一项或者 \r\n这样的连续项 触发了语句中单词的语义定义  那就处理是该添加什么还是结束什么.
         //目前没有处理小括号 方括号 尖括号. 只处理了大括号.
-        if (IsBreakWord(out var currentBreakWord, out var currentBreakBy))
+        if (IsSentenceBreakWord(out var currentBreakWord, out var currentBreakBy))
         {
           #region 检测是否在注释区域内,任何换行符,语句开始或者终止符,只要是在注释区域内,就应该被添加为注释内容
 
@@ -201,7 +211,7 @@ namespace CS2TS
 
           if (currentBreakWord == ",")
           {
-            var r = ParseDouhao();
+            var r = ParseComma();
             if (r)
             {
               continue;
@@ -214,7 +224,7 @@ namespace CS2TS
 
           if (currentBreakWord == ";")
           {
-            var r = ParseFenhao();
+            var r = ParseSemicolon();
             if (r)
             {
               continue;
@@ -227,7 +237,7 @@ namespace CS2TS
 
           else if (currentBreakWord == "{")
           {
-            var r = ParseDakuohao();
+            var r = ParseLeftCurlyBraces();
             if (r)
             {
               continue;
@@ -240,7 +250,7 @@ namespace CS2TS
 
           else if (currentBreakWord == "}")
           {
-            var r = ParseDakuohui();
+            var r = ParseRightCurlyBraces();
             if (r)
             {
               continue;
@@ -265,7 +275,7 @@ namespace CS2TS
     #region 使用没有解析的字符集合构建代码
 
     /// <summary>
-    /// 使用没有解析的字符集合构建代码
+    /// 使用没有解析的字符集合构建明文代码(非结构化)
     /// </summary>
     /// <returns></returns>
     private string BuildCodeBodyByUnProcessWords()
@@ -289,7 +299,7 @@ namespace CS2TS
     #region 解析变量的信息
 
     /// <summary>
-    /// 解析变量的信息,填充到给定的变量.
+    /// 解析变量的信息,填充到给定的变量.(从未处理的单词表中获取数据)
     /// </summary>
     /// <param name="va"></param>
     private void ParseVariableInfo(Variable va)
@@ -432,7 +442,11 @@ namespace CS2TS
 
     #region 解析逗号
 
-    private bool ParseDouhao()
+    /// <summary>
+    /// 解析逗号 , 可以出现在:函数参数,枚举,类继承
+    /// </summary>
+    /// <returns></returns>
+    private bool ParseComma()
     {
       //上一个枚举的值,因为枚举默认是从0开始
       if (IsInEnum())
@@ -450,7 +464,12 @@ namespace CS2TS
 
     #region 解析分号
 
-    private bool ParseFenhao()
+    /// <summary>
+    /// 解析分号 ;
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    private bool ParseSemicolon()
     {
       //return true就是执行 continue;
       if (IsUsingAddingWords())
@@ -629,7 +648,22 @@ namespace CS2TS
 
     #region 解析大括号开始
 
-    private bool ParseDakuohao()
+    /// <summary>
+    /// 解析左侧花括号 大括号开始 { 可能的结构:
+    /// if{}
+    /// else if{}
+    /// else{}
+    /// 任何地方表示一段代码{}
+    /// namespace (){}
+    /// function(){}
+    /// variable{}
+    /// switch{}
+    /// while{}
+    /// foreach(){}
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    private bool ParseLeftCurlyBraces()
     {
       #region if  else if  else 字段
 
@@ -992,8 +1026,12 @@ namespace CS2TS
     #endregion
 
     #region 解析大括号返回
-
-    private bool ParseDakuohui()
+    
+    /// <summary>
+    /// 解析右侧花括号 大括号结束 }
+    /// </summary>
+    /// <returns></returns>
+    private bool ParseRightCurlyBraces()
     {
       if (IsInStatement())
       {
@@ -1453,12 +1491,23 @@ namespace CS2TS
       return false;
     }
 
-    private bool IsSplitWord(string c)
+    /// <summary>
+    /// 传入一个或者多个字符,确认他是不是断词符号.
+    /// </summary>
+    /// <param name="c"></param>
+    /// <returns></returns>
+    private bool IsWordBreakSymbol(string c)
     {
       return _splitWords.Contains(c);
     }
 
-    private bool IsBreakWord(out string current, out string breakBy)
+    /// <summary>
+    /// 检查当前待处理的内容最后一项是否为断句符号
+    /// </summary>
+    /// <param name="current"></param>
+    /// <param name="breakBy"></param>
+    /// <returns></returns>
+    private bool IsSentenceBreakWord(out string current, out string breakBy)
     {
       foreach (var v in _breakWords)
       {
