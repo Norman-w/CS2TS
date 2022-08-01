@@ -6,6 +6,7 @@ using
 System;
 using System.Collections.Generic;
 using System.Text;
+using cc.dd.ee.ff;
 using CS2TS;
 
 /*
@@ -46,7 +47,7 @@ namespace
     }
     #endregion
     //命名空间内不能有属性
-    public class aa: a, iii
+    public class aa: a, fii
     {
       public class bClass
       {
@@ -86,6 +87,11 @@ namespace
             {
                 return null;
             }
+        }
+
+        public void fiiFunc(byte b)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -5,6 +5,7 @@ import cc;
 import System;
 import System.Collections.Generic;
 import System.Text;
+import cc.dd.ee.ff;
 import CS2TS;
 /*
 
@@ -36,7 +37,7 @@ export namespace aa {
     EW = 111111111111111,
   }
   //命名空间内不能有属性
-  export class aa extends a implements bb.iii {
+  export class aa extends a implements cc.dd.ee.ff.fii {
     aobj?: aa;
     ct?: number = Number();
     str?: string;
