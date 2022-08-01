@@ -54,147 +54,178 @@ namespace CS2TS
           continue;
         }
         //走到这里的时候 待处理单次或者词汇表中已经有内容了 不是字符级别的处理了. 这时候就要看怎么处理这个或者这些词.
-
         if (TryStartSemanticInvalidArea(currentChar))
         {
           continue;
         }
-
         //如果当前待处理的内容中,最后一项或者 \r\n这样的连续项 触发了语句中单词的语义定义  那就处理是该添加什么还是结束什么.
         //目前没有处理小括号 方括号 尖括号. 只处理了大括号.
-        if (IsSentenceBreakWord(out var currentBreakWord, out var currentBreakBy))
+        string currentBreakWord, currentBreakBy;
+        //如果最后一个单词或者符号是断句触发,处理待处理的所有的单词
+        if (IsSentenceBreakWord(out currentBreakWord, out currentBreakBy))
         {
-          #region 检测是否在注释区域内,任何换行符,语句开始或者终止符,只要是在注释区域内,就应该被添加为注释内容
-
-          if (IsInNotesLine())
+          //如果处理待处理的所有单词失败的话
+          if (!ProcessUnProcessWords(currentBreakWord, currentBreakBy))
           {
-            var currentNote = GetCurrentNotesLine();
-            currentNote.Append(_tempWord.ToString());
-            if (IsValidEndWordForCurrent())
+            //如果当前的临时单词不是空的(当前是用一个词来断开了另外一个词,但是处理失败了 有可能是 \r\n using 断了,但是只有一个using不能处理.
+            //把这个临时单词放在待处理列表中.
+            var unProcessWord = _tempWord.ToString().Trim(new char[] {'\r', '\n', ' '});
+            if (unProcessWord.Length > 0)
             {
-              _spaces[^2].Chirldren.Add(currentNote);
-              // _noOwnerNotes.Add(currentNote);
-              _spaces.RemoveAt(_spaces.Count - 1);
+              _unProcessWords.Add(unProcessWord);
             }
-
+            //然后重置临时单词
             _tempWord = new StringBuilder();
-            _unProcessWords.Clear();
-            continue;
           }
-
-          if (InInNotesArea())
-          {
-            var currentNode = GetCurrentNotesArea();
-            if (currentNode.Lines == null)
-            {
-              currentNode.Lines = new List<string>();
-            }
-
-            currentNode.Lines.Add(_tempWord.ToString());
-            if (IsValidEndWordForCurrent())
-            {
-              _spaces[^2].Chirldren.Add(currentNode);
-              // _noOwnerNotes.Add(currentNode);
-              _spaces.RemoveAt(_spaces.Count - 1);
-            }
-
-            _tempWord = new StringBuilder();
-            _unProcessWords.Clear();
-            continue;
-          }
-
-          if (IsInSharpLine())
-          {
-            var currentNote = GetCurrentSharpLine();
-            currentNote.Append(_tempWord.ToString());
-            if (IsValidEndWordForCurrent())
-            {
-              _spaces[^2].Chirldren.Add(currentNote);
-              // _noOwnerNotes.Add(currentNote);
-              _spaces.RemoveAt(_spaces.Count - 1);
-            }
-
-            _tempWord = new StringBuilder();
-            _unProcessWords.Clear();
-            continue;
-          }
-
-          #endregion
-
-          #region 检测是否在字符串定义区域内,这个后续如果处理复杂逻辑的时候再处理
-
-          #endregion
-
-          //如果是一个空换行的话不需要处理了.因为换行能结束一行注释 但是运行到这里已经确认不是在注释中了.所以不算结束注释.
-          if (currentBreakWord == "\n" && currentBreakBy == currentBreakWord)
-          {
-            _tempWord = new StringBuilder();
-            continue;
-          }
-
-          #region 对逗号的处理,比如枚举中逗号是结束一个枚举值的定义
-
-          if (currentBreakWord == ",")
-          {
-            var r = ParseComma();
-            if (r)
-            {
-              continue;
-            }
-          }
-
-          #endregion
-
-          #region 对分号的处理,会影响引用和变量定义
-
-          if (currentBreakWord == ";")
-          {
-            var r = ParseSemicolon();
-            if (r)
-            {
-              continue;
-            }
-          }
-
-          #endregion
-
-          #region 对大括号开始的处理 会结束类或命名空间头
-
-          else if (currentBreakWord == "{")
-          {
-            var r = ParseLeftCurlyBraces();
-            if (r)
-            {
-              continue;
-            }
-          }
-
-          #endregion
-
-          #region 对大括号结束的处理 会结束类或者命名空间的定义
-
-          else if (currentBreakWord == "}")
-          {
-            var r = ParseRightCurlyBraces();
-            if (r)
-            {
-              continue;
-            }
-          }
-
-          #endregion
-
-          var unProcessWord = _tempWord.ToString().Replace("\r", "").Replace("\n","");
-          if (unProcessWord.Length > 0)
-          {
-            _unProcessWords.Add(unProcessWord);
-          }
-
-          _tempWord = new StringBuilder();
         }
+        //如果不是有效的断句符,继续下一个字符.
       }
 
       return _spaces[0] as CodeFile;
+    }
+
+    /// <summary>
+    /// 尝试终止语义无效的区域(使用待处理单词和待处理单词表)
+    /// </summary>
+    /// <returns></returns>
+    private bool TryEndSemanticInvalidArea()
+    {
+      #region 检测是否在注释区域内,任何换行符,语句开始或者终止符,只要是在注释区域内,就应该被添加为注释内容
+
+      if (IsInNotesLine())
+      {
+        var currentNote = GetCurrentNotesLine();
+        currentNote.Append(_tempWord.ToString());
+        if (IsValidEndWordForCurrent())
+        {
+          _spaces[^2].Chirldren.Add(currentNote);
+          // _noOwnerNotes.Add(currentNote);
+          _spaces.RemoveAt(_spaces.Count - 1);
+        }
+
+        _tempWord = new StringBuilder();
+        _unProcessWords.Clear();
+        return true;
+      }
+
+      if (InInNotesArea())
+      {
+        var currentNode = GetCurrentNotesArea();
+        if (currentNode.Lines == null)
+        {
+          currentNode.Lines = new List<string>();
+        }
+
+        currentNode.Lines.Add(_tempWord.ToString());
+        if (IsValidEndWordForCurrent())
+        {
+          _spaces[^2].Chirldren.Add(currentNode);
+          // _noOwnerNotes.Add(currentNode);
+          _spaces.RemoveAt(_spaces.Count - 1);
+        }
+
+        _tempWord = new StringBuilder();
+        _unProcessWords.Clear();
+        return true;
+      }
+
+      if (IsInSharpLine())
+      {
+        var currentNote = GetCurrentSharpLine();
+        currentNote.Append(_tempWord.ToString());
+        if (IsValidEndWordForCurrent())
+        {
+          _spaces[^2].Chirldren.Add(currentNote);
+          // _noOwnerNotes.Add(currentNote);
+          _spaces.RemoveAt(_spaces.Count - 1);
+        }
+
+        _tempWord = new StringBuilder();
+        _unProcessWords.Clear();
+        return true;
+      }
+      #endregion
+
+      return false;
+    }
+
+    /// <summary>
+    /// 处理待处理的单词表
+    /// </summary>
+    /// <param name="currentBreakWord"></param>
+    /// <param name="currentBreakBy"></param>
+    /// <returns></returns>
+    private bool ProcessUnProcessWords(string currentBreakWord, string currentBreakBy)
+    {
+      if (TryEndSemanticInvalidArea())
+      {
+        return true;
+      }
+
+      #region 检测是否在字符串定义区域内,这个后续如果处理复杂逻辑的时候再处理
+
+      #endregion
+
+      //如果是一个空换行的话不需要处理了.因为换行能结束一行注释 但是运行到这里已经确认不是在注释中了.所以不算结束注释.
+      if (currentBreakWord == "\n" && currentBreakBy == currentBreakWord)
+      {
+        _tempWord = new StringBuilder();
+        return true;
+      }
+
+      #region 对逗号的处理,比如枚举中逗号是结束一个枚举值的定义
+
+      if (currentBreakWord == ",")
+      {
+        var r = ParseComma();
+        if (r)
+        {
+          return true;
+        }
+      }
+
+      #endregion
+
+      #region 对分号的处理,会影响引用和变量定义
+
+      if (currentBreakWord == ";")
+      {
+        var r = ParseSemicolon();
+        if (r)
+        {
+          return true;
+        }
+      }
+
+      #endregion
+
+      #region 对大括号开始的处理 会结束类或命名空间头
+
+      else if (currentBreakWord == "{")
+      {
+        var r = ParseLeftCurlyBraces();
+        if (r)
+        {
+          return true;
+        }
+      }
+
+      #endregion
+
+      #region 对大括号结束的处理 会结束类或者命名空间的定义
+
+      else if (currentBreakWord == "}")
+      {
+        var r = ParseRightCurlyBraces();
+        if (r)
+        {
+          return true;
+        }
+      }
+
+      #endregion
+
+      return false;
     }
 
     #region 尝试开辟一个新的语义无效区域(如果待处理词组前是以 // 之类的开始 就是要开始对应的种类的无效语义区域了)

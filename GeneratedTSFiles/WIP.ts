@@ -54,6 +54,15 @@ export namespace aa {
     }
     public voidFunc() :void {
     }
+    /// <summary>
+    /// 遍历每一个to内的元素,如果from有同名的,替换to内的值
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
+    /// <returns></returns>
+    public replace() :Dictionary<string,string> {
+      return ;
+    }
     private format() :Nullable<long> {
       return ;
     }
