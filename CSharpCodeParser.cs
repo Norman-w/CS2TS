@@ -15,12 +15,12 @@ namespace CS2TS
     /// 领空链,第0个元素为文件.最后一个元素为当前在什么领空中处理字符
     /// </summary>
     private readonly List<CodeNode> _spaces = new List<CodeNode>();
-    
+
     /// <summary>
     /// 没有处理的所有的词素,比如 int a( 这里有三个词素 int a 和 (,  其中(为断句符号.遇到断句符号(或单词)时就需要处理之前没有处理的内容了.
     /// </summary>
     private readonly List<string> _unProcessWords = new List<string>();
-    
+
     /// <summary>
     /// 当前没有处理的所有的char构成的一个临时的单词,如果单词被打断 比如 a; 我们定义了 分号是断词符号之一,所以当前的 待处理词素集中加入  a和; 分号
     /// </summary>
@@ -47,60 +47,11 @@ namespace CS2TS
       int count = file.Length;
       for (int i = 0; i < count; i++)
       {
-        //if (i == 1607)
-        //{
-        //    //还是要考虑一下函数或者命名空间的头  是否要和体分开区分领空   可以类开始的地方定义添加类然后在定义添加类头再定义添加类的接口之类的
-        //    //也可以直接通过{来区分是否符合类创建标准 然后把前面的都解释一遍,具体看下脑图
-        //}
-
-
         string currentChar = file[i].ToString();
-        //if (currentChar == "}")
-        //{
-
-        //}
-
-        bool isSpiliting = IsWordBreakSymbol(currentChar);
-        if (isSpiliting)
+        //尝试把当前字符放在半成品单词/备注/字符串 当中.如果已经处理完毕,就可以continue处理下一个字符了.
+        if (TryAppend2TempWordOrUnProcessWordsOrSemanticInvalidArea(currentChar))
         {
-          //这里的逻辑要好好理解并测试一下才可以明白
-
-          #region 检查是否在注释区域中,在注释中的分隔符被记录到临时文字中的,但是不一定是完成,因为\r\n这样的能结束注释行的 才算是完成符,那时候再收尾.
-
-          if (IsInNotesLine())
-          {
-            //getCurrentNotesLine().Append(currentChar);
-            _tempWord.Append(currentChar);
-            continue;
-          }
-
-          if (InInNotesArea())
-          {
-            //getCurrentNotesArea().Lines.Add(currentChar);
-            _tempWord.Append(currentChar);
-            continue;
-          }
-
-          if (IsInSharpLine())
-          {
-            //getCurrentSharpLine().Append(currentChar);
-            _tempWord.Append(currentChar);
-            continue;
-          }
-
-          #endregion
-
-          //如果不是在注释区域的分隔符,那么就直接加入到上一个词组当中.
-          if (_tempWord.ToString().Trim().Length > 0)
-            _unProcessWords.Add(_tempWord.ToString());
-          if (currentChar.Trim().Length > 0)
-            _unProcessWords.Add(currentChar);
-          _tempWord = new StringBuilder();
-        }
-        else
-        {
-          //如果不是分隔符,就是标准字符的话 直接加入到上一个单词中.
-          _tempWord.Append(currentChar);
+          continue;
         }
         //走到这里的时候 待处理单次或者词汇表中已经有内容了 不是字符级别的处理了. 这时候就要看怎么处理这个或者这些词.
 
@@ -271,6 +222,83 @@ namespace CS2TS
 
       return _spaces[0] as CodeFile;
     }
+
+    #region 处理字符,如果需要断词就把当前词添加到待处理单次列表中,如果不需要,就追加到当前正在处理的单词的末尾
+
+    /// <summary>
+    /// 把当前的字符放到目标位置.处理字符,如果需要断词就把当前词添加到待处理单次列表中,如果不需要,就追加到当前正在处理的单词的末尾.如果在注释中,直接追加到注释就不继续处理了.
+    /// </summary>
+    /// <param name="currentChar">当前要处理的字符串</param>
+    private bool TryAppend2TempWordOrUnProcessWordsOrSemanticInvalidArea(string currentChar)
+    {
+      //返回值是当前自如是否已经处理过了.如果是的话,调用这个函数的地方所在的循环就可以继续处理下一个了.
+      if (IsWordBreakSymbol(currentChar))
+      {
+        //这里的逻辑要好好理解并测试一下才可以明白
+        if (TryAppend2SemanticInvalidArea(currentChar))
+        {
+          return true;
+        }
+        //如果不是在注释区域的分隔符,那么就直接加入到上一个词组当中.
+
+        //如果当前的临时词长度大于0,当前的字符又是一个分词符号,那么要把之前的已经积攒的字符作为一个单词 添加到待处理单词集合中.
+        if (_tempWord.ToString().Trim().Length > 0)
+          _unProcessWords.Add(_tempWord.ToString());
+
+        //如果当前的分次符还不是空的,把这个分词符号也加入到待处理词素当中.这样在处理的时候好知道这个分词符号是个啥.
+        if (currentChar.Trim().Length > 0)
+          _unProcessWords.Add(currentChar);
+
+        //处理完了这个字符串以后.因为当前字符已经是分词符了.所以前面的词加到了待处理单词中以后,就可以清空了.
+        _tempWord = new StringBuilder();
+      }
+      else
+      {
+        //如果不是分隔符,就是标准字符的话 直接加入到上一个单词中.
+        _tempWord.Append(currentChar);
+      }
+      return false;
+    }
+
+    #endregion
+
+    #region 尝试把字符放入到当前的无语意区
+
+    /// <summary>
+    /// 如果是一个分词符号的时候.尝试添加都的当前的语义无效的区域.如果成功了.字符就可以越过了.如果不成功,继续对这个字符进行别的处理.
+    /// </summary>
+    /// <param name="currentChar"></param>
+    /// <returns></returns>
+    private bool TryAppend2SemanticInvalidArea(string currentChar)
+    {
+      #region 检查是否在注释区域中,在注释中的分隔符被记录到临时文字中的,但是不一定是完成,因为\r\n这样的能结束注释行的 才算是完成符,那时候再收尾.
+
+      if (IsInNotesLine())
+      {
+        //getCurrentNotesLine().Append(currentChar);
+        _tempWord.Append(currentChar);
+        return true;
+      }
+
+      if (InInNotesArea())
+      {
+        //getCurrentNotesArea().Lines.Add(currentChar);
+        _tempWord.Append(currentChar);
+        return true;
+      }
+
+      if (IsInSharpLine())
+      {
+        //getCurrentSharpLine().Append(currentChar);
+        _tempWord.Append(currentChar);
+        return true;
+      }
+      #endregion
+
+      return false;
+    }
+
+    #endregion
 
     #region 使用没有解析的字符集合构建代码
 
@@ -1026,7 +1054,7 @@ namespace CS2TS
     #endregion
 
     #region 解析大括号返回
-    
+
     /// <summary>
     /// 解析右侧花括号 大括号结束 }
     /// </summary>
