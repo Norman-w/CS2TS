@@ -49,12 +49,23 @@ export namespace aa {
     /// <param name="a">函数的参数1</param>
     /// <param name="b">函数的参数2</param>
     /// <returns>返回结果</returns>
+    public sum() :number {
+      return Number();
+    }
+    public voidFunc() :void {
+    }
+    private format() :Nullable<long> {
+      return ;
+    }
+    public fiiFunc() :void {
+    }
   }
   export class bClass {
   }
 }
 export namespace bb {
   export interface iii {
+    voidFunc() :void;
   }
   export interface iiii4 {
   }
@@ -66,6 +77,7 @@ export namespace cc {
     export namespace ee {
       export namespace ff {
         export interface fii {
+          fiiFunc() :void;
         }
       }
     }

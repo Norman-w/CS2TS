@@ -168,7 +168,7 @@ public class TypeScriptCodeGenerator
       }
       else if(childType == typeof(Function))
       {
-        ProcessFunction(chirld as Function);
+        ProcessFunction(chirld as Function, parent);
       }
       else if (chirld is Variable)
       {
@@ -539,11 +539,76 @@ public class TypeScriptCodeGenerator
     _currentLayerDepth--;
   }
 
-  private void ProcessFunction(Function function)
+  private void ProcessFunction(Function function, CodeNode parent)
   {
     _currentLayerDepth++;
     // var classCode = new StringBuilder();
     var tab = GetTab(_currentLayerDepth);
+    _currentCode.Append(tab);
+    #region 权限信息,Interface中的函数定义没有权限信息
+
+    if (parent.GetType() != typeof(Interface))
+    {
+      //当cs中没有默认的权限信息的时候,是private.在ts中private需要默认指定.如果不指定就是public
+      if (function.Permission == null)
+      {
+        _currentCode.Append("private");
+      }
+      //其他的为了展示的更清楚,所有的也都加上修饰符
+      else
+      {
+        _currentCode.Append(function.Permission.ToString().ToLower());
+      }
+    }
+    #endregion
+
+    #region 函数名字和参数
+
+    _currentCode.Append(' ').Append(function.Name).Append('(');
+    //循环参数的类型进行依次的添加.
+    StringBuilder allParamsSB = new StringBuilder();
+    if (function.InParameters != null)
+    {
+      for (var i = 0; i < function.InParameters.Count; i++)
+      {
+        var parameter = function.InParameters[i];
+        var tsTypeName = TypeMapDefine.GetTypeScriptTypeName(parameter.Type);
+        allParamsSB.AppendFormat("{0}: {1}", parameter.Name, tsTypeName);
+        if (i > 0)
+        {
+          allParamsSB.Append(',');
+        }
+      }
+    }
+
+    #endregion
+    
+    //添加所有入参以后添加函数的返回参数信息
+    var tsReturnType = TypeMapDefine.GetTypeScriptTypeName(function.ReturnParameter.Type);
+    _currentCode.Append(allParamsSB).Append(") :").Append(tsReturnType);
+    //要用type来判断 不能用 is Interface 判断.因为Class is Interface 是成立的.只要继承就会是true
+    if (parent.GetType() == typeof(Interface))
+    {
+      _currentCode.AppendLine(";");
+    }
+    else
+    {
+      _currentCode.AppendLine(" {");
+
+      #region 添加函数内部的内容
+
+      //现阶段为了代码不报错,返回一个默认的结果
+      var defaultReturnValue = TypeMapDefine.GetTypeScriptTypeDefaultValue(function.ReturnParameter.Type);
+      if (tsReturnType != "void")
+      {
+        _currentCode.Append("return ").Append(defaultReturnValue).AppendLine(";");
+      }
+
+      #endregion
+
+      //添加函数的收尾大括号
+      _currentCode.Append(tab).AppendLine("}");
+    }
 
     // processChildren(function);
 
