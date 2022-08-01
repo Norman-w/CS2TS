@@ -55,36 +55,10 @@ namespace CS2TS
         }
         //走到这里的时候 待处理单次或者词汇表中已经有内容了 不是字符级别的处理了. 这时候就要看怎么处理这个或者这些词.
 
-        #region 注释行 注释区域 等开头的检测.如果当前tempword是为了开始一行或者一段注释的话 添加注释然后继续处理下一个字符
-
-        //如果要开始注释行并且当前没有在其它注释行或者区域中,也不在字符串中的话需要再后续添加一个判断逻辑
-        if (IsNotesLineStartWord() && !IsInNotesLine() && !InInNotesArea())
+        if (TryStartSemanticInvalidArea(currentChar))
         {
-          _spaces.Add(new NotesLine());
-          _tempWord = new StringBuilder();
-          _unProcessWords.Clear();
           continue;
         }
-
-        //如果要开始注释区域并且当前没有在其它注释行或者区域中,也不在字符串中的话需要再后续添加一个判断逻辑
-        if (IsNotesAreaStartWord() && !InInNotesArea() && !IsInNotesLine())
-        {
-          _spaces.Add(new NotesArea());
-          _tempWord = new StringBuilder();
-          _unProcessWords.Clear();
-          continue;
-        }
-
-        //如果要开始#开头的修饰行并且当前没有其他注释行或者区域中,也不在字符串中的话需要再后续添加一个判断逻辑
-        if (IsSharpLineStartWord() && !InInNotesArea() && !IsInNotesLine())
-        {
-          _spaces.Add(new SharpLine());
-          _tempWord = new StringBuilder();
-          _unProcessWords.Clear();
-          continue;
-        }
-
-        #endregion
 
         //如果当前待处理的内容中,最后一项或者 \r\n这样的连续项 触发了语句中单词的语义定义  那就处理是该添加什么还是结束什么.
         //目前没有处理小括号 方括号 尖括号. 只处理了大括号.
@@ -222,6 +196,51 @@ namespace CS2TS
 
       return _spaces[0] as CodeFile;
     }
+
+    #region 尝试开辟一个新的语义无效区域(如果待处理词组前是以 // 之类的开始 就是要开始对应的种类的无效语义区域了)
+
+    /// <summary>
+    /// 尝试开辟一个新的语义无效区域
+    /// 注释行 注释区域 等开头的检测.如果当前tempWord是为了开始一行或者一段注释的话 添加注释然后继续处理下一个字符
+    /// </summary>
+    /// <param name="currentChar"></param>
+    /// <returns></returns>
+    private bool TryStartSemanticInvalidArea(string currentChar)
+    {
+      #region 注释行 注释区域 等开头的检测.如果当前tempword是为了开始一行或者一段注释的话 添加注释然后继续处理下一个字符
+
+      //如果要开始注释行并且当前没有在其它注释行或者区域中,也不在字符串中的话需要再后续添加一个判断逻辑
+      if (IsNotesLineStartWord() && !IsInNotesLine() && !InInNotesArea())
+      {
+        _spaces.Add(new NotesLine());
+        _tempWord = new StringBuilder();
+        _unProcessWords.Clear();
+        return true;
+      }
+
+      //如果要开始注释区域并且当前没有在其它注释行或者区域中,也不在字符串中的话需要再后续添加一个判断逻辑
+      if (IsNotesAreaStartWord() && !InInNotesArea() && !IsInNotesLine())
+      {
+        _spaces.Add(new NotesArea());
+        _tempWord = new StringBuilder();
+        _unProcessWords.Clear();
+        return true;
+      }
+
+      //如果要开始#开头的修饰行并且当前没有其他注释行或者区域中,也不在字符串中的话需要再后续添加一个判断逻辑
+      if (IsSharpLineStartWord() && !InInNotesArea() && !IsInNotesLine())
+      {
+        _spaces.Add(new SharpLine());
+        _tempWord = new StringBuilder();
+        _unProcessWords.Clear();
+        return true;
+      }
+      #endregion
+
+      return false;
+    }
+
+    #endregion
 
     #region 处理字符,如果需要断词就把当前词添加到待处理单次列表中,如果不需要,就追加到当前正在处理的单词的末尾
 
