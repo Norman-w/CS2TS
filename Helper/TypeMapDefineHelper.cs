@@ -1,3 +1,5 @@
+using System.Xml.Schema;
+
 namespace CS2TS;
 
 public static class TypeMapDefine
@@ -75,6 +77,9 @@ public static class TypeMapDefine
         break;
       case "bool":
         ret = "Boolean";
+        break;
+      default:
+        ret = "any";
         break;
     }
 

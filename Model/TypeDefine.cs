@@ -18,5 +18,5 @@ public class TypeDefine
   /// <summary>
   /// 作为泛型时的泛型内参数的个数,比如 List<T> 就是只有一个T Dictioary<string,object> 就是两个.
   /// </summary>
-  public List<TypeDefine> GenericParamTypeList { get; set; }
+  public List<Parameter> GenericParamTypeList { get; set; }
 }

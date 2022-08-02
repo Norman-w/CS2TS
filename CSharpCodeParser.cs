@@ -47,6 +47,16 @@ namespace CS2TS
       int count = file.Length;
       for (int i = 0; i < count; i++)
       {
+        if (i == 1266)
+        {
+          
+        }
+        var i1 = _unProcessWords.IndexOf("i");
+        var i2 = _unProcessWords.IndexOf("nt");
+        if (i1+1==i2)
+        {
+          
+        }
         string currentChar = file[i].ToString();
         //尝试把当前字符放在半成品单词/备注/字符串 当中.如果已经处理完毕,就可以continue处理下一个字符了.
         if (TryAppend2TempWordOrUnProcessWordsOrSemanticInvalidArea(currentChar))
@@ -376,6 +386,35 @@ namespace CS2TS
 
     #region 解析入参 使用给定的单词集. 是在大小括号中间的部分的所有单词 包括逗号
 
+    private void JoinParameterInto(Parameter param, CodeNode parent)
+    {
+      if (parent is Function)
+      {
+        var fnParent = parent as Function;
+        if (fnParent.InParameters == null)
+        {
+          fnParent.InParameters = new List<Parameter>();
+        }
+        fnParent.InParameters.Add(param);
+      }
+      else if (parent is Parameter)
+      {
+        var parentParameter = parent as Parameter;
+        if (parentParameter.Type.IsGeneric)
+        {
+          if (parentParameter.Type.GenericParamTypeList == null)
+          {
+            parentParameter.Type.GenericParamTypeList = new List<Parameter>();
+          }
+          parentParameter.Type.GenericParamTypeList.Add(param);
+        }
+      }
+      else
+      {
+        throw new NotImplementedException("参数定义在什么地方?");
+      }
+    }
+
     /// <summary>
     /// 解析入参 使用给定的单词集. 是在大小括号中间的部分的所有单词 包括逗号 比如 从(int a, int b, string c)中检索出a b c的相关信息
     /// </summary>
@@ -383,52 +422,72 @@ namespace CS2TS
     /// <returns></returns>
     private List<Parameter> Convert2Parameters(List<string> words)
     {
+      if (words.Count == 15)
+      {
+        
+      }
       List<Parameter> ret = new List<Parameter>();
-      Parameter currentParam = null;
+      Parameter currentParam = new Parameter();
+      currentParam.Type = new TypeDefine();
+      //领空进入当前函数(因为如果words的数量小于2的话这个函数都进不来.所以这里放心大胆的进入领空.
+      _spaces.Add(currentParam);
       for (int i = 0; i < words.Count; i++)
       {
-        if (currentParam == null)
-        {
-          currentParam = new Parameter();
-          currentParam.Type = new TypeDefine();
-          _spaces.Add(currentParam);
-        }
         var current = words[i];
         // var next = i < words.Count - 2 ? words[words.Count ^ 2] : null;
         // var isGeneric = next == "<";
+        //如果当前参数没有类型名字,用这个词赋值名字,然后继续下一个词
         if (currentParam.Type.Name == null)
         {
           currentParam.Type.Name = current;
           continue;
         }
 
+        //如果是泛型定义的开始
         if (current == "<")
         {
+          //标记当前参数为泛型
           currentParam.Type.IsGeneric = true;
           //进入到泛型的参数
           currentParam = new Parameter();
           currentParam.Type = new TypeDefine();
+          //泛型下面还有可能有泛型,所以要把新定义的参数作为领空.
           _spaces.Add(currentParam);
+          //获取当前参数应该在领空指示器中的父级
+          // var parent = _spaces[^2];
+          // JoinParameterInto(currentParam, parent);
+          
+          //继续处理下一个单词
           continue;
         }
 
-        //逗号的时候 结束上一个参数 进入下一个参数
-        if (current == "," || current == ">")
+        if (current == ",")
         {
-          //获取当前参数应该在领空指示器中的父级
+          //遇到逗号,把当前参数加入到父级.
           var parent = _spaces[^2];
-          //父级的子节点中加入这个参数
-          parent.Chirldren.Add(currentParam);
-          //在领空指示器中移除当前的参数,准备开始新的参数
+          JoinParameterInto(currentParam, parent);
+          //退出当前参数的领空,因为当前的已经用逗号完成了.
           _spaces.RemoveAt(_spaces.Count-1);
-          //再利用
+          //继续进入下一个参数
           currentParam = new Parameter();
           currentParam.Type = new TypeDefine();
-          //让领空指向下一个参数
+          //作为新的领空.因为有可能这个参数还是个泛型.
           _spaces.Add(currentParam);
           continue;
         }
 
+        if (current == ">")
+        {
+          //遇到大于号的时候,把当前的参数加入到父级,然后结束当前 Dictionary<string,int>的int的领空
+          var parent = _spaces[^2];
+          JoinParameterInto(currentParam, parent);
+          //退出当前参数的领空,因为当前的已经用  > 完成了.
+          _spaces.RemoveAt(_spaces.Count-1);
+          //这里不能像逗号一样进入到下一个参数的领空,因为在这后面没有 int同级别的参数了. 等待的下一个单词应该是这个参数的名称之类的.
+          //所以要把currentParam从堆栈中取出来
+          currentParam = parent as Parameter;
+          continue;
+        }
         //如果类型已经解析完毕了,下面就到名字了.
         if (currentParam.Type.Name!= null)
         {
@@ -441,6 +500,8 @@ namespace CS2TS
       var currentSpace = _spaces[^1];
       if (currentSpace == currentParam)
       {
+        var parent = _spaces[^2];
+        JoinParameterInto(currentParam, parent);
         _spaces.RemoveAt(_spaces.Count-1);
       }
 
@@ -1674,7 +1735,12 @@ namespace CS2TS
     {
       foreach (var v in _breakWords)
       {
-        var checking = _unProcessWords.Count > 0 ? _unProcessWords[^1] : _tempWord.ToString();
+        var checking = _tempWord.ToString();
+        if (checking.Length == 0 && _unProcessWords.Count>0)
+        {
+          checking = _unProcessWords[^1];
+        }
+        // var checking = _unProcessWords.Count > 0 ? _unProcessWords[^1] : _tempWord.ToString();
         if (checking.EndsWith(v) == true)
         {
           current = v;
