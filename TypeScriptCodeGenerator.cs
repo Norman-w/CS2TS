@@ -652,8 +652,9 @@ public class TypeScriptCodeGenerator
     #endregion
     
     //添加所有入参以后添加函数的返回参数信息
-    var tsReturnType = TypeMapDefine.GetTypeScriptTypeName(function.ReturnParameter.Type);
-    _currentCode.Append(allParamsSB).Append(") :").Append(tsReturnType);
+    // var tsReturnType = TypeMapDefine.GetTypeScriptTypeName(function.ReturnParameter.Type);
+    // _currentCode.Append(allParamsSB).Append(") :").Append(tsReturnType);
+    _currentCode.Append(allParamsSB).Append(") :").Append(ProcessParameter(function.ReturnParameter));
     //要用type来判断 不能用 is Interface 判断.因为Class is Interface 是成立的.只要继承就会是true
     if (parent.GetType() == typeof(Interface))
     {
@@ -667,7 +668,7 @@ public class TypeScriptCodeGenerator
 
       //现阶段为了代码不报错,返回一个默认的结果
       var defaultReturnValue = TypeMapDefine.GetTypeScriptTypeDefaultValue(function.ReturnParameter.Type);
-      if (tsReturnType != "void")
+      if (defaultReturnValue != "void")
       {
         _currentCode.Append("return ").Append(defaultReturnValue).AppendLine(";");
       }

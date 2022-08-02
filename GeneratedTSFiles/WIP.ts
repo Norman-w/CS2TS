@@ -53,6 +53,7 @@ export namespace aa {
       return Number();
     }
     public voidFunc(a: number, b: number) :void {
+      return any;
     }
     /// <summary>
     /// 遍历每一个to内的元素,如果from有同名的,替换to内的值
@@ -67,6 +68,7 @@ export namespace aa {
       return any;
     }
     public fiiFunc(b: number) :void {
+      return any;
     }
   }
   export class bClass {
