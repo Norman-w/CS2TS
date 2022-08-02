@@ -38,7 +38,7 @@ export namespace aa {
   }
   //命名空间内不能有属性
   export class aa extends a implements cc.dd.ee.ff.fii {
-    aobj?: aa;
+    aobj?: aa = any;
     ct?: number = Number();
     str?: string;
     MyProperty?: number;
@@ -49,10 +49,10 @@ export namespace aa {
     /// <param name="a">函数的参数1</param>
     /// <param name="b">函数的参数2</param>
     /// <returns>返回结果</returns>
-    public sum() :number {
+    public sum(a: number, b: number) :number {
       return Number();
     }
-    public voidFunc() :void {
+    public voidFunc(a: number, b: number) :void {
     }
     /// <summary>
     /// 遍历每一个to内的元素,如果from有同名的,替换to内的值
@@ -60,13 +60,13 @@ export namespace aa {
     /// <param name="from"></param>
     /// <param name="to"></param>
     /// <returns></returns>
-    public replace() :{[Key:string],Value:string} {
-      return ;
+    public replace(from: {[Key: string], Value: {[Key: string], Value: number}}, to: {[Key: string], Value: {[Key: string], Value: number}}) :Dictionary<string,string> {
+      return any;
     }
-    private format() :number | undefined {
-      return Number();
+    private format(a: number, b: number) :Nullable<long> {
+      return any;
     }
-    public fiiFunc() :void {
+    public fiiFunc(b: number) :void {
     }
   }
   export class bClass {

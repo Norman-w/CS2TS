@@ -498,6 +498,73 @@ public class TypeScriptCodeGenerator
     _currentLayerDepth--;
   }
 
+  /// <summary>
+  /// 生成parameter 参数的代码.如果参数有名字,自动带名字,没有名字的就不带. 如果参数是泛型 自动下钻.
+  /// </summary>
+  /// <param name="param"></param>
+  /// <returns></returns>
+  private string ProcessParameter(Parameter param)
+  {
+    var ret = new StringBuilder();
+    var name = param.Name;
+    //如果有名字的 要加上 名字和冒号的模式 name:
+    if (!string.IsNullOrEmpty(name))
+    {
+      ret.Append(name).Append(": ");
+    }
+    
+    var type = param.Type;
+    var typeName = type.Name;
+
+    #region 处理字典类,特殊的 Dictionary<string,string> 转换成 {[Key:string],Value:string} 如果字典里面还有字典 还继续向内转换.
+
+    if (type.IsGeneric && typeName == "Dictionary")
+    {
+      //Dictionary<string,string> 转换成 {[Key:string],Value:string}
+      var keyParam = type.GenericParamTypeList[0];
+      var valueParam = type.GenericParamTypeList[1];
+      var keyType = keyParam.Type;
+      var valueType = valueParam.Type;
+      var keyTypeName = TypeMapDefine.GetTypeScriptTypeName(keyType);
+      var valueTypeName = TypeMapDefine.GetTypeScriptTypeName(valueType);
+      //dictionary结构开始
+      ret.Append("{[Key: ");
+      //如果key还是一个泛型的话 下钻
+      if (keyType.IsGeneric)
+      {
+        ret.Append(ProcessParameter(keyParam));
+      }
+      //如果不是,直接就指定成转换出来的ts中的类型.
+      else
+      {
+        ret.Append(keyTypeName);
+      }
+
+      ret.Append("], Value: ");
+      //如果value还是一个泛型的话 下钻.
+      if (valueType.IsGeneric)
+      {
+        ret.Append(ProcessParameter(valueParam));
+      }
+      //如果不是,直接就指定成转换出来的ts类型.
+      else
+      {
+        ret.Append(valueTypeName);
+      }
+      //dictionary结构结束
+      ret.Append('}');
+    }
+    
+    #endregion
+    //如果只是一般的,添加参数的类型即可,如果参数有名字的话前面已经添加了.
+    else
+    {
+      ret.Append(TypeMapDefine.GetTypeScriptTypeName(type));
+    }
+
+    return ret.ToString();
+  }
+
   private void ProcessVariableWithStructure(VariableWithStructure? vws,
     bool ignorePermission,
     bool ignoreStatic,
@@ -571,13 +638,14 @@ public class TypeScriptCodeGenerator
     {
       for (var i = 0; i < function.InParameters.Count; i++)
       {
-        var parameter = function.InParameters[i];
-        var tsTypeName = TypeMapDefine.GetTypeScriptTypeName(parameter.Type);
-        allParamsSB.AppendFormat("{0}: {1}", parameter.Name, tsTypeName);
         if (i > 0)
         {
-          allParamsSB.Append(',');
+          allParamsSB.Append(", ");
         }
+        var parameter = function.InParameters[i];
+        allParamsSB.Append(ProcessParameter(parameter));
+        // var tsTypeName = TypeMapDefine.GetTypeScriptTypeName(parameter.Type);
+        // allParamsSB.AppendFormat("{0}: {1}", parameter.Name, tsTypeName);
       }
     }
 

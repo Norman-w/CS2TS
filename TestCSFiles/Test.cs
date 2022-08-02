@@ -79,7 +79,7 @@ namespace
         /// <param name="from"></param>
         /// <param name="to"></param>
         /// <returns></returns>
-        public Dictionary<string, string> replace(Dictionary<string, string> from, Dictionary<string, string> to)
+        public Dictionary<string, string> replace(Dictionary<string, Dictionary<string,int>> from, Dictionary<string, Dictionary<string,int>> to)
         {
           var ret = new Dictionary<string, string>();
           foreach (var t in to)
