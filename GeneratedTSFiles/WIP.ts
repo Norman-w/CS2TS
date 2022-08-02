@@ -61,10 +61,10 @@ export namespace aa {
     /// <param name="from"></param>
     /// <param name="to"></param>
     /// <returns></returns>
-    public replace(from: {[Key: string], Value: {[Key: string], Value: number}}, to: {[Key: string], Value: {[Key: string], Value: number}}) :Dictionary<string,string> {
+    public replace(from: {[Key: string], Value: {[Key: string], Value: number}}, to: {[Key: string], Value: {[Key: string], Value: number}}) :{[Key: string], Value: string} {
       return any;
     }
-    private format(a: number, b: number) :Nullable<long> {
+    private format(a: number, b: number) : {
       return any;
     }
     public fiiFunc(b: number) :void {

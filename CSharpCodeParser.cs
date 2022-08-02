@@ -422,6 +422,7 @@ namespace CS2TS
     /// <returns></returns>
     private List<Parameter> Convert2Parameters(List<string> words)
     {
+      var parentFunction = _spaces[^1] as Function;
       if (words.Count == 15)
       {
         
@@ -465,7 +466,14 @@ namespace CS2TS
         {
           //遇到逗号,把当前参数加入到父级.
           var parent = _spaces[^2];
-          JoinParameterInto(currentParam, parent);
+          if( parent == parentFunction)
+          {
+            ret.Add(currentParam);
+          }
+          else
+          {
+            JoinParameterInto(currentParam, parent);
+          }
           //退出当前参数的领空,因为当前的已经用逗号完成了.
           _spaces.RemoveAt(_spaces.Count-1);
           //继续进入下一个参数
@@ -480,7 +488,14 @@ namespace CS2TS
         {
           //遇到大于号的时候,把当前的参数加入到父级,然后结束当前 Dictionary<string,int>的int的领空
           var parent = _spaces[^2];
-          JoinParameterInto(currentParam, parent);
+          if( parent == parentFunction)
+          {
+            ret.Add(currentParam);
+          }
+          else
+          {
+            JoinParameterInto(currentParam, parent);
+          }
           //退出当前参数的领空,因为当前的已经用  > 完成了.
           _spaces.RemoveAt(_spaces.Count-1);
           //这里不能像逗号一样进入到下一个参数的领空,因为在这后面没有 int同级别的参数了. 等待的下一个单词应该是这个参数的名称之类的.
@@ -500,8 +515,16 @@ namespace CS2TS
       var currentSpace = _spaces[^1];
       if (currentSpace == currentParam)
       {
-        var parent = _spaces[^2];
-        JoinParameterInto(currentParam, parent);
+        // var parent = _spaces[^2];
+        // if( parent == parentFunction)
+        // {
+        //   ret.Add(currentParam);
+        // }
+        // else
+        // {
+        //   JoinParameterInto(currentParam, parent);
+        // }
+        ret.Add(currentParam);
         _spaces.RemoveAt(_spaces.Count-1);
       }
 
@@ -1174,17 +1197,30 @@ namespace CS2TS
             returnTypeDefStartPos++;
           }
 
+          #region 解析函数的返回值
+
+          
+
+          #endregion
           int returnTYpeDefWordsCount = nameIndex - returnTypeDefStartPos;
-          StringBuilder returnType = new StringBuilder();
-          for (int ri = 0; ri < returnTYpeDefWordsCount; ri++)
+          // StringBuilder returnType = new StringBuilder();
+          // for (int ri = 0; ri < returnTYpeDefWordsCount; ri++)
+          // {
+          //   returnType.Append(_unProcessWords[returnTypeDefStartPos + ri]);
+          // }
+          // fn.ReturnParameter = new Parameter();
+          // fn.ReturnParameter.Type = new TypeDefine() {Name = returnType.ToString()};
+          var returnParameterDefineWords = _unProcessWords.Skip(returnTypeDefStartPos).Take(returnTYpeDefWordsCount);
+          var returnParameters = Convert2Parameters(new List<string>(returnParameterDefineWords));
+          if (returnParameters.Count>1)
           {
-            returnType.Append(_unProcessWords[returnTypeDefStartPos + ri]);
+            throw new NotImplementedException("错误,解析到的返回值不止1个");
           }
+
+          fn.ReturnParameter = returnParameters[0];
 
           //class 标记后面的一个为类名称
           fn.Name = name.Replace("\r", "").Replace("\n","").Trim();
-          fn.ReturnParameter = new Parameter();
-          fn.ReturnParameter.Type = new TypeDefine() {Name = returnType.ToString()};
 
           if (parent is CodeFile)
           {
@@ -1206,7 +1242,8 @@ namespace CS2TS
           if (rightParenthesesPos-1>leftParenthesesPos)
           {
             var parameterWordsList = _unProcessWords.Skip(leftParenthesesPos+1).Take(rightParenthesesPos-leftParenthesesPos-1);
-            Convert2Parameters(new List<string>(parameterWordsList));
+            var parameters = Convert2Parameters(new List<string>(parameterWordsList));
+            fn.InParameters = parameters;
           }
           #endregion
         }
