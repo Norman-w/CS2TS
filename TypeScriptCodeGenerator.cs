@@ -502,8 +502,9 @@ public class TypeScriptCodeGenerator
   /// 生成parameter 参数的代码.如果参数有名字,自动带名字,没有名字的就不带. 如果参数是泛型 自动下钻.
   /// </summary>
   /// <param name="param"></param>
+  /// <param name="forReturnParameter">是否为返回值生成参数.如果为返回值生成参数的话,nullable long的类型应该返回为 number|undefined 作为入参则是 number?</param>
   /// <returns></returns>
-  private string ProcessParameter(Parameter param)
+  private string ProcessParameter(Parameter param, bool forReturnParameter)
   {
     var ret = new StringBuilder();
     var name = param.Name;
@@ -532,7 +533,7 @@ public class TypeScriptCodeGenerator
       //如果key还是一个泛型的话 下钻
       if (keyType.IsGeneric)
       {
-        ret.Append(ProcessParameter(keyParam));
+        ret.Append(ProcessParameter(keyParam, forReturnParameter));
       }
       //如果不是,直接就指定成转换出来的ts中的类型.
       else
@@ -540,11 +541,11 @@ public class TypeScriptCodeGenerator
         ret.Append(keyTypeName);
       }
 
-      ret.Append("], Value: ");
+      ret.Append("]: ");
       //如果value还是一个泛型的话 下钻.
       if (valueType.IsGeneric)
       {
-        ret.Append(ProcessParameter(valueParam));
+        ret.Append(ProcessParameter(valueParam,forReturnParameter));
       }
       //如果不是,直接就指定成转换出来的ts类型.
       else
@@ -555,6 +556,37 @@ public class TypeScriptCodeGenerator
       ret.Append('}');
     }
     
+    #endregion
+
+    #region 如果是nullable类型的
+
+    else if (type.IsGeneric && typeName.ToLower() == "nullable")
+    {
+      //作为入参时,Nullable<long>转换成 number?
+      //作为返回参数时, Nullable<long>转换成 number|undefined
+      var innerParameter = type.GenericParamTypeList[0];
+      var innerParameterType = innerParameter.Type;
+      var innerParameterTypeName = TypeMapDefine.GetTypeScriptTypeName(innerParameterType);
+
+      //如果 还是一个泛型的话 下钻
+      if (innerParameterType.IsGeneric)
+      {
+        ret.Append(ProcessParameter(innerParameter,false));
+      }
+      //如果不是,直接就指定成转换出来的ts中的类型.
+      else
+      {
+        if (forReturnParameter)
+        {
+          ret.Append(innerParameterTypeName).Append("|undefined");
+        }
+        else
+        {
+          ret.Append(innerParameterTypeName).Append('?');
+        }
+      }
+    }
+
     #endregion
     //如果只是一般的,添加参数的类型即可,如果参数有名字的话前面已经添加了.
     else
@@ -643,7 +675,7 @@ public class TypeScriptCodeGenerator
           allParamsSB.Append(", ");
         }
         var parameter = function.InParameters[i];
-        allParamsSB.Append(ProcessParameter(parameter));
+        allParamsSB.Append(ProcessParameter(parameter, false));
         // var tsTypeName = TypeMapDefine.GetTypeScriptTypeName(parameter.Type);
         // allParamsSB.AppendFormat("{0}: {1}", parameter.Name, tsTypeName);
       }
@@ -654,7 +686,7 @@ public class TypeScriptCodeGenerator
     //添加所有入参以后添加函数的返回参数信息
     // var tsReturnType = TypeMapDefine.GetTypeScriptTypeName(function.ReturnParameter.Type);
     // _currentCode.Append(allParamsSB).Append(") :").Append(tsReturnType);
-    _currentCode.Append(allParamsSB).Append(") :").Append(ProcessParameter(function.ReturnParameter));
+    _currentCode.Append(allParamsSB).Append(") :").Append(ProcessParameter(function.ReturnParameter, true));
     //要用type来判断 不能用 is Interface 判断.因为Class is Interface 是成立的.只要继承就会是true
     if (parent.GetType() == typeof(Interface))
     {
@@ -668,7 +700,7 @@ public class TypeScriptCodeGenerator
 
       //现阶段为了代码不报错,返回一个默认的结果
       var defaultReturnValue = TypeMapDefine.GetTypeScriptTypeDefaultValue(function.ReturnParameter.Type);
-      if (defaultReturnValue != "void")
+      if (function.ReturnParameter.Type.Name != "void")
       {
         _currentCode.Append("return ").Append(defaultReturnValue).AppendLine(";");
       }

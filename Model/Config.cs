@@ -8,7 +8,7 @@ public class TypescriptGeneratorConfig
   public TypescriptGeneratorConfig()
   {
     ConvertClass2Interface = false;
-    SetDefaultVariableValueForClass = true;
+    SetDefaultVariableValueForClass = false;
   }
   /// <summary>
   /// 是否把类转换为TypeScripts的接口
