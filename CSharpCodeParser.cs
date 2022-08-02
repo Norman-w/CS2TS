@@ -374,6 +374,80 @@ namespace CS2TS
 
     #endregion
 
+    #region 解析入参 使用给定的单词集. 是在大小括号中间的部分的所有单词 包括逗号
+
+    /// <summary>
+    /// 解析入参 使用给定的单词集. 是在大小括号中间的部分的所有单词 包括逗号 比如 从(int a, int b, string c)中检索出a b c的相关信息
+    /// </summary>
+    /// <param name="words"></param>
+    /// <returns></returns>
+    private List<Parameter> Convert2Parameters(List<string> words)
+    {
+      List<Parameter> ret = new List<Parameter>();
+      Parameter currentParam = null;
+      for (int i = 0; i < words.Count; i++)
+      {
+        if (currentParam == null)
+        {
+          currentParam = new Parameter();
+          currentParam.Type = new TypeDefine();
+          _spaces.Add(currentParam);
+        }
+        var current = words[i];
+        // var next = i < words.Count - 2 ? words[words.Count ^ 2] : null;
+        // var isGeneric = next == "<";
+        if (currentParam.Type.Name == null)
+        {
+          currentParam.Type.Name = current;
+          continue;
+        }
+
+        if (current == "<")
+        {
+          currentParam.Type.IsGeneric = true;
+          //进入到泛型的参数
+          currentParam = new Parameter();
+          currentParam.Type = new TypeDefine();
+          _spaces.Add(currentParam);
+          continue;
+        }
+
+        //逗号的时候 结束上一个参数 进入下一个参数
+        if (current == "," || current == ">")
+        {
+          //获取当前参数应该在领空指示器中的父级
+          var parent = _spaces[^2];
+          //父级的子节点中加入这个参数
+          parent.Chirldren.Add(currentParam);
+          //在领空指示器中移除当前的参数,准备开始新的参数
+          _spaces.RemoveAt(_spaces.Count-1);
+          //再利用
+          currentParam = new Parameter();
+          currentParam.Type = new TypeDefine();
+          //让领空指向下一个参数
+          _spaces.Add(currentParam);
+          continue;
+        }
+
+        //如果类型已经解析完毕了,下面就到名字了.
+        if (currentParam.Type.Name!= null)
+        {
+          currentParam.Name = current;
+        }
+        //如果是泛型,进入到泛型参数定义的领空
+      }
+
+      //处理完最后一个字符以后,如果当前领空上还是当前参数的话,结束当前参数
+      var currentSpace = _spaces[^1];
+      if (currentSpace == currentParam)
+      {
+        _spaces.RemoveAt(_spaces.Count-1);
+      }
+
+      return ret;
+    }
+
+    #endregion
     #region 解析变量的信息
 
     /// <summary>
@@ -1051,7 +1125,6 @@ namespace CS2TS
           fn.ReturnParameter = new Parameter();
           fn.ReturnParameter.Type = new TypeDefine() {Name = returnType.ToString()};
 
-
           if (parent is CodeFile)
           {
             throw new NotImplementedException("函数不能定义在文件层或者直接定义在命名空间内");
@@ -1062,7 +1135,19 @@ namespace CS2TS
 
             parent.Chirldren.Add(fn);
           }
+          //先进入函数定义领空再处理函数的参数集.不然会错乱,可能会把参数加到类中了.
           _spaces.Add(fn);
+
+          #region 解析函数的参数
+
+          var leftParenthesesPos = _unProcessWords.IndexOf("(");
+          var rightParenthesesPos = _unProcessWords.IndexOf(")");
+          if (rightParenthesesPos-1>leftParenthesesPos)
+          {
+            var parameterWordsList = _unProcessWords.Skip(leftParenthesesPos+1).Take(rightParenthesesPos-leftParenthesesPos-1);
+            Convert2Parameters(new List<string>(parameterWordsList));
+          }
+          #endregion
         }
 
         #endregion

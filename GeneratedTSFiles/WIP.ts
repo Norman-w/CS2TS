@@ -60,11 +60,11 @@ export namespace aa {
     /// <param name="from"></param>
     /// <param name="to"></param>
     /// <returns></returns>
-    public replace() :Dictionary<string,string> {
+    public replace() :{[Key:string],Value:string} {
       return ;
     }
-    private format() :Nullable<long> {
-      return ;
+    private format() :number | undefined {
+      return Number();
     }
     public fiiFunc() :void {
     }
