@@ -196,7 +196,7 @@ namespace CS2TS
 
       #endregion
 
-      #region 对分号的处理,会影响引用和变量定义
+      #region 对分号的处理,会影响引用和变量定义,也可以结束一个接口内的函数定义
 
       if (currentBreakWord == ";")
       {
@@ -757,28 +757,10 @@ namespace CS2TS
 
           if (parent is Interface)
           {
-            #region 在接口中就是 函数定义
-
-            var itf = parent as Interface;
-            int kuohaoIndex = _unProcessWords.IndexOf("(");
-            int kuohuiindex = _unProcessWords.IndexOf(")");
-            if (kuohuiindex > kuohaoIndex + 1 && kuohaoIndex > 1)
+            if (IsFunctionAddingWords())
             {
-              Function fn = new Function();
-
-              var name = _unProcessWords[kuohaoIndex - 1].Replace("\r", "").Replace("\n","").Trim();
-              var type = _unProcessWords[kuohaoIndex - 2];
-              fn.Name = name;
-              fn.ReturnParameter = new Parameter();
-              fn.ReturnParameter.Type = new TypeDefine() {Name = type};
-              itf.Chirldren.Add(fn);
-
-              _tempWord = new StringBuilder();
-              _unProcessWords.Clear();
-              return true;
+              CreateFunction();
             }
-
-            #endregion
 
             #region 不带括号的
 
@@ -1083,7 +1065,6 @@ namespace CS2TS
 
         #endregion
 
-
         #region 不同类型 加入到不同的地方去
 
         #region get set
@@ -1167,85 +1148,17 @@ namespace CS2TS
 
         #region 如果是带()的函数定义
 
-        else if (IsFunctionAddingWords())
+        //如果是一个函数的定义（有小括号对） 并且是在Interface里， class因为是继承自interface 所以也会是true
+        else if (IsFunctionAddingWords() && parent is Interface)
         {
-          Function fn = new Function();
-          //括号前面的是函数名
-          //函数名前面的是函数返回值类型
-          int nameIndex = _unProcessWords.IndexOf("(") - 1;
-          string name = _unProcessWords[nameIndex];
-          //函数的返回值类型应该是在public等关键字后面一直到函数名处的所有内容.
-          //////string returnType = unProcessWords[nameIndex - 1];
-
-
-          fn.Permission = ConvertString2Permission(_unProcessWords[0].Replace("\t", "").Trim());
-          fn.IsStatic = _unProcessWords.Contains("static");
-          fn.IsOverride = _unProcessWords.Contains("override");
-          int returnTypeDefStartPos = 0;
-          if (fn.Permission != null)
+          if (parent is Interface)
           {
-            returnTypeDefStartPos++;
+            CreateFunction();
           }
-
-          if (fn.IsStatic)
+          else
           {
-            returnTypeDefStartPos++;
+            
           }
-
-          if (fn.IsOverride)
-          {
-            returnTypeDefStartPos++;
-          }
-
-          #region 解析函数的返回值
-
-          
-
-          #endregion
-          int returnTYpeDefWordsCount = nameIndex - returnTypeDefStartPos;
-          // StringBuilder returnType = new StringBuilder();
-          // for (int ri = 0; ri < returnTYpeDefWordsCount; ri++)
-          // {
-          //   returnType.Append(_unProcessWords[returnTypeDefStartPos + ri]);
-          // }
-          // fn.ReturnParameter = new Parameter();
-          // fn.ReturnParameter.Type = new TypeDefine() {Name = returnType.ToString()};
-          var returnParameterDefineWords = _unProcessWords.Skip(returnTypeDefStartPos).Take(returnTYpeDefWordsCount);
-          var returnParameters = Convert2Parameters(new List<string>(returnParameterDefineWords));
-          if (returnParameters.Count>1)
-          {
-            throw new NotImplementedException("错误,解析到的返回值不止1个");
-          }
-
-          fn.ReturnParameter = returnParameters[0];
-
-          //class 标记后面的一个为类名称
-          fn.Name = name.Replace("\r", "").Replace("\n","").Trim();
-
-          if (parent is CodeFile)
-          {
-            throw new NotImplementedException("函数不能定义在文件层或者直接定义在命名空间内");
-          }
-
-          if (parent is Class)
-          {
-
-            parent.Chirldren.Add(fn);
-          }
-          //先进入函数定义领空再处理函数的参数集.不然会错乱,可能会把参数加到类中了.
-          _spaces.Add(fn);
-
-          #region 解析函数的参数
-
-          var leftParenthesesPos = _unProcessWords.IndexOf("(");
-          var rightParenthesesPos = _unProcessWords.IndexOf(")");
-          if (rightParenthesesPos-1>leftParenthesesPos)
-          {
-            var parameterWordsList = _unProcessWords.Skip(leftParenthesesPos+1).Take(rightParenthesesPos-leftParenthesesPos-1);
-            var parameters = Convert2Parameters(new List<string>(parameterWordsList));
-            fn.InParameters = parameters;
-          }
-          #endregion
         }
 
         #endregion
@@ -1273,6 +1186,14 @@ namespace CS2TS
 
         #endregion
 
+        #region 其他的各种花括号可以包起来的结构或者是只有花括号对没有限定只是为了区分代码区间的  也算
+
+        else
+        {
+          Console.WriteLine("当前大括号起始位置之前的字符没有被处理：", _unProcessWords.Count);
+        }
+
+          #endregion
         #endregion
 
 
@@ -1282,6 +1203,91 @@ namespace CS2TS
       }
 
       return false;
+    }
+
+    #endregion
+
+
+    #region 根据现有的信息创建函数
+    //根据已有的词汇表，创建函数，并且自动添加到领空和父亲，然后清空未处理的半截单词和未处理的所有单词
+    private void CreateFunction()
+    {
+      var parent = _spaces[^1];
+      Function fn = new Function();
+      //括号前面的是函数名
+      //函数名前面的是函数返回值类型
+      int nameIndex = _unProcessWords.IndexOf("(") - 1;
+      string name = _unProcessWords[nameIndex];
+      //函数的返回值类型应该是在public等关键字后面一直到函数名处的所有内容.
+      //////string returnType = unProcessWords[nameIndex - 1];
+
+
+      fn.Permission = ConvertString2Permission(_unProcessWords[0].Replace("\t", "").Trim());
+      fn.IsStatic = _unProcessWords.Contains("static");
+      fn.IsOverride = _unProcessWords.Contains("override");
+      int returnTypeDefStartPos = 0;
+      if (fn.Permission != null)
+      {
+        returnTypeDefStartPos++;
+      }
+
+      if (fn.IsStatic)
+      {
+        returnTypeDefStartPos++;
+      }
+
+      if (fn.IsOverride)
+      {
+        returnTypeDefStartPos++;
+      }
+
+      #region 解析函数的返回值
+
+          
+
+      #endregion
+      int returnTYpeDefWordsCount = nameIndex - returnTypeDefStartPos;
+      // StringBuilder returnType = new StringBuilder();
+      // for (int ri = 0; ri < returnTYpeDefWordsCount; ri++)
+      // {
+      //   returnType.Append(_unProcessWords[returnTypeDefStartPos + ri]);
+      // }
+      // fn.ReturnParameter = new Parameter();
+      // fn.ReturnParameter.Type = new TypeDefine() {Name = returnType.ToString()};
+      var returnParameterDefineWords = _unProcessWords.Skip(returnTypeDefStartPos).Take(returnTYpeDefWordsCount);
+      var returnParameters = Convert2Parameters(new List<string>(returnParameterDefineWords));
+      if (returnParameters.Count>1)
+      {
+        throw new NotImplementedException("错误,解析到的返回值不止1个");
+      }
+
+      fn.ReturnParameter = returnParameters[0];
+
+      //class 标记后面的一个为类名称
+      fn.Name = name.Replace("\r", "").Replace("\n","").Trim();
+
+      
+      // if (parent is Class)
+      // {
+      parent.Chirldren.Add(fn);
+      // }
+      //先进入函数定义领空再处理函数的参数集.不然会错乱,可能会把参数加到类中了.
+      _spaces.Add(fn);
+
+      #region 解析函数的参数
+
+      var leftParenthesesPos = _unProcessWords.IndexOf("(");
+      var rightParenthesesPos = _unProcessWords.IndexOf(")");
+      if (rightParenthesesPos-1>leftParenthesesPos)
+      {
+        var parameterWordsList = _unProcessWords.Skip(leftParenthesesPos+1).Take(rightParenthesesPos-leftParenthesesPos-1);
+        var parameters = Convert2Parameters(new List<string>(parameterWordsList));
+        fn.InParameters = parameters;
+      }
+      #endregion
+      
+      _tempWord = new StringBuilder();
+      _unProcessWords.Clear();
     }
 
     #endregion
@@ -1499,10 +1505,12 @@ namespace CS2TS
 
       int kuohaoIndex = _unProcessWords.IndexOf("(");
       int kuohuiIndex = _unProcessWords.IndexOf(")");
+      //大括号和分号都可以是一个函数定义内容的标志符，在大括号或者分号前面的都可以是函数的定义，只不过分号前面的是没有函数内体，这通常就是在接口内定义函数了。
       int dakuohaoIndex = _unProcessWords.IndexOf("{");
+      int fenhaoIndex = _unProcessWords.IndexOf(";");
       if (kuohaoIndex > 0
           && kuohuiIndex > 1
-          && dakuohaoIndex == _unProcessWords.Count - 1
+          && (dakuohaoIndex == _unProcessWords.Count - 1 || fenhaoIndex == _unProcessWords.Count -1) 
          )
       {
         return true;
