@@ -29,7 +29,7 @@ export namespace aa {
         EW = 111111111111111,
     }
     //命名空间内不能有属性
-    export class aa extends a implements cc.dd.ee.ff.fii {
+    export class aa extends a implements bb.cc.dd.ee.ff.fii {
         aobj?: aa;
         ct?: number;
         str?: string;
@@ -58,65 +58,25 @@ export namespace aa {
         private format(a: number, b: number) :number|undefined {
             return undefined;
         }
-
-        fiiFunc(age: number): void;
-        fiiFunc(name: string): void;
-        fiiFunc(): string;
-        fiiFunc(p1__number_string_undefined_null_Array?: number | string): void | string {
-            if(p1__number_string_undefined_null_Array === undefined)
-            {
-                return this['fiiFunc_v2']();
-            }
-            if(typeof p1__number_string_undefined_null_Array === typeof Number)
-            {
-                return this.fiiFunc_v0(p1__number_string_undefined_null_Array as number);
-            }
-            if(typeof p1__number_string_undefined_null_Array === typeof String)
-            {
-                return this.fiiFunc_v1(p1__number_string_undefined_null_Array as string);
-            }
-            return undefined;
+        public fiiFunc(b: number) :void {
         }
-        private fiiFunc_v0(age:number):void
-        {
-            
-        }
-        private fiiFunc_v1(name:string):void
-        {
-            
-        }
-        private fiiFunc_v2():string
-        {
-            return "";
-        }
-
-        // public getInfo(name:string):string
-        // public getInfo(age:number):string
-        // public getInfo(str:any):any{
-        //     if(typeof str === 'string') return '我叫 ' + str
-        //     else return '我的年龄是 ' + str
-        // }
     }
     export class bClass {
     }
 }
 export namespace bb {
     export interface iii {
-        voidFunc() :void;
+        voidFunc(a: number, b: number) :void;
     }
-    export interface iiii4 {
-    }
-}
-export namespace cc {
-    export interface ii {
-    }
-    export namespace dd {
-        export namespace ee {
-            export namespace ff {
-                export interface fii {
-                    fiiFunc(age: number):void;
-                    fiiFunc(name:string) :void;
-                    fiiFunc():string;
+    export namespace cc {
+        export interface ii {
+        }
+        export namespace dd {
+            export namespace ee {
+                export namespace ff {
+                    export interface fii {
+                        fiiFunc(b: number) :void;
+                    }
                 }
             }
         }

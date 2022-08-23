@@ -79,7 +79,7 @@ public static class TypeMapDefine
         ret = "Boolean";
         break;
       default:
-        ret = "any";
+        ret = "undefined";
         break;
     }
 
