@@ -1,8 +1,8 @@
 ﻿// using CS2TS.Helper;
-
-using System.Text;
-using CS2TS.Model;
-using Newtonsoft.Json;
+//
+// using System.Text;
+// using CS2TS.Model;
+// using Newtonsoft.Json;
 
 namespace CS2TS
 {
@@ -23,7 +23,7 @@ namespace CS2TS
         testFile = args[0];
       }
       var codeFile = ps.ParseCsFile(testFile);
-      var json = JsonConvert.SerializeObject(codeFile, Formatting.Indented);
+      // var json = JsonConvert.SerializeObject(codeFile, Formatting.Indented);
       // Console.WriteLine(json);
 
       // CodeNodeHelper hp = new CodeNodeHelper(codeFile);
