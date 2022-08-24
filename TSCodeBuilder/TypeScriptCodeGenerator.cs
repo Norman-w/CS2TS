@@ -139,6 +139,7 @@ public class TypeScriptCodeGenerator
       return;
     }
     _currentSpaces.Add(parent);
+    // var em = parent.Chirldren.GetEnumerator();
     foreach (var chirld in parent.Chirldren)
     {
       var childType = chirld.GetType();
@@ -498,105 +499,7 @@ public class TypeScriptCodeGenerator
     _currentLayerDepth--;
   }
 
-  /// <summary>
-  /// 生成parameter 参数的代码.如果参数有名字,自动带名字,没有名字的就不带. 如果参数是泛型 自动下钻.
-  /// </summary>
-  /// <param name="param"></param>
-  /// <param name="forReturnParameter">是否为返回值生成参数.如果为返回值生成参数的话,nullable long的类型应该返回为 number|undefined 作为入参则是 number?</param>
-  /// <returns></returns>
-  private string ProcessParameter(Parameter param, bool forReturnParameter)
-  {
-    var ret = new StringBuilder();
-    var name = param.Name;
-    //如果有名字的 要加上 名字和冒号的模式 name:
-    if (!string.IsNullOrEmpty(name))
-    {
-      ret.Append(name).Append(": ");
-    }
-    
-    var type = param.Type;
-    var typeName = type.Name;
-
-    #region 处理字典类,特殊的 Dictionary<string,string> 转换成 {[Key:string],Value:string} 如果字典里面还有字典 还继续向内转换.
-
-    if (type.IsGeneric && typeName == "Dictionary")
-    {
-      //Dictionary<string,string> 转换成 {[Key:string],Value:string}
-      var keyParam = type.GenericParamTypeList[0];
-      var valueParam = type.GenericParamTypeList[1];
-      var keyType = keyParam.Type;
-      var valueType = valueParam.Type;
-      var keyTypeName = TypeMapDefine.GetTypeScriptTypeName(keyType);
-      var valueTypeName = TypeMapDefine.GetTypeScriptTypeName(valueType);
-      //dictionary结构开始
-      ret.Append("{[Key: ");
-      //如果key还是一个泛型的话 下钻
-      if (keyType.IsGeneric)
-      {
-        ret.Append(ProcessParameter(keyParam, forReturnParameter));
-      }
-      //如果不是,直接就指定成转换出来的ts中的类型.
-      else
-      {
-        ret.Append(keyTypeName);
-      }
-
-      ret.Append("]: ");
-      //如果value还是一个泛型的话 下钻.
-      if (valueType.IsGeneric)
-      {
-        ret.Append(ProcessParameter(valueParam,forReturnParameter));
-      }
-      //如果不是,直接就指定成转换出来的ts类型.
-      else
-      {
-        ret.Append(valueTypeName);
-      }
-      //dictionary结构结束
-      ret.Append('}');
-    }
-    
-    #endregion
-
-    #region 如果是nullable类型的
-
-    else if (type.IsGeneric && typeName.ToLower() == "nullable")
-    {
-      //作为入参时,Nullable<long>转换成 number?
-      //作为返回参数时, Nullable<long>转换成 number|undefined
-      var innerParameter = type.GenericParamTypeList[0];
-      var innerParameterType = innerParameter.Type;
-      var innerParameterTypeName = TypeMapDefine.GetTypeScriptTypeName(innerParameterType);
-
-      //如果 还是一个泛型的话 下钻
-      if (innerParameterType.IsGeneric)
-      {
-        ret.Append(ProcessParameter(innerParameter,false));
-      }
-      //如果不是,直接就指定成转换出来的ts中的类型.
-      else
-      {
-        if (forReturnParameter)
-        {
-          ret.Append(innerParameterTypeName).Append("|undefined");
-        }
-        else
-        {
-          ret.Append(innerParameterTypeName).Append('?');
-        }
-      }
-    }
-
-    #endregion
-    //如果只是一般的,添加参数的类型即可,如果参数有名字的话前面已经添加了.
-    else
-    {
-      ret.Append(TypeMapDefine.GetTypeScriptTypeName(type));
-    }
-
-    return ret.ToString();
-  }
-
+  
   private void ProcessVariableWithStructure(VariableWithStructure? vws,
     bool ignorePermission,
     bool ignoreStatic,
@@ -643,79 +546,59 @@ public class TypeScriptCodeGenerator
     _currentLayerDepth++;
     // var classCode = new StringBuilder();
     var tab = GetTab(_currentLayerDepth);
-    _currentCode.Append(tab);
-    #region 权限信息,Interface中的函数定义没有权限信息
+    
 
+    #region 如果方法所在位置不在接口中，同名方法是可以被重载的。在同级别中找有没有同名的函数，进行批量处理。处理时权限相同的做一批处理。
+
+    /*
+     * 当一个类中出现多个同名函数的时候，在第一个同名函数被发现时执行批量操作生成方法导向和对应的要调用的结构。
+     * 后面遍历到类中的其他这个同名函数的时候直接跳过即可。
+     */
     if (parent.GetType() != typeof(Interface))
     {
-      //当cs中没有默认的权限信息的时候,是private.在ts中private需要默认指定.如果不指定就是public
-      if (function.Permission == null)
+      //查找同名字的方法
+      var sameNameFunctions =  FunctionBuilder.GetSameNameFunctions(function.Name,parent);
+      //如果类中具有同名方法，并且当前方法是这个方法集中的第一个进行一次批量处理，其他后续的不需要处理。
+      if (sameNameFunctions.Count > 1)
       {
-        _currentCode.Append("private");
+        if (sameNameFunctions.IndexOf(function) == 0)
+        {
+          var groupFunctions = FunctionBuilder.GroupFunctionsByPermission(sameNameFunctions);
+          foreach (var group in groupFunctions)
+          {
+            var appendPermission = groupFunctions.Count > 1 ? 
+              string.Format("_{0}",group.Key.ToString().ToUpper()) : 
+              "";
+            //如果有2个或者以上的该访问权限的同名函数的话，就进行批量函数生成，否则就按照一个函数生成，也就是不需要统领函数了。
+            if (group.Value.Count>1)
+            {
+              var functionsCode = FunctionBuilder.BuildSameNameFunctionsCode(group.Value, parent, tab, appendPermission);
+              _currentCode.Append(tab).AppendLine(functionsCode);
+            }
+            else
+            {
+              var functionsCode = FunctionBuilder.BuildFunctionCode(group.Value[0], appendPermission,parent, tab, false);
+              _currentCode.Append(tab).AppendLine(functionsCode);
+            }
+          }
+        }
+        else
+        {
+          return;
+        }
       }
-      //其他的为了展示的更清楚,所有的也都加上修饰符
       else
       {
-        _currentCode.Append(function.Permission.ToString().ToLower());
+        FunctionBuilder.BuildFunctionCode(function, "",parent, tab, false);
       }
     }
     #endregion
-
-    #region 函数名字和参数
-
-    _currentCode.Append(' ').Append(function.Name).Append('(');
-    //循环参数的类型进行依次的添加.
-    StringBuilder allParamsSB = new StringBuilder();
-    if (function.InParameters != null)
-    {
-      for (var i = 0; i < function.InParameters.Count; i++)
-      {
-        if (i > 0)
-        {
-          allParamsSB.Append(", ");
-        }
-        var parameter = function.InParameters[i];
-        allParamsSB.Append(ProcessParameter(parameter, false));
-        // var tsTypeName = TypeMapDefine.GetTypeScriptTypeName(parameter.Type);
-        // allParamsSB.AppendFormat("{0}: {1}", parameter.Name, tsTypeName);
-      }
-    }
-
-    #endregion
-    
-    //添加所有入参以后添加函数的返回参数信息
-    // var tsReturnType = TypeMapDefine.GetTypeScriptTypeName(function.ReturnParameter.Type);
-    // _currentCode.Append(allParamsSB).Append(") :").Append(tsReturnType);
-    _currentCode.Append(allParamsSB).Append(") :").Append(ProcessParameter(function.ReturnParameter, true));
-    //要用type来判断 不能用 is Interface 判断.因为Class is Interface 是成立的.只要继承就会是true
-    if (parent.GetType() == typeof(Interface))
-    {
-      _currentCode.AppendLine(";");
-    }
-    else
-    {
-      _currentCode.AppendLine(" {");
-
-      #region 添加函数内部的内容
-
-      //现阶段为了代码不报错,返回一个默认的结果
-      var defaultReturnValue = TypeMapDefine.GetTypeScriptTypeDefaultValue(function.ReturnParameter.Type);
-      if (function.ReturnParameter.Type.Name != "void")
-      {
-        _currentCode.Append("return ").Append(defaultReturnValue).AppendLine(";");
-      }
-
-      #endregion
-
-      //添加函数的收尾大括号
-      _currentCode.Append(tab).AppendLine("}");
-    }
 
     // processChildren(function);
 
     _currentLayerDepth--;
   }
-
+  
   private void ProcessNotes(NoteBase noteBase)
   {
     if (noteBase is NotesArea)

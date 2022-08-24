@@ -759,7 +759,7 @@ namespace CS2TS
           {
             if (IsFunctionAddingWords())
             {
-              CreateFunction();
+              CreateFunction(false);
             }
 
             #region 不带括号的
@@ -1153,7 +1153,7 @@ namespace CS2TS
         {
           if (parent is Interface)
           {
-            CreateFunction();
+            CreateFunction(true);
           }
           else
           {
@@ -1210,7 +1210,7 @@ namespace CS2TS
 
     #region 根据现有的信息创建函数
     //根据已有的词汇表，创建函数，并且自动添加到领空和父亲，然后清空未处理的半截单词和未处理的所有单词
-    private void CreateFunction()
+    private void CreateFunction(bool hasStructure)
     {
       var parent = _spaces[^1];
       Function fn = new Function();
@@ -1267,13 +1267,9 @@ namespace CS2TS
       fn.Name = name.Replace("\r", "").Replace("\n","").Trim();
 
       
-      // if (parent is Class)
-      // {
-      parent.Chirldren.Add(fn);
-      // }
       //先进入函数定义领空再处理函数的参数集.不然会错乱,可能会把参数加到类中了.
       _spaces.Add(fn);
-
+      
       #region 解析函数的参数
 
       var leftParenthesesPos = _unProcessWords.IndexOf("(");
@@ -1286,6 +1282,18 @@ namespace CS2TS
       }
       #endregion
       
+      
+      // if (parent is Class)
+      // {
+      parent.Chirldren.Add(fn);
+      // }
+     
+      //但是如果在分号结尾的时候，就是直接定义这个函数而没有结构，hasStructure如果是true，_unProcessWords就是用{结尾，如果是false就是_unProcessWords最后一个为;
+      
+      if (!hasStructure)
+      {
+        _spaces.RemoveAt(_spaces.Count-1);
+      }
       _tempWord = new StringBuilder();
       _unProcessWords.Clear();
     }

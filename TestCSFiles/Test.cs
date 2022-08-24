@@ -112,6 +112,19 @@ namespace
         {
             throw new NotImplementedException();
         }
+        public void fiiFunc(string str)
+        {
+            
+        }
+        public string fiiFunc()
+        {
+            return "this is fii func no param and return string";
+        }
+
+        private string fiiFunc(bool bl)
+        {
+            return null;
+        }
     }
 }
 namespace bb
@@ -142,6 +155,9 @@ namespace cc
           interface fii
           {
             void fiiFunc(byte b);
+            void fiiFunc(string str);
+
+            string fiiFunc();
           }
         }
       }

@@ -1,0 +1,325 @@
+using System.Text;
+using CS2TS.Model;
+
+namespace CS2TS;
+
+public class FunctionBuilder
+{
+  #region 在同级别中获取相同名字的函数集合
+
+  public static List<Function> GetSameNameFunctions(string functionName, CodeNode parent)
+  {
+    var fs = new List<Function>();
+    for (int i = 0; i < parent.Chirldren.Count; i++)
+    {
+      var current = parent.Chirldren[i];
+      if (current is Function && (current as Function).Name == functionName)
+      {
+        fs.Add(current as Function);
+      }
+    }
+    return fs;
+  }
+
+  #endregion
+  #region 把函数按照访问权限修饰符进行分组
+
+  public static Dictionary<PermissionEnum, List<Function>> GroupFunctionsByPermission(List<Function> list)
+  {
+    Dictionary<PermissionEnum, List<Function>> ret = new Dictionary<PermissionEnum, List<Function>>();
+    foreach (var f in list)
+    {
+      PermissionEnum realPermission = (f.Permission == null) ? PermissionEnum.Private : f.Permission.Value;
+      if (!ret.ContainsKey(realPermission))
+      {
+        ret.Add(realPermission, new List<Function>());
+      }
+      ret[realPermission].Add(f);
+    }
+    return ret;
+  }
+
+  #endregion
+  #region 把一堆同名函数按照ts的方式进行输出，传入的参数为克隆数组，不能是直接传入class中的，否则会影响class遍历children
+
+  public static string BuildSameNameFunctionsCode(
+    List<Function> functions, 
+    CodeNode parent, 
+    string tab,
+    //追加到方法名字后面的权限名称。如果在cs中多个函数的权限不一样，在ts中没有办法那样做只能通过函数名字区分了。
+    string appendPermissionAfterFuncName
+    )
+  {
+    StringBuilder ret = new StringBuilder();
+    #region 按照参数的多少进行排序，函数多的放在前面。类似于做一个表出来，检查每个参数的各个函数定义中的情况
+    functions.Sort((a, b) =>
+    {
+      var aFuncParamsCount = a.InParameters.Count;
+      var bFuncParamsCount = b.InParameters == null? 0:b.InParameters.Count;
+      if (aFuncParamsCount > bFuncParamsCount)
+        return -1;
+      if (aFuncParamsCount < bFuncParamsCount)
+        return 1;
+      return 0;
+    });
+    #endregion
+    //遍历参数多的那个，其他的函数如果没有这个参数，就标记为该参数可以为undefined
+    var maxParamsFunction = functions[0];
+    var maxParamCount = maxParamsFunction.InParameters.Count;
+    var permission = maxParamsFunction.Permission ?? PermissionEnum.Private;
+    //每一行都有一个头定义，然后最后一行是对这些定义的总结 像下面这样
+    // public fiiFunc(sss:boolean):void;
+    // public fiiFunc(b: number) :void;
+    // public fiiFunc(str: string) :void;
+    // public fiiFunc() :string ;
+    // public fiiFunc(param0? : number|string|boolean|undefined):string|void
+    // {
+
+    //默认的开头是 public fiiFunc(这样的 然后开始往里面加参数
+    // var defaultHeaderStringBuilder = new StringBuilder(string.Format("{0} {1}(", permission.ToString().ToLower(), maxParamsFunction.Name));
+    List<StringBuilder> functionHeaderDefineStringBuilders = new List<StringBuilder>();
+    // Enumerable.Repeat(
+    // defaultHeaderStringBuilder
+    // ,functions.Count).ToList(); 
+    //返回值的定义种类。是否有多个函数的返回值类型不一致
+    Dictionary<string, Parameter> returnTypeDefines = new Dictionary<string, Parameter>();
+
+    #region 制作函数的标头，同时检查一下函数的返回参数是否一样
+
+    for (int j = 0; j < functions.Count; j++)
+    {
+      var currentFunc = functions[j];
+      functionHeaderDefineStringBuilders.Add(new StringBuilder(
+        BuildFunctionCode(currentFunc,appendPermissionAfterFuncName, parent, tab, true)
+        ));
+      //BuildFunctionCode会自动换行 所以这里不需要AppendLine
+      ret.Append(functionHeaderDefineStringBuilders[j].ToString());
+      //检查返回值类型是不是一样的
+      var returnParamString = ParameterBuilder.ProcessParameter(currentFunc.ReturnParameter, true);
+      if (returnTypeDefines.ContainsKey(returnParamString) == false)
+      {
+        returnTypeDefines.Add(returnParamString, currentFunc.ReturnParameter);
+      }
+    }
+
+    #endregion
+    
+    #region 处理统领函数，先生成统领函数头，包含public fiiFunc（这样的信息，然后后面一会加入参数，最后加入返回值)
+    //统领函数的代码
+    var leaderFunctionCode = new StringBuilder();
+    leaderFunctionCode.Append(tab).Append(BuildPermission(maxParamsFunction, parent));
+    //public fiiFunc(param0? : number|string|boolean|undefined):string|void
+    leaderFunctionCode.Append(' ').Append(maxParamsFunction.Name).Append(appendPermissionAfterFuncName).Append('(');
+    #endregion
+
+    //好了到这个地方已经有了所有的函数的头了。就是可以调用的头。也有了统领函数的头，然后下面开始定义他们的类型信息,用于统领函数
+    #region 横着走，每一个参数遍历一次，每次中遍历多个函数，把他们的定义头完善并且把他们的可能类型加入到索引函数中。
+
+    for (int i = 0; i < maxParamCount; i++)
+    {
+      //headers   column0 column1 column2
+
+      //row0      row0c0  row0c1  row0c2
+      //row1      row1c0  row1c1  row1c2
+      //row2      row2c0  row2c1  --
+      //row3      row3c0  row3c1  --
+      //row4      row4c0  --      --
+      //row5      --      --      --
+      var currentParamTypes = new Dictionary<string, TypeDefine>();
+      //同样一个位置的函数可能有多个名字
+      var currentParamNames = new List<string>();
+      for (int j = 0; j < functions.Count; j++)
+      {
+        var currentFunc = functions[j];
+        //如果当前的函数 没有入参，或者是 当前的函数的入参表中没有这个入参（数量不够）那就用undefined来表示了
+        if (currentFunc.InParameters == null || currentFunc.InParameters.Count - 1 < i)
+        {
+          if (currentParamTypes.ContainsKey("undefined") == false)
+          {
+            currentParamTypes.Add("undefined", null);
+          }
+        }
+        //否则遍历出来这些入参的类型。
+        else
+        {
+          var currentInParameterInCurrentFunc = currentFunc.InParameters[i];
+          if (currentParamTypes.ContainsKey(currentInParameterInCurrentFunc.Name) == false)
+          {
+            currentParamTypes.Add(currentInParameterInCurrentFunc.Name, currentInParameterInCurrentFunc.Type);
+          }
+          #region 归集这个函数所使用的各种名字信息。
+
+          if (currentParamNames.Contains(currentInParameterInCurrentFunc.Name) == false)
+          {
+            currentParamNames.Add(currentInParameterInCurrentFunc.Name);
+          }
+
+          #endregion
+        }
+      }
+      if (i > 0)
+      {
+        leaderFunctionCode.Append(',');
+      }
+      //如果当前的入参类型不是一个 或者是名字不相同，那就生成为param0这样的格式，如果相同，那就用这个类型和这个名字
+      if (currentParamNames.Count > 1 || currentParamTypes.Count > 1)
+      {
+        //param0:
+        leaderFunctionCode.Append("param").Append(i).Append(':');
+        int typeKindIndex = 0;
+        //number|string|undefined
+        foreach (var currentParamType in currentParamTypes)
+        {
+          if (typeKindIndex > 0)
+          {
+            leaderFunctionCode.Append('|');
+          }
+          if (currentParamType.Value == null)
+          {
+            leaderFunctionCode.Append("undefined");
+          }
+          else
+          {
+            leaderFunctionCode.Append(TypeMapDefine.GetTypeScriptTypeName(currentParamType.Value));
+          }
+          typeKindIndex++;
+        }
+      }
+      else
+      {
+        leaderFunctionCode.Append(maxParamsFunction.Name).Append(':').
+          Append(TypeMapDefine.GetTypeScriptTypeName(maxParamsFunction.InParameters[i].Type));
+      }
+    }
+
+    leaderFunctionCode.Append(") :");
+    #endregion
+
+    #region 添加返回值的参数信息
+
+    if (returnTypeDefines.Count > 1)
+    {
+      int returnTypeIndex = 0;
+      foreach (var returnTypeDefine in returnTypeDefines)
+      {
+        if (returnTypeIndex > 0)
+        {
+          leaderFunctionCode.Append('|');
+        }
+        leaderFunctionCode.Append(ParameterBuilder.ProcessParameter(returnTypeDefine.Value, true));
+        returnTypeIndex++;
+      }
+    }
+    else
+    {
+      leaderFunctionCode.Append(ParameterBuilder.ProcessParameter(maxParamsFunction.ReturnParameter, true));
+    }
+
+    #endregion
+
+    #region 添加函数结构体，返回undefined作为测试
+    
+    leaderFunctionCode.AppendLine("")
+      .Append(tab).AppendLine("{");
+     
+    #region 函数内部内容 也就是大括号里面的内容
+
+    var leaderFunctionContent = new StringBuilder("\treturn undefined;");
+    //
+
+    #endregion
+    
+      leaderFunctionCode.Append(tab).AppendLine(leaderFunctionContent.ToString())
+      .Append(tab).AppendLine("}");
+
+    #endregion
+    return ret.ToString();
+  }
+
+  #endregion
+
+  public static string BuildFunctionCode(
+    Function function, 
+    string appendPermissionAfterFuncName,
+    CodeNode parent, 
+    string tab, 
+    bool asFunctionHeader)
+  {
+    var functionCode = new StringBuilder(tab);
+
+    #region 权限信息,Interface中的函数定义没有权限信息
+
+    functionCode.Append(BuildPermission(function,parent));
+
+    #endregion
+
+    #region 函数名字和参数
+
+    functionCode.Append(' ').Append(function.Name).Append(appendPermissionAfterFuncName).Append('(');
+    //循环参数的类型进行依次的添加.
+    StringBuilder allParamsSB = new StringBuilder();
+    if (function.InParameters != null)
+    {
+      for (var i = 0; i < function.InParameters.Count; i++)
+      {
+        if (i > 0)
+        {
+          allParamsSB.Append(", ");
+        }
+        var parameter = function.InParameters[i];
+        allParamsSB.Append(ParameterBuilder.ProcessParameter(parameter, false));
+        // var tsTypeName = TypeMapDefine.GetTypeScriptTypeName(parameter.Type);
+        // allParamsSB.AppendFormat("{0}: {1}", parameter.Name, tsTypeName);
+      }
+    }
+
+    #endregion
+
+    //添加所有入参以后添加函数的返回参数信息
+    // var tsReturnType = TypeMapDefine.GetTypeScriptTypeName(function.ReturnParameter.Type);
+    // _currentCode.Append(allParamsSB).Append(") :").Append(tsReturnType);
+    functionCode.Append(allParamsSB).Append(") :").Append(ParameterBuilder.ProcessParameter(function.ReturnParameter, true));
+    //要用type来判断 不能用 is Interface 判断.因为Class is Interface 是成立的.只要继承就会是true
+    if (parent.GetType() == typeof(Interface) || asFunctionHeader)
+    {
+      functionCode.AppendLine(";");
+    }
+    else
+    {
+      functionCode.Append(tab).AppendLine(" {");
+
+      #region 添加函数内部的内容
+
+      //现阶段为了代码不报错,返回一个默认的结果
+      var defaultReturnValue = TypeMapDefine.GetTypeScriptTypeDefaultValue(function.ReturnParameter.Type);
+      if (function.ReturnParameter.Type.Name != "void")
+      {
+        functionCode.Append("return ").Append(defaultReturnValue).AppendLine(";");
+      }
+
+      #endregion
+
+      //添加函数的收尾大括号
+      functionCode.Append(tab).AppendLine("}");
+    }
+    return functionCode.ToString();
+  }
+  private static string BuildPermission(Function function, CodeNode parent)
+  {
+    StringBuilder functionCode = new StringBuilder();
+    if (parent.GetType() != typeof(Interface))
+    {
+      //当cs中没有默认的权限信息的时候,是private.在ts中private需要默认指定.如果不指定就是public
+      if (function.Permission == null)
+      {
+        functionCode.Append("private");
+      }
+      //其他的为了展示的更清楚,所有的也都加上修饰符
+      else
+      {
+        functionCode.Append(function.Permission.ToString().ToLower());
+      }
+    }
+    return functionCode.ToString();
+  }
+}

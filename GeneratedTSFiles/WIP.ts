@@ -29,7 +29,7 @@ export namespace aa {
         EW = 111111111111111,
     }
     //命名空间内不能有属性
-    export class aa extends a implements bb.cc.dd.ee.ff.fii {
+    export class aa extends a implements cc.dd.ee.ff.fii {
         aobj?: aa;
         ct?: number;
         str?: string;
@@ -58,7 +58,22 @@ export namespace aa {
         private format(a: number, b: number) :number|undefined {
             return undefined;
         }
-        public fiiFunc(b: number) :void {
+        public fiiFunc(sss:boolean):void;
+        public fiiFunc(b: number) :void;
+        public fiiFunc(str: string) :void;
+        public fiiFunc() :string ;
+        public fiiFunc(param0? : number|string|boolean|undefined):string|void
+        {
+            //如果多个同名的函数的相同位置上的参数名字或者类型不同，就生成为param0 这样的名字。然后根据类型的判断具体的确定执行的是哪一个函数。
+            if(typeof param0 === "number")
+            {
+                this.fiiFunc_v2();
+                return;
+            }
+        }
+        public fiiFunc_v2():void
+        {
+            
         }
     }
     export class bClass {
@@ -68,15 +83,19 @@ export namespace bb {
     export interface iii {
         voidFunc(a: number, b: number) :void;
     }
-    export namespace cc {
-        export interface ii {
-        }
-        export namespace dd {
-            export namespace ee {
-                export namespace ff {
-                    export interface fii {
-                        fiiFunc(b: number) :void;
-                    }
+    export interface iiii4 {
+    }
+}
+export namespace cc {
+    export interface ii {
+    }
+    export namespace dd {
+        export namespace ee {
+            export namespace ff {
+                export interface fii {
+                    fiiFunc(b: number) :void;
+                    fiiFunc(str: string) :void;
+                    fiiFunc() :string;
                 }
             }
         }
