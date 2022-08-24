@@ -88,6 +88,7 @@ export namespace aa {
 }
 export namespace bb {
     export interface iii {
+        voidFunc(a: number, b: number) :void;
     }
     export interface iiii4 {
     }
@@ -99,6 +100,9 @@ export namespace cc {
         export namespace ee {
             export namespace ff {
                 export interface fii {
+                    fiiFunc(b: number) :void;
+                    fiiFunc(str: string) :void;
+                    fiiFunc() :string;
                 }
             }
         }

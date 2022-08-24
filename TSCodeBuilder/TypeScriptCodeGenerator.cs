@@ -596,6 +596,16 @@ public class TypeScriptCodeGenerator
     }
     #endregion
 
+    #region 如果在接口中 生成接口的头定义
+
+    else
+    {
+      var functionCode = FunctionBuilder.BuildFunctionCode(function, "", parent, tab, true);
+      _currentCode.Append(functionCode);
+    }
+
+    #endregion
+
     // processChildren(function);
 
     _currentLayerDepth--;
