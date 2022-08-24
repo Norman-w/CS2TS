@@ -1,4 +1,12 @@
-
+import bb;
+import cc;
+//这里是注释区域,里面我用了{还有/还有;还有其他的 之类的东西./*
+///*注释区里面还可以有注释///////所以如果//或者/**/不再行的开头,都不是新注释行
+import System;
+import System.Collections.Generic;
+import System.Text;
+import cc.dd.ee.ff;
+import CS2TS;
 /*
 
  * 这个一个注释段,命名空间没有summary
@@ -41,47 +49,45 @@ export namespace aa {
         /// <param name="a">函数的参数1</param>
         /// <param name="b">函数的参数2</param>
         /// <returns>返回结果</returns>
-        public sum(a: number, b: number) :number {
+        public sum(a: number, b: number) :number		 {
             return Number();
         }
-        public voidFunc(a: number, b: number) :void {
+
+        public voidFunc(a: number, b: number) :void		 {
         }
+
         /// <summary>
         /// 遍历每一个to内的元素,如果from有同名的,替换to内的值
         /// </summary>
         /// <param name="from"></param>
         /// <param name="to"></param>
         /// <returns></returns>
-        public replace(from: {[Key: string]: {[Key: string]: number}}, to: {[Key: string]: {[Key: string]: number}}) :{[Key: string]: string} {
+        public replace(from: {[Key: string]: {[Key: string]: number}}, to: {[Key: string]: {[Key: string]: number}}) :{[Key: string]: string}		 {
             return undefined;
         }
-        private format(a: number, b: number) :number|undefined {
+
+        private format(a: number, b: number) :number|undefined		 {
             return undefined;
         }
-        public fiiFunc(sss:boolean):void;
-        public fiiFunc(b: number) :void;
-        public fiiFunc(str: string) :void;
-        public fiiFunc() :string ;
-        public fiiFunc(param0? : number|string|boolean|undefined):string|void
+
+        public fiiFunc_PUBLIC(b: number) :void;
+        public fiiFunc_PUBLIC(str: string) :void;
+        public fiiFunc_PUBLIC() :string;
+        public fiiFunc_PUBLIC(param0?:number|string) :void|string
         {
-            //如果多个同名的函数的相同位置上的参数名字或者类型不同，就生成为param0 这样的名字。然后根据类型的判断具体的确定执行的是哪一个函数。
-            if(typeof param0 === "number")
-            {
-                this.fiiFunc_v2();
-                return;
-            }
+            return undefined;
         }
-        public fiiFunc_v2():void
-        {
-            
+
+        private fiiFunc_PRIVATE(bl: boolean) :string		 {
+            return String();
         }
+
     }
     export class bClass {
     }
 }
 export namespace bb {
     export interface iii {
-        voidFunc(a: number, b: number) :void;
     }
     export interface iiii4 {
     }
@@ -93,9 +99,6 @@ export namespace cc {
         export namespace ee {
             export namespace ff {
                 export interface fii {
-                    fiiFunc(b: number) :void;
-                    fiiFunc(str: string) :void;
-                    fiiFunc() :string;
                 }
             }
         }

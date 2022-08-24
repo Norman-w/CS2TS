@@ -126,6 +126,8 @@ public class FunctionBuilder
       //row4      row4c0  --      --
       //row5      --      --      --
       var currentParamTypes = new Dictionary<string, TypeDefine>();
+      //当前的这个参数是否可以不传（也就是说有的函数中没有这个参数)；
+      var currentParamCanBeEmpty = false;
       //同样一个位置的函数可能有多个名字
       var currentParamNames = new List<string>();
       for (int j = 0; j < functions.Count; j++)
@@ -134,10 +136,7 @@ public class FunctionBuilder
         //如果当前的函数 没有入参，或者是 当前的函数的入参表中没有这个入参（数量不够）那就用undefined来表示了
         if (currentFunc.InParameters == null || currentFunc.InParameters.Count - 1 < i)
         {
-          if (currentParamTypes.ContainsKey("undefined") == false)
-          {
-            currentParamTypes.Add("undefined", null);
-          }
+          currentParamCanBeEmpty = true;
         }
         //否则遍历出来这些入参的类型。
         else
@@ -165,7 +164,13 @@ public class FunctionBuilder
       if (currentParamNames.Count > 1 || currentParamTypes.Count > 1)
       {
         //param0:
-        leaderFunctionCode.Append("param").Append(i).Append(':');
+        leaderFunctionCode.Append("param").Append(i);
+        //如果有的函数中包含undefined定义，也就是没有这个参数，这个参数还要支持 ? 标志符表示此参数可以没有
+          if(currentParamCanBeEmpty)
+          {
+            leaderFunctionCode.Append('?');
+          }
+          leaderFunctionCode.Append(':');
         int typeKindIndex = 0;
         //number|string|undefined
         foreach (var currentParamType in currentParamTypes)
@@ -174,14 +179,8 @@ public class FunctionBuilder
           {
             leaderFunctionCode.Append('|');
           }
-          if (currentParamType.Value == null)
-          {
-            leaderFunctionCode.Append("undefined");
-          }
-          else
-          {
-            leaderFunctionCode.Append(TypeMapDefine.GetTypeScriptTypeName(currentParamType.Value));
-          }
+          leaderFunctionCode.Append(TypeMapDefine.GetTypeScriptTypeName(currentParamType.Value));
+          
           typeKindIndex++;
         }
       }
@@ -233,6 +232,8 @@ public class FunctionBuilder
       .Append(tab).AppendLine("}");
 
     #endregion
+
+    ret.Append(leaderFunctionCode);
     return ret.ToString();
   }
 

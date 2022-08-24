@@ -587,9 +587,11 @@ public class TypeScriptCodeGenerator
           return;
         }
       }
+      //如果没有同名函数按照一般函数处理
       else
       {
-        FunctionBuilder.BuildFunctionCode(function, "",parent, tab, false);
+        var functionsCode = FunctionBuilder.BuildFunctionCode(function, "",parent, tab, false);
+        _currentCode.Append(tab).AppendLine(functionsCode);
       }
     }
     #endregion
