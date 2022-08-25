@@ -36,11 +36,11 @@ function TestWhoAreYou(obj: Person|Animal) {
 }
 function PersonSay(person:Person)
 {
-    
+    person.Say()
 }
 function AnimalSound(animal:Animal)
 {
-    
+    animal.Sound()
 }
 
 TestWhoAreYou(norman);
