@@ -112,6 +112,17 @@ namespace
         {
             throw new NotImplementedException();
         }
+
+        public void fiiFunc(byte b, byte b2, byte b3)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void fiiFunc(int a, int b, int c)
+        {
+            throw new NotImplementedException();
+        }
+
         public void fiiFunc(string str)
         {
             
@@ -155,7 +166,9 @@ namespace cc
         {
           interface fii
           {
-            void fiiFunc(byte b);
+            void fiiFunc(byte b, byte b2, byte b3);
+
+            void fiiFunc(int a, int b, int c);
             void fiiFunc(string str);
 
             string fiiFunc();

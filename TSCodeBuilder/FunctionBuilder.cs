@@ -54,7 +54,7 @@ public class FunctionBuilder
     #region 按照参数的多少进行排序，函数多的放在前面。类似于做一个表出来，检查每个参数的各个函数定义中的情况
     functions.Sort((a, b) =>
     {
-      var aFuncParamsCount = a.InParameters.Count;
+      var aFuncParamsCount = a.InParameters == null? 0:a.InParameters.Count;
       var bFuncParamsCount = b.InParameters == null? 0:b.InParameters.Count;
       if (aFuncParamsCount > bFuncParamsCount)
         return -1;
@@ -65,7 +65,6 @@ public class FunctionBuilder
     #endregion
     //遍历参数多的那个，其他的函数如果没有这个参数，就标记为该参数可以为undefined
     var maxParamsFunction = functions[0];
-    var maxParamCount = maxParamsFunction.InParameters.Count;
     var permission = maxParamsFunction.Permission ?? PermissionEnum.Private;
     //每一行都有一个头定义，然后最后一行是对这些定义的总结 像下面这样
     // public fiiFunc(sss:boolean):void;
@@ -78,6 +77,11 @@ public class FunctionBuilder
     //默认的开头是 public fiiFunc(这样的 然后开始往里面加参数
     // var defaultHeaderStringBuilder = new StringBuilder(string.Format("{0} {1}(", permission.ToString().ToLower(), maxParamsFunction.Name));
     List<StringBuilder> functionHeaderDefineStringBuilders = new List<StringBuilder>();
+    //实际被调用的方法体代码集,如下面的结构
+    // private fiiFunc_0(b:number):void{
+    //         
+    // }
+    List<StringBuilder> functionStructureDefineStringBuilders = new List<StringBuilder>();
     // Enumerable.Repeat(
     // defaultHeaderStringBuilder
     // ,functions.Count).ToList(); 
@@ -89,9 +93,15 @@ public class FunctionBuilder
     for (int j = 0; j < functions.Count; j++)
     {
       var currentFunc = functions[j];
+      //构建函数声明头
       functionHeaderDefineStringBuilders.Add(new StringBuilder(
         BuildFunctionCode(currentFunc,appendPermissionAfterFuncName, parent, tab, true)
         ));
+      //构建函数的真正结构.
+      functionStructureDefineStringBuilders.Add(new StringBuilder(
+            BuildFunctionCode(currentFunc,string.Format("_{0}",j),parent,tab,false)
+          )
+        );
       //BuildFunctionCode会自动换行 所以这里不需要AppendLine
       ret.Append(functionHeaderDefineStringBuilders[j].ToString());
       //检查返回值类型是不是一样的
@@ -103,18 +113,46 @@ public class FunctionBuilder
     }
 
     #endregion
+
+    //构建完同名函数的头以后，构建统领函数
+    var leaderFunctionCode = BuildLeaderFunction(functions, parent, maxParamsFunction, returnTypeDefines, appendPermissionAfterFuncName, tab);
     
-    #region 处理统领函数，先生成统领函数头，包含public fiiFunc（这样的信息，然后后面一会加入参数，最后加入返回值)
+    ret.Append(leaderFunctionCode);
+
+
+    //把实际被调用的函数结果放在下面
+    foreach (var functionStructureDefineStringBuilder in functionStructureDefineStringBuilders)
+    {
+      ret.AppendLine(functionStructureDefineStringBuilder.ToString());
+    }
+    
+    
+    return ret.ToString();
+  }
+
+  #endregion
+
+  private static string BuildLeaderFunction(
+    List<Function> functions, 
+    CodeNode parent, 
+    Function maxParamsFunction, 
+    Dictionary<string, Parameter> returnTypeDefines,
+    string appendPermissionAfterFuncName, 
+    string tab)
+  {
+    var maxParamCount = maxParamsFunction.InParameters == null ? 0 : maxParamsFunction.InParameters.Count;
+     #region 处理统领函数，先生成统领函数头，包含public fiiFunc（这样的信息，然后后面一会加入参数，最后加入返回值)
     //统领函数的代码
     var leaderFunctionCode = new StringBuilder();
     leaderFunctionCode.Append(tab).Append(BuildPermission(maxParamsFunction, parent));
     //public fiiFunc(param0? : number|string|boolean|undefined):string|void
     leaderFunctionCode.Append(' ').Append(maxParamsFunction.Name).Append(appendPermissionAfterFuncName).Append('(');
     #endregion
-
+    
+    //所有函数的所有参数版本，key是参数名称，value是这个参数的版本
+    var allParamVersions = new Dictionary<string, Dictionary<string,Parameter>>();
     //好了到这个地方已经有了所有的函数的头了。就是可以调用的头。也有了统领函数的头，然后下面开始定义他们的类型信息,用于统领函数
     #region 横着走，每一个参数遍历一次，每次中遍历多个函数，把他们的定义头完善并且把他们的可能类型加入到索引函数中。
-
     for (int i = 0; i < maxParamCount; i++)
     {
       //headers   column0 column1 column2
@@ -125,11 +163,13 @@ public class FunctionBuilder
       //row3      row3c0  row3c1  --
       //row4      row4c0  --      --
       //row5      --      --      --
-      var currentParamTypes = new Dictionary<string, TypeDefine>();
+      // var currentParamTypes = new Dictionary<string, TypeDefine>();
       //当前的这个参数是否可以不传（也就是说有的函数中没有这个参数)；
       var currentParamCanBeEmpty = false;
       //同样一个位置的函数可能有多个名字
-      var currentParamNames = new List<string>();
+      // var currentParamNames = new List<string>();
+      //当前这个位置的函数的版本有哪些。如果名字或者是类型不完全一样的话 都记录到里面去
+      var currentPosParamVersions = new Dictionary<string,Parameter>();
       for (int j = 0; j < functions.Count; j++)
       {
         var currentFunc = functions[j];
@@ -142,29 +182,24 @@ public class FunctionBuilder
         else
         {
           var currentInParameterInCurrentFunc = currentFunc.InParameters[i];
-          if (currentParamTypes.ContainsKey(currentInParameterInCurrentFunc.Name) == false)
-          {
-            currentParamTypes.Add(currentInParameterInCurrentFunc.Name, currentInParameterInCurrentFunc.Type);
-          }
-          #region 归集这个函数所使用的各种名字信息。
 
-          if (currentParamNames.Contains(currentInParameterInCurrentFunc.Name) == false)
+          var currentInParameterCodeInCurrentFunc = ParameterBuilder.ProcessParameter(currentInParameterInCurrentFunc,false);
+          if (currentPosParamVersions.ContainsKey(currentInParameterCodeInCurrentFunc) == false)
           {
-            currentParamNames.Add(currentInParameterInCurrentFunc.Name);
-          }
-
-          #endregion
+            currentPosParamVersions.Add(currentInParameterCodeInCurrentFunc, currentInParameterInCurrentFunc);
+          } 
         }
       }
       if (i > 0)
       {
         leaderFunctionCode.Append(',');
       }
+      var currentParamRealName = string.Format("param{0}", i);
       //如果当前的入参类型不是一个 或者是名字不相同，那就生成为param0这样的格式，如果相同，那就用这个类型和这个名字
-      if (currentParamNames.Count > 1 || currentParamTypes.Count > 1)
+      if (currentPosParamVersions.Count > 1)
       {
         //param0:
-        leaderFunctionCode.Append("param").Append(i);
+        leaderFunctionCode.Append(currentParamRealName);
         //如果有的函数中包含undefined定义，也就是没有这个参数，这个参数还要支持 ? 标志符表示此参数可以没有
           if(currentParamCanBeEmpty)
           {
@@ -173,28 +208,38 @@ public class FunctionBuilder
           leaderFunctionCode.Append(':');
         int typeKindIndex = 0;
         //number|string|undefined
-        foreach (var currentParamType in currentParamTypes)
+        foreach (var current in currentPosParamVersions)
         {
           if (typeKindIndex > 0)
           {
             leaderFunctionCode.Append('|');
           }
-          leaderFunctionCode.Append(TypeMapDefine.GetTypeScriptTypeName(currentParamType.Value));
+          var currentParamVersion = current.Value;
+          var currentParamTypeName = TypeMapDefine.GetTypeScriptTypeName(currentParamVersion.Type);
+          leaderFunctionCode.Append(currentParamTypeName);
           
           typeKindIndex++;
         }
       }
       else
       {
-        leaderFunctionCode.Append(maxParamsFunction.Name).Append(':').
+        currentParamRealName = maxParamsFunction.InParameters[i].Name;
+        
+        leaderFunctionCode.Append(currentParamRealName);
+        if(currentParamCanBeEmpty)
+        {
+          leaderFunctionCode.Append('?');
+        }
+        leaderFunctionCode.Append(':').
           Append(TypeMapDefine.GetTypeScriptTypeName(maxParamsFunction.InParameters[i].Type));
       }
+      allParamVersions.Add(currentParamRealName, currentPosParamVersions);
     }
 
     leaderFunctionCode.Append(") :");
     #endregion
 
-    #region 添加返回值的参数信息
+    #region 在统领函数中添加返回值的参数信息
 
     if (returnTypeDefines.Count > 1)
     {
@@ -216,29 +261,79 @@ public class FunctionBuilder
 
     #endregion
 
-    #region 添加函数结构体，返回undefined作为测试
+    #region 添加统领函数结构体 
     
     leaderFunctionCode.AppendLine("")
       .Append(tab).AppendLine("{");
      
     #region 函数内部内容 也就是大括号里面的内容
 
-    var leaderFunctionContent = new StringBuilder("\treturn undefined;");
+    var allParamNames = new List<string>(allParamVersions.Keys);
+    for (int i = 0; i < functions.Count; i++)
+    {
+      var current = functions[i];
+      var currentFunctionParamCount = current.InParameters == null ? 0 : current.InParameters.Count;
+      //构建if语句,增加if语句来判断统领函数所收到的值是属于哪个函数
+      StringBuilder ifCode = new StringBuilder();
+
+      bool hasParam = current.InParameters != null && current.InParameters.Count > 0;
+      if (hasParam)
+      {
+        ifCode.Append("if(");
+        for (int j = 0; j < currentFunctionParamCount; j++)
+        {
+          if (j > 0)
+          {
+            ifCode.Append(" && ");
+          }
+          var currentParamRealName = allParamNames[j];
+          var currentParam = current.InParameters[j];
+          //boolean string number etc.
+          var currentTypeName = TypeMapDefine.GetTypeScriptTypeName(currentParam.Type);
+          ifCode.AppendFormat("typeof {0} === \"{1}\"", currentParamRealName, currentTypeName);
+        }
+        ifCode.AppendLine(")")
+          .Append(tab).AppendLine("{");
+      }
+      else
+      {
+        //没有参数的时候 直接就是 return 然后啥啥啥.因为没有参数的函数不可能同时有两个同一样名称的
+      }
+     
+      //调用
+      ifCode.Append(tab).Append("\t return this.").Append(maxParamsFunction.Name).Append(appendPermissionAfterFuncName).AppendFormat("_{0}", i)
+        .Append("(");
+      //依次写上对应的参数名称,函数需要多少个参数就写入多少个进去.
+      
+      for (int j = 0; j < currentFunctionParamCount; j++)
+      {
+        if (j > 0)
+          ifCode.Append(", ");
+        ifCode.Append(allParamNames[j]);
+      }
+      ifCode.AppendLine(");");
+        if(hasParam)
+      ifCode.Append(tab).AppendLine("}");
+
+      leaderFunctionCode.Append(ifCode);
+    }
+
+    // var leaderFunctionContent = new StringBuilder("\treturn undefined;");
     //
 
     #endregion
     
-      leaderFunctionCode.Append(tab).AppendLine(leaderFunctionContent.ToString())
-      .Append(tab).AppendLine("}");
+      leaderFunctionCode.Append(tab).AppendLine("}");
 
     #endregion
 
-    ret.Append(leaderFunctionCode);
-    return ret.ToString();
+    return leaderFunctionCode.ToString();
   }
 
-  #endregion
-
+  // private static string BuildLeaderFunctionStructure()
+  // {
+  //   
+  // }
   /// <summary>
   /// 检查方法是否继承自接口（或类）
   /// </summary>

@@ -61,13 +61,47 @@ export namespace aa {
             return undefined;
         }
 
+        public fiiFunc(b: number, b2: number, b3: number) :void;
+        public fiiFunc(a: number, b: number, c: number) :void;
         public fiiFunc(b: number) :void;
         public fiiFunc(str: string) :void;
         public fiiFunc() :string;
-        public fiiFunc(param0?:number|string) :void|string
+        public fiiFunc(param0?:number|string,param1?:number,param2?:number) :void|string
         {
-            return undefined;
+            if(typeof param0 === "number" && typeof param1 === "number" && typeof param2 === "number")
+            {
+                return this.fiiFunc_0(param0, param1, param2);
+            }
+            if(typeof param0 === "number" && typeof param1 === "number" && typeof param2 === "number")
+            {
+                return this.fiiFunc_1(param0, param1, param2);
+            }
+            if(typeof param0 === "number")
+            {
+                return this.fiiFunc_2(param0);
+            }
+            if(typeof param0 === "string")
+            {
+                return this.fiiFunc_3(param0);
+            }
+            return this.fiiFunc_4();
         }
+        public fiiFunc_0(b: number, b2: number, b3: number) :void {
+        }
+
+        public fiiFunc_1(a: number, b: number, c: number) :void {
+        }
+
+        public fiiFunc_2(b: number) :void {
+        }
+
+        public fiiFunc_3(str: string) :void {
+        }
+
+        public fiiFunc_4() :string {
+            return String();
+        }
+
 
         private fiiFunc_PRIVATE(bl: boolean) :string {
             return String();
@@ -92,7 +126,8 @@ export namespace cc {
         export namespace ee {
             export namespace ff {
                 export interface fii {
-                    fiiFunc(b: number) :void;
+                    fiiFunc(b: number, b2: number, b3: number) :void;
+                    fiiFunc(a: number, b: number, c: number) :void;
                     fiiFunc(str: string) :void;
                     fiiFunc() :string;
                 }
