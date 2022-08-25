@@ -239,6 +239,28 @@ public class FunctionBuilder
 
   #endregion
 
+  /// <summary>
+  /// 检查方法是否继承自接口（或类）
+  /// </summary>
+  /// <param name="function"></param>
+  /// <param name="interface"></param>
+  /// <returns></returns>
+  public static bool IsExtendFromInterface(Function function, Interface @interface)
+  {
+    var functions = @interface.GetFunctions();
+    if (functions.Count == 0)
+      return false;
+    var functionString = BuildFunctionCode(function, null, @interface, null, true);
+    foreach (var current in functions)
+    {
+      if(current.Name!= function.Name)
+        continue;
+      var currentFunctionString = BuildFunctionCode(current, null, @interface, null, true);
+      if (currentFunctionString == functionString)
+        return true;
+    }
+    return false;
+  }
   public static string BuildFunctionCode(
     Function function, 
     string appendPermissionAfterFuncName,
@@ -287,7 +309,7 @@ public class FunctionBuilder
     }
     else
     {
-      functionCode.Append(tab).AppendLine(" {");
+      functionCode.AppendLine(" {");
 
       #region 添加函数内部的内容
 

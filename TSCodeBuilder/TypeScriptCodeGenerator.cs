@@ -566,7 +566,10 @@ public class TypeScriptCodeGenerator
           var groupFunctions = FunctionBuilder.GroupFunctionsByPermission(sameNameFunctions);
           foreach (var group in groupFunctions)
           {
-            var appendPermission = groupFunctions.Count > 1 ? 
+            //如果group是public
+            //public组因为可能是继承自接口的，如果修改了名称就不能有效继承了，所以如果真的存在多个名字相同但是访问修饰符不同的函数的话，public不变，改private和其他的
+            
+            var appendPermission = (groupFunctions.Count > 1 && group.Key != PermissionEnum.Public) ? 
               string.Format("_{0}",group.Key.ToString().ToUpper()) : 
               "";
             //如果有2个或者以上的该访问权限的同名函数的话，就进行批量函数生成，否则就按照一个函数生成，也就是不需要统领函数了。

@@ -121,6 +121,7 @@ namespace
             return "this is fii func no param and return string";
         }
 
+        //这个方法不是从接口中继承而来，所以他的修饰符可以是private的。如果该方法是从接口继承，那么他必须是public的
         private string fiiFunc(bool bl)
         {
             return null;
