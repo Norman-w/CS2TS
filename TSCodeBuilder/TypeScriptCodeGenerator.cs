@@ -580,7 +580,7 @@ public class TypeScriptCodeGenerator
             }
             else
             {
-              var functionsCode = FunctionBuilder.BuildFunctionCode(group.Value[0], appendPermission,parent, tab, false);
+              var functionsCode = FunctionBuilder.BuildFunctionCode(group.Value[0], appendPermission,parent, tab, false, null);
               _currentCode.Append(tab).AppendLine(functionsCode);
             }
           }
@@ -593,7 +593,7 @@ public class TypeScriptCodeGenerator
       //如果没有同名函数按照一般函数处理
       else
       {
-        var functionsCode = FunctionBuilder.BuildFunctionCode(function, "",parent, tab, false);
+        var functionsCode = FunctionBuilder.BuildFunctionCode(function, "",parent, tab, false,null);
         _currentCode.Append(tab).AppendLine(functionsCode);
       }
     }
@@ -603,7 +603,7 @@ public class TypeScriptCodeGenerator
 
     else
     {
-      var functionCode = FunctionBuilder.BuildFunctionCode(function, "", parent, tab, true);
+      var functionCode = FunctionBuilder.BuildFunctionCode(function, "", parent, tab, true,null);
       _currentCode.Append(functionCode);
     }
 

@@ -95,11 +95,11 @@ public class FunctionBuilder
       var currentFunc = functions[j];
       //构建函数声明头
       functionHeaderDefineStringBuilders.Add(new StringBuilder(
-        BuildFunctionCode(currentFunc,appendPermissionAfterFuncName, parent, tab, true)
+        BuildFunctionCode(currentFunc,appendPermissionAfterFuncName, parent, tab, true, null)
         ));
       //构建函数的真正结构.
       functionStructureDefineStringBuilders.Add(new StringBuilder(
-            BuildFunctionCode(currentFunc,string.Format("_{0}",j),parent,tab,false)
+            BuildFunctionCode(currentFunc,string.Format("_{0}",j),parent,tab,false, PermissionEnum.Private)
           )
         );
       //BuildFunctionCode会自动换行 所以这里不需要AppendLine
@@ -345,12 +345,12 @@ public class FunctionBuilder
     var functions = @interface.GetFunctions();
     if (functions.Count == 0)
       return false;
-    var functionString = BuildFunctionCode(function, null, @interface, null, true);
+    var functionString = BuildFunctionCode(function, null, @interface, null, true, null);
     foreach (var current in functions)
     {
       if(current.Name!= function.Name)
         continue;
-      var currentFunctionString = BuildFunctionCode(current, null, @interface, null, true);
+      var currentFunctionString = BuildFunctionCode(current, null, @interface, null, true, null);
       if (currentFunctionString == functionString)
         return true;
     }
@@ -361,13 +361,22 @@ public class FunctionBuilder
     string appendPermissionAfterFuncName,
     CodeNode parent, 
     string tab, 
-    bool asFunctionHeader)
+    bool asFunctionHeader,
+    Nullable<PermissionEnum> overridePermission
+    )
   {
     var functionCode = new StringBuilder(tab);
 
     #region 权限信息,Interface中的函数定义没有权限信息
 
-    functionCode.Append(BuildPermission(function,parent));
+    if (overridePermission!= null)
+    {
+      functionCode.Append(overridePermission.Value.ToString().ToLower());
+    }
+    else
+    {
+      functionCode.Append(BuildPermission(function, parent));
+    }
 
     #endregion
 
