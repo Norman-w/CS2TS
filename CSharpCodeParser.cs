@@ -29,7 +29,7 @@ namespace CS2TS
     /// <summary>
     /// 分词符号,遇到这个的时候要把前面已经获取到的内容变为一个词条了.
     /// </summary>
-    private readonly List<string> _splitWords = new List<string>() {";", " ", "{", "(", ")", "}", ":", ">", "<", ",", "="};
+    private readonly List<string> _splitWords = new List<string>() {";", " ", "{", "(", ")", "}", ":", ">", "<", ",", "=", "?"};
 
     /// <summary>
     /// 断句符号,遇到这个的时候证明前面堆积的单词或者符号可以进行一次处理了.
@@ -423,10 +423,6 @@ namespace CS2TS
     private List<Parameter> Convert2Parameters(List<string> words)
     {
       var parentFunction = _spaces[^1] as Function;
-      if (words.Count == 15)
-      {
-        
-      }
       List<Parameter> ret = new List<Parameter>();
       Parameter currentParam = new Parameter();
       currentParam.Type = new TypeDefine();
@@ -442,6 +438,11 @@ namespace CS2TS
         {
           currentParam.Type.Name = current;
           continue;
+        }
+        if (current == "?")
+        {
+          currentParam.Nullable = true;
+          continue;;
         }
 
         //如果是泛型定义的开始

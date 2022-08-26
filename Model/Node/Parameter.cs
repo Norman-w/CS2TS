@@ -10,4 +10,9 @@ public class Parameter:CodeNode
   public TypeDefine Type { get; set; }
   public bool IsRef { get; set; }
   public bool IsOut { get; set; }
+
+  /// <summary>
+  /// 是否可以不传入或者传入null. 也就是在参数类型后面加入问号
+  /// </summary>
+  public bool Nullable { get; set; }
 }

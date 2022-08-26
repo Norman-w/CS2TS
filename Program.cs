@@ -11,13 +11,14 @@ namespace CS2TS
     /// <summary>
     /// 应用程序的主入口点。
     /// </summary>
-    [STAThread]
+    // [STAThread]
     static void Main(string[]? args)
     {
       CSharpCodeParser ps = new CSharpCodeParser();
       // var testFile = @"/Users/coolking/Downloads/TestCsFiles23/Domain/Bag/BagItemsAlias.cs";
       // var testFile = @"/Volumes/NormanData/Visual Studio 2008/Projects/速配项目/QP/Domain/Account/AccountGroup.cs";
-      var testFile = @"../../../TestCSFiles/Test.cs";
+      // var testFile = @"../../../TestCSFiles/Test.cs";
+      var testFile = @"../../../Program.cs";
       if (args != null && args.Length>0)
       {
         testFile = args[0];

@@ -17,7 +17,13 @@ public class ParameterBuilder
     //如果有名字的 要加上 名字和冒号的模式 name:
     if (!string.IsNullOrEmpty(name))
     {
-      ret.Append(name).Append(": ");
+      ret.Append(name);
+      //如果可以不设置的 就是在后面有?的
+      if (param.Nullable)
+      {
+        ret.Append('?');
+      }
+      ret.Append(": ");
     }
     
     var type = param.Type;

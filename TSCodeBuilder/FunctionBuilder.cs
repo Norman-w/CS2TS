@@ -375,14 +375,23 @@ public class FunctionBuilder
     }
     else
     {
-      functionCode.Append(BuildPermission(function, parent));
+      functionCode.Append(BuildPermission(function, parent)).Append(' ');
+    }
+
+    #endregion
+
+    #region static的信息
+
+    if (function.IsStatic)
+    {
+      functionCode.Append("static ");
     }
 
     #endregion
 
     #region 函数名字和参数
 
-    functionCode.Append(' ').Append(function.Name).Append(appendPermissionAfterFuncName).Append('(');
+    functionCode.Append(function.Name).Append(appendPermissionAfterFuncName).Append('(');
     //循环参数的类型进行依次的添加.
     StringBuilder allParamsSB = new StringBuilder();
     if (function.InParameters != null)
