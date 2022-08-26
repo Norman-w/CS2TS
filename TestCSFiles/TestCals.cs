@@ -2,6 +2,14 @@ namespace CS2TS.TestCSFiles;
 
 public class TestCals
 {
+  public string Return(string a)
+  {
+    return a;
+  }
+  public char Header(string a)
+  {
+    return a[0];
+  }
   public int Sum(int a, int b)
   {
     return a + b;
@@ -46,5 +54,12 @@ public class TestCals
       // start++;
     }
     return ret.ToArray();
+  }
+  public void SetValueTest()
+  {
+    var a = 0;
+    var b = 1;
+    var c = 2;
+    a = b = c++ - 3;
   }
 }

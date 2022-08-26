@@ -809,12 +809,12 @@ namespace CS2TS
             else if (parent is StatementWithStructure)
             {
               var vrParent = parent as StatementWithStructure;
-              if (vrParent.Statements == null)
-              {
-                vrParent.Statements = new List<Statement>();
-              }
-
-              vrParent.Statements.Add(st);
+              // if (vrParent.Statements == null)
+              // {
+              //   vrParent.Statements = new List<Statement>();
+              // }
+              //
+              // vrParent.Statements.Add(st);
               _tempWord = new StringBuilder();
               _unProcessWords.Clear();
               return true;
@@ -904,12 +904,12 @@ namespace CS2TS
         else if (parent is StatementWithStructure)
         {
           var swsParent = parent as StatementWithStructure;
-          if (swsParent.Statements == null)
-          {
-            swsParent.Statements = new List<Statement>();
-          }
-
-          swsParent.Statements.Add(st);
+          // if (swsParent.Statements == null)
+          // {
+          //   swsParent.Statements = new List<Statement>();
+          // }
+          //
+          // swsParent.Statements.Add(st);
         }
         else
         {
@@ -1403,7 +1403,7 @@ namespace CS2TS
     private StatementWithStructure AddForStatement2Parent()
     {
       var parent = _spaces[^1];
-      StatementWithStructure forSt = new StatementWithStructure();
+      StatementWithStructure forSt = new ForStatement();
       forSt.Type = "for";
 
       if (parent is Function)
