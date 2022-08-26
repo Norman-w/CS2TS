@@ -171,6 +171,10 @@ public class TypeScriptCodeGenerator
       {
         ProcessFunction(chirld as Function, parent);
       }
+      else if (childType is Statement)
+      {
+        ProcessStatement(chirld as Statement, parent);
+      }
       else if (chirld is Variable)
       {
         if (parent is Class)
@@ -613,7 +617,24 @@ public class TypeScriptCodeGenerator
 
     _currentLayerDepth--;
   }
-  
+
+  private void ProcessStatement(Statement statement, CodeNode parent)
+  {
+    StringBuilder ret = new StringBuilder();
+    var tab = GetTab(++_currentLayerDepth);
+    if (statement is ReturnStatement)
+    {
+      var rst = statement as ReturnStatement;
+      ret.Append(tab).Append("return");
+      if (rst.Value != null)
+      {
+        ret.Append(' ').Append(rst.Value.Name);
+      }
+      ret.AppendLine(";");
+    }
+    _currentLayerDepth--;
+    _currentCode.Append(ret);
+  }
   private void ProcessNotes(NoteBase noteBase)
   {
     if (noteBase is NotesArea)

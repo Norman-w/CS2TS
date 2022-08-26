@@ -2,14 +2,15 @@ namespace CS2TS;
 
 public class SemicolonParser
 {
-  public static List<Statement> Parse2Statement(List<string> words, CodeNode parent)
+  public static bool Parse2Statement(List<string> words, CodeNode parent)
   {
-    List<Statement> ret = new List<Statement>();
+    // List<Statement> ret = new List<Statement>();
     if (IsReturnStatement(words,parent))
     {
-      ret.Add(Parse2ReturnStatement(words,parent));
+      parent.Chirldren.Add(Parse2ReturnStatement(words,parent));
+      return true;
     }
-    return ret;
+    return false;
   }
   //判断当前这些词,是不是return句
   private static bool IsReturnStatement(List<string> words, CodeNode parent)

@@ -708,6 +708,16 @@ namespace CS2TS
     /// <exception cref="NotImplementedException"></exception>
     private bool ParseSemicolon()
     {
+      if (IsInFunction())
+      {
+        CodeNode parent = _spaces[^1];
+        if (SemicolonParser.Parse2Statement(_unProcessWords, parent))
+        {
+          _unProcessWords.Clear();
+          _tempWord = new StringBuilder();
+          return true;
+        }
+      }
       //return true就是执行 continue;
       if (IsUsingAddingWords())
       {

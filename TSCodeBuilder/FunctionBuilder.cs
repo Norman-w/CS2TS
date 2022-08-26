@@ -426,11 +426,15 @@ public class FunctionBuilder
 
       #region 添加函数内部的内容
 
-      //现阶段为了代码不报错,返回一个默认的结果
-      var defaultReturnValue = TypeMapDefine.GetTypeScriptTypeDefaultValue(function.ReturnParameter.Type);
-      if (function.ReturnParameter.Type.Name != "void")
+      // //现阶段为了代码不报错,返回一个默认的结果
+      // var defaultReturnValue = TypeMapDefine.GetTypeScriptTypeDefaultValue(function.ReturnParameter.Type);
+      // if (function.ReturnParameter.Type.Name != "void")
+      // {
+      //   functionCode.Append("return ").Append(defaultReturnValue).AppendLine(";");
+      // }
+      foreach (var child in function.Chirldren)
       {
-        functionCode.Append("return ").Append(defaultReturnValue).AppendLine(";");
+         functionCode.Append(StatementBuilder.BuildStatement(child as Statement, function, tab));
       }
 
       #endregion
