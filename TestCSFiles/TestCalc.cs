@@ -6,10 +6,14 @@ public class TestCals
   {
     return a;
   }
-  // public char Header(string a)
-  // {
-  //   return a[0];
-  // }
+  public char Header(string a)
+  {
+    return a[1-1];
+  }
+  public char End(string a)
+  {
+    return a[a.Length-1];
+  }
   // public int Sum(int a, int b)
   // {
   //   return a + b;
