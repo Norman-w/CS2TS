@@ -1,12 +1,6 @@
 namespace CS2TS;
 
-public enum StatementType
-{
-  Structure,
-  VariableDefine,
-  VariableSet,
-  Return,
-}
+
 // /// <summary>
 // /// 语句段的类型,带大括号的
 // /// </summary>
