@@ -10,12 +10,7 @@ public class StatementBuilder
     if (statement is ReturnStatement)
     {
       var rrs = statement as ReturnStatement;
-      ret.Append(tab).Append('\t').Append("return");
-      if (rrs.Value != null)
-      {
-        // ret.Append(' ').Append(rrs.Value.Name);
-      }
-      ret.AppendLine(";");
+      return rrs.Value;
     }
     return ret.ToString();
   }

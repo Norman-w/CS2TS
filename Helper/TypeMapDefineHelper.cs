@@ -19,6 +19,7 @@ public static class TypeMapDefine
     switch (type.Name.ToLower())
     {
       case "string":
+      case "char":
         ret = "string";
         break;
       case "int":

@@ -14,18 +14,18 @@ public class TestCals
   {
     return a[a.Length-1];
   }
-  // public int Sum(int a, int b)
-  // {
-  //   return a + b;
-  // }
-  // public int Max(int a, int b)
-  // {
-  //   return a > b ? a : b;
-  // }
-  // public bool Equal(int a, int b)
-  // {
-  //   return a == b;
-  // }
+  public int Sum(int a, int b)
+  {
+    return a + b;
+  }
+  public int Max(int a, int b)
+  {
+    return a > b ? a : b;
+  }
+  public bool Equal(int a, int b)
+  {
+    return a == b;
+  }
   // public string Append(string dest, int num)
   // {
   //   return string.Format("{0}{1}", dest, num);

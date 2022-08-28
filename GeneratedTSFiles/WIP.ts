@@ -1,24 +1,23 @@
 export class TestCals {
     public Return(a: string) :string {
-        return a;
+        return a;		}
+
+    public Header(a: string) :string {
+        return a [ 1 - 1 ];		}
+
+    public End(a: string) :string {
+        return a [ a.length - 1 ];		}
+
+    public Sum(a: number, b: number) :number {
+        return a + b;		}
+
+    public Max(a: number, b: number) :number {
+        return a > b ? a : b;		}
+
+    public Equal(a: number, b: number) :boolean {
+        return a == b;
     }
 
-    // public char Header(string a)
-    // {
-    //   return a[0];
-    // }
-    // public int Sum(int a, int b)
-    // {
-    //   return a + b;
-    // }
-    // public int Max(int a, int b)
-    // {
-    //   return a > b ? a : b;
-    // }
-    // public bool Equal(int a, int b)
-    // {
-    //   return a == b;
-    // }
     // public string Append(string dest, int num)
     // {
     //   return string.Format("{0}{1}", dest, num);
