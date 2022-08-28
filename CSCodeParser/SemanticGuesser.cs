@@ -12,18 +12,18 @@ namespace CS2TS;
  * ;        finish statement
  *
  *
- * 返回一个由变量0确认的变量a中的元素
+ * 返回一个由常量0确认的变量a中的元素
  * return a[0];
  * return   return start
  * a        variable use
  * [        start select elem/enter variable
- * 0        variable
+ * 0        const variable define
  * ]        end select elem/quit variable
  * ;        finish statement
  *
  *
  * 多重使用
- * return a[a.Length]
+ * return a[a.Length];
  * return   return start
  * a        variable use
  * [        start select elem/enter variable
@@ -34,7 +34,7 @@ namespace CS2TS;
  * ;        finish statement
  *
  *
- * return a[1-1]
+ * return a[1-1];
  * return   return start
  * a        variable use
  * [        start select elem/enter variable
@@ -44,8 +44,16 @@ namespace CS2TS;
  * ]        end select elem/quit variable
  * ;        finish statement
  *
- *
- * 
+ * 在返回值上使用函数
+ * return Sum(1+2);
+ * return   return start
+ * Sum      variable use(variable is a function)
+ * (        pre variable is function, function call
+ * 1        const variable define
+ * +        operator
+ * 2        const variable define
+ * )        pre as parameter, function call finished
+ * ;        finish statement
  */
 
 public enum TypesOfStatementsWithinFunctions
@@ -81,7 +89,11 @@ public enum TypesOfStatementsWithinFunctions
     /// <summary>
     /// 这个可以没有
     /// </summary>
-    FinishStatement
+    FinishStatement,
+    /// <summary>
+    /// 调用函数
+    /// </summary>
+    FunctionCall
 }
 public class SemanticGuesser
 {

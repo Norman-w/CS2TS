@@ -628,7 +628,7 @@ public class TypeScriptCodeGenerator
       ret.Append(tab).Append("return");
       if (rst.Value != null)
       {
-        ret.Append(' ').Append(rst.Value.Name);
+        // ret.Append(' ').Append(rst.Value.Name);
       }
       ret.AppendLine(";");
     }

@@ -13,7 +13,7 @@ public class StatementBuilder
       ret.Append(tab).Append('\t').Append("return");
       if (rrs.Value != null)
       {
-        ret.Append(' ').Append(rrs.Value.Name);
+        // ret.Append(' ').Append(rrs.Value.Name);
       }
       ret.AppendLine(";");
     }

@@ -19,7 +19,7 @@ namespace CS2TS
     /// <summary>
     /// 没有处理的所有的词素,比如 int a( 这里有三个词素 int a 和 (,  其中(为断句符号.遇到断句符号(或单词)时就需要处理之前没有处理的内容了.
     /// </summary>
-    private readonly List<string> _unProcessWords = new List<string>();
+    private readonly List<string>? _unProcessWords = new List<string>();
 
     /// <summary>
     /// 当前没有处理的所有的char构成的一个临时的单词,如果单词被打断 比如 a; 我们定义了 分号是断词符号之一,所以当前的 待处理词素集中加入  a和; 分号
@@ -29,7 +29,7 @@ namespace CS2TS
     /// <summary>
     /// 分词符号,遇到这个的时候要把前面已经获取到的内容变为一个词条了.
     /// </summary>
-    private readonly List<string> _splitWords = new List<string>() {";", " ", "{", "(", ")", "}", ":", ">", "<", ",", "=", "?"};
+    private readonly List<string> _splitWords = new List<string>() {";", " ", "{", "(", ")", "}", ":", ">", "<", ",", "=", "?", "-", "[", "]"};
 
     /// <summary>
     /// 断句符号,遇到这个的时候证明前面堆积的单词或者符号可以进行一次处理了.
@@ -711,7 +711,7 @@ namespace CS2TS
       if (IsInFunction())
       {
         CodeNode parent = _spaces[^1];
-        if (SemicolonParser.Parse2Statement(_unProcessWords, parent))
+        if (SemicolonParser.Parse2Statements(_unProcessWords, parent as Function))
         {
           _unProcessWords.Clear();
           _tempWord = new StringBuilder();
