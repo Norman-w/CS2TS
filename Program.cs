@@ -30,7 +30,7 @@ namespace CS2TS
       // CodeNodeHelper hp = new CodeNodeHelper(codeFile);
       // hp.FindClass(codeFile, "aSubSub");
 
-      return;
+      // return;
       var generator = new TypeScriptCodeGenerator(codeFile);
       var tsCode = generator.CreateTsFile();
       Console.WriteLine(tsCode);

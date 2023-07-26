@@ -4,7 +4,7 @@ using CS2TS.Model;
 
 namespace CS2TS
 {
-  public class CSharpCodeParser
+  public partial class CSharpCodeParser
   {
     public CSharpCodeParser()
     {
@@ -533,6 +533,7 @@ namespace CS2TS
     }
 
     #endregion
+    
     #region 解析变量的信息
 
     /// <summary>
@@ -1442,36 +1443,6 @@ namespace CS2TS
 
     #endregion
 
-    private bool IsInStatement()
-    {
-      return _spaces[^1] is StatementWithStructure;
-    }
-
-    private bool IsInNamespace()
-    {
-      return _spaces[^1] is NameSpace;
-    }
-
-    private bool IsInClass()
-    {
-      return _spaces[^1] is Class;
-    }
-
-    private bool IsInEnum()
-    {
-      return _spaces[^1] is EnumDefine;
-    }
-
-    private bool isInVariable_Structure()
-    {
-      return _spaces[^1] is VariableWithStructure;
-    }
-
-    private bool IsInFunction()
-    {
-      return _spaces[^1] is Function;
-    }
-
     private Nullable<PermissionEnum> ConvertString2Permission(string str)
     {
       switch (str)
@@ -1487,401 +1458,6 @@ namespace CS2TS
         default:
           return null;
       }
-    }
-
-    private bool isVariable_AddingWords(out Nullable<PermissionEnum> permission)
-    {
-      if (_unProcessWords == null || _unProcessWords.Count < 3)
-      {
-        permission = null;
-        return false;
-      }
-
-      if (_unProcessWords[^1] == ";")
-      {
-        permission = Define.Permissions.Contains(_unProcessWords[0])
-          ? ConvertString2Permission(_unProcessWords[0])
-          : null;
-        return true;
-      }
-
-      permission = null;
-      return false;
-    }
-
-    private bool IsVariableAddingWords()
-    {
-      return _unProcessWords != null && _unProcessWords.Count == 3;
-    }
-
-    private bool IsFunctionAddingWords()
-    {
-      // 1 函数名  2( 3)  4{
-      if (_unProcessWords == null || _unProcessWords.Count < 4)
-      {
-        return false;
-      }
-
-      int kuohaoIndex = _unProcessWords.IndexOf("(");
-      int kuohuiIndex = _unProcessWords.IndexOf(")");
-      //大括号和分号都可以是一个函数定义内容的标志符，在大括号或者分号前面的都可以是函数的定义，只不过分号前面的是没有函数内体，这通常就是在接口内定义函数了。
-      int dakuohaoIndex = _unProcessWords.IndexOf("{");
-      int fenhaoIndex = _unProcessWords.IndexOf(";");
-      if (kuohaoIndex > 0
-          && kuohuiIndex > 1
-          && (dakuohaoIndex == _unProcessWords.Count - 1 || fenhaoIndex == _unProcessWords.Count -1) 
-         )
-      {
-        return true;
-      }
-
-      return false;
-    }
-
-    /// <summary>
-    /// 是否是给定的这种类型名字的带大括号对的定义 变量 带public之类的字样和结构
-    /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    private bool isVariable_Permission_StructureAddingWords_bak(out string typeName)
-    {
-      if (_unProcessWords == null || _unProcessWords.Count < 1)
-      {
-        typeName = null;
-        return false;
-      }
-
-      if (_unProcessWords.Count > 3 && _unProcessWords[^1] == "{")
-      {
-        int maohaoIndex = _unProcessWords.IndexOf(":");
-        int kuohaoIndex = _unProcessWords.IndexOf("(");
-        if (kuohaoIndex >= 0 && kuohaoIndex < 2)
-        {
-          //需要一个类型一个名称,所以括号在第 2或者以后才算是函数 不然有可能是if之类的
-          typeName = null;
-          return false;
-        }
-
-        if (kuohaoIndex > -1)
-        {
-          typeName = _unProcessWords[kuohaoIndex - 2];
-        }
-        else if (maohaoIndex > -1)
-        {
-          typeName = _unProcessWords[maohaoIndex - 2];
-        }
-        else
-        {
-          typeName = _unProcessWords[^3];
-        }
-
-        if (Define.Permissions.Contains(_unProcessWords[0]))
-        {
-          //如果第一项是 public private等等的 算是有权限定义
-          return true;
-        }
-      }
-
-      typeName = null;
-      return false;
-    }
-
-    /// <summary>
-    /// 参数,带大括号包围的结构
-    /// </summary>
-    /// <param name="typeName"></param>
-    /// <returns></returns>
-    private bool isVariable_StructureAddingWords(out string typeName, out Nullable<PermissionEnum> permission)
-    {
-      if (_unProcessWords == null ||
-          //unProcessWords.Count < 3
-          _unProcessWords.Count < 2
-         )
-      {
-        typeName = null;
-        permission = null;
-        return false;
-      }
-
-      if (_unProcessWords[^1] == "{")
-      {
-        int maohaoIndex = _unProcessWords.IndexOf(":");
-        if (maohaoIndex > -1)
-        {
-          typeName = _unProcessWords[maohaoIndex - 2];
-        }
-        else
-        {
-          typeName = _unProcessWords.Count == 2 ? null : _unProcessWords[^3];
-        }
-
-        if (Define.Permissions.Contains(_unProcessWords[0]))
-        {
-          permission = ConvertString2Permission(_unProcessWords[0]);
-        }
-        else
-        {
-          permission = null;
-        }
-
-        return true;
-      }
-
-      typeName = null;
-      permission = null;
-      return false;
-    }
-
-    private bool IsStatementWithStructure(out string statementType)
-    {
-      if (_unProcessWords == null ||
-          _unProcessWords[^1] != "{"
-         )
-      {
-        statementType = null;
-        return false;
-      }
-
-      int tagCount = _unProcessWords.Count - 1;
-      if (tagCount == 0)
-      {
-        statementType = null;
-        return true;
-      }
-      else if (tagCount == 2)
-      {
-        if (_unProcessWords[0] == "else" && _unProcessWords[1] == "if")
-        {
-          statementType = "else if";
-          return true;
-        }
-      }
-      else if (tagCount == 1 && new List<string>() {"if", "else", "switch", "while"}.IndexOf(_unProcessWords[0]) == 0)
-      {
-        statementType = _unProcessWords[0];
-        return true;
-      }
-
-      statementType = null;
-      return false;
-    }
-
-    /// <summary>
-    /// 是否为正您在添加If语句段 的词汇集
-    /// </summary>
-    /// <returns></returns>
-    private bool IsIfStatementAddingWords()
-    {
-      if (_unProcessWords == null || _unProcessWords.Count < 1)
-      {
-        return false;
-      }
-
-      int ifIndex = _unProcessWords.IndexOf("if");
-      int kuohaoIndex = _unProcessWords.IndexOf("(");
-      int kuohuiIndex = _unProcessWords.IndexOf(")");
-      int dakuohao = _unProcessWords.IndexOf("{");
-      if (dakuohao > kuohuiIndex && kuohuiIndex > kuohaoIndex && kuohaoIndex > ifIndex && ifIndex >= 0)
-      {
-        return true;
-      }
-
-      return false;
-    }
-
-    /// <summary>
-    /// 是否为else if  语句
-    /// </summary>
-    /// <returns></returns>
-    private bool IsElseIfStatementAddingWords()
-    {
-      if (_unProcessWords == null || _unProcessWords.Count < 1)
-      {
-        return false;
-      }
-
-      int elseIndex = _unProcessWords.IndexOf("else");
-      int ifIndex = _unProcessWords.IndexOf("if");
-      int kuohaoIndex = _unProcessWords.IndexOf("(");
-      int kuohuiIndex = _unProcessWords.IndexOf(")");
-      int dakuohao = _unProcessWords.IndexOf("{");
-      if (dakuohao > kuohuiIndex && kuohuiIndex > kuohaoIndex && kuohaoIndex > elseIndex && elseIndex > ifIndex &&
-          ifIndex >= 0)
-      {
-        return true;
-      }
-
-      return false;
-    }
-
-    private bool IsElseStatementAddingWords()
-    {
-      if (_unProcessWords == null || _unProcessWords.Count < 1)
-      {
-        return false;
-      }
-
-      int elseIndex = _unProcessWords.IndexOf("else");
-      int dakuohao = _unProcessWords.IndexOf("{");
-      if (dakuohao > elseIndex && elseIndex >= 0)
-      {
-        return true;
-      }
-
-      return false;
-    }
-
-    private bool IsInterfaceAddingWords()
-    {
-      if (_unProcessWords == null || _unProcessWords.Count < 1)
-      {
-        return false;
-      }
-
-      int interfaceWordIndex = _unProcessWords.IndexOf("interface");
-      int dakuohaoIndex = _unProcessWords.IndexOf("{");
-      //>+1是因为中间还有一个名字
-      if (interfaceWordIndex >= 0 && dakuohaoIndex > interfaceWordIndex + 1)
-      {
-        return true;
-      }
-
-      return false;
-    }
-
-    private bool IsNamespaceAddingWords()
-    {
-      if (_unProcessWords == null || _unProcessWords.Count < 1)
-      {
-        return false;
-      }
-
-      if (_unProcessWords.Count == 3 && _unProcessWords[0] == "namespace")
-      {
-        return true;
-      }
-
-      return false;
-    }
-
-    private bool IsUsingAddingWords()
-    {
-      if (_unProcessWords == null || _unProcessWords.Count < 1)
-      {
-        return false;
-      }
-
-      if (_unProcessWords.Count == 3 && _unProcessWords[0] == "using")
-      {
-        return true;
-      }
-
-      return false;
-    }
-
-    /// <summary>
-    /// 传入一个或者多个字符,确认他是不是断词符号.
-    /// </summary>
-    /// <param name="c"></param>
-    /// <returns></returns>
-    private bool IsWordBreakSymbol(string c)
-    {
-      return _splitWords.Contains(c);
-    }
-
-    /// <summary>
-    /// 检查当前待处理的内容最后一项是否为断句符号
-    /// </summary>
-    /// <param name="current"></param>
-    /// <param name="breakBy"></param>
-    /// <returns></returns>
-    private bool IsSentenceBreakWord(out string current, out string breakBy)
-    {
-      foreach (var v in _breakWords)
-      {
-        var checking = _tempWord.ToString();
-        if (checking.Length == 0 && _unProcessWords.Count>0)
-        {
-          checking = _unProcessWords[^1];
-        }
-        // var checking = _unProcessWords.Count > 0 ? _unProcessWords[^1] : _tempWord.ToString();
-        if (checking.EndsWith(v) == true)
-        {
-          current = v;
-          breakBy = checking;
-          return true;
-        }
-      }
-
-      current = null;
-      breakBy = null;
-      return false;
-    }
-
-    /// <summary>
-    /// 当前缓存的是否为注释行开头字符
-    /// </summary>
-    /// <returns></returns>
-    private bool IsNotesLineStartWord()
-    {
-      return _tempWord.ToString().Trim().StartsWith("//");
-    }
-
-    /// <summary>
-    /// 当前缓存的是否为注释区域开始字符
-    /// </summary>
-    /// <returns></returns>
-    private bool IsNotesAreaStartWord()
-    {
-      return _tempWord.ToString().Trim().StartsWith("/*");
-    }
-
-    /// <summary>
-    /// 当前缓存的字符,是否为#region这样的C#注释开头字符
-    /// </summary>
-    /// <returns></returns>
-    private bool IsSharpLineStartWord()
-    {
-      return _tempWord.ToString().Trim().StartsWith("#");
-    }
-
-    private bool IsInNotesLine()
-    {
-      foreach (var s in _spaces)
-      {
-        if (s is NotesLine)
-        {
-          return true;
-        }
-      }
-
-      return false;
-    }
-
-    private bool InInNotesArea()
-    {
-      foreach (var s in _spaces)
-      {
-        if (s is NotesArea)
-        {
-          return true;
-        }
-      }
-
-      return false;
-    }
-
-    private bool IsInSharpLine()
-    {
-      foreach (var s in _spaces)
-      {
-        if (s is SharpLine)
-        {
-          return true;
-        }
-      }
-
-      return false;
     }
 
     private bool IsValidEndWordForCurrent()
@@ -1953,6 +1529,41 @@ namespace CS2TS
     private SharpLine GetCurrentSharpLine()
     {
       return (_spaces[^1] as SharpLine)!;
+    }
+    
+    
+    private bool IsStatementWithStructure(out string statementType)
+    {
+      if (_unProcessWords == null ||
+          _unProcessWords[^1] != "{"
+         )
+      {
+        statementType = null;
+        return false;
+      }
+
+      int tagCount = _unProcessWords.Count - 1;
+      if (tagCount == 0)
+      {
+        statementType = null;
+        return true;
+      }
+      else if (tagCount == 2)
+      {
+        if (_unProcessWords[0] == "else" && _unProcessWords[1] == "if")
+        {
+          statementType = "else if";
+          return true;
+        }
+      }
+      else if (tagCount == 1 && new List<string>() {"if", "else", "switch", "while"}.IndexOf(_unProcessWords[0]) == 0)
+      {
+        statementType = _unProcessWords[0];
+        return true;
+      }
+
+      statementType = null;
+      return false;
     }
   }
 }
