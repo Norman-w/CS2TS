@@ -41,3 +41,21 @@ Since "#region" may span regions, it's great for collapsing code most of the tim
 使用 \TestCSFiles\Test.cs作为csharp待转换源码
 使用 \GeneratedTSFiles\WIP.ts作为typescript的已生成代码.
 namespace, enum, class, interface, using, variable 都已处理完毕.剩余Function生成部分未处理
+
+
+
+## 2023年07月26日22:46:35 有了新的灵感
+##### 是否可以逐个字符的处理,而不是只判断起始符号和结束符号,根据当前领空,当前正在处理的字符,来确定当前字符可能是什么的开始,可能是什么的结束
+例如,当前领空是namespace,
+...好吧 当我过去看了之前写的代码 好像本来就是这么处理的.我刚刚有这个突发奇想的时候只是因为觉得下次遇到 [ 这个符号的时候就知道当前领空中可能 这个 [ 或者是某个单词可能是什么意图了.
+
+
+不过是可以考虑一个问题的,就是 一个类型的元素 需要有哪几个关键词来确定他的类型,例如
+
+[Attribute] 的时候,他是一个Attribute,确认方式是他的前面是不是有[, 结束是不是有], 中间是不是有Attribute等
+哦 这个逻辑好像之前也有的  因为我们里面其实有一些  Is 什么什么的方法
+
+## 2023年07月30日11:00:27 做了一个新的功能 WIP
+##### 在SegmentLocation.cs中定义了用于表述节点路径的静态类.
+
+详细使用和测试见Testers.cs中的TestSegmentLocation()方法
