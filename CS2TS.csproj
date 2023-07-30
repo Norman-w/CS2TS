@@ -13,9 +13,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <TypeScriptCompile Include="GeneratedTSFiles\TODO.ts" />
-      <TypeScriptCompile Include="GeneratedTSFiles\WIP.ts" />
       <TypeScriptCompile Include="LearningTS.ts" />
+      <TypeScriptCompile Include="Test\_2_OutGeneratedTSFiles\TODO.ts" />
+      <TypeScriptCompile Include="Test\_2_OutGeneratedTSFiles\WIP.ts" />
     </ItemGroup>
 
 </Project>
