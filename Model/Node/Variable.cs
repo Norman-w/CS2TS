@@ -61,6 +61,9 @@ public abstract class Variable : CodeNode
 /// </summary>
 public class VariableNoStructure : Variable
 {
+  /// <summary>
+  /// 继承项的列表.比如 定义枚举时可继承自 uint,c#写做: enum xxx : uint
+  /// </summary>
   public List<string> Extends { get; set; }
 
   public VariableNoStructure(string name,

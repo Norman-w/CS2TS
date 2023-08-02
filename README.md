@@ -59,3 +59,10 @@ namespace, enum, class, interface, using, variable 都已处理完毕.剩余Func
 ##### 在SegmentLocation.cs中定义了用于表述节点路径的静态类.
 
 详细使用和测试见Testers.cs中的TestSegmentLocation()方法
+
+
+# WIKI
+### 单词及符号
+比如语句 using namespace xxx;
+其中集合中包含 ```["using","namespace","xxx",";"]```
+有的符号可能还是多个char的组合,比如  */ 是注释的结束符号  \r\n 是换行的符号

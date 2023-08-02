@@ -18,7 +18,8 @@ namespace CS2TS
       // var testFile = @"/Users/coolking/Downloads/TestCsFiles23/Domain/Bag/BagItemsAlias.cs";
       // var testFile = @"/Volumes/NormanData/Visual Studio 2008/Projects/速配项目/QP/Domain/Account/AccountGroup.cs";
       // var testFile = @"../../../TestCSFiles/Test.cs";
-      var testFile = @"../../../Test/TestCSFiles/TestCalc.cs";
+      // var testFile = @"../../../Test/TestCSFiles/TestCalc.cs";
+      var testFile = @"/Users/norman/RiderProjects/wechatServer/Sdk/BaseResponse.cs";
       if (args != null && args.Length>0)
       {
         testFile = args[0];

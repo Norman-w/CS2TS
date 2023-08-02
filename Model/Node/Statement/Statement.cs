@@ -18,6 +18,11 @@ public class Statement : CodeNode
   /// 什么类型的 比如 if  else if else while switch
   /// </summary>
   public string Type { get; set; }
+
+  /// <summary>
+  /// 语句内的子语句,比如 for里面还有 foreach的子句等 无限嵌套.默认是null
+  /// </summary>
+  public List<Statement>? Statements { get; set; }
 }
 
 public class ReturnStatement : Statement

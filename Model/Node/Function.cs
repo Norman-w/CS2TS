@@ -4,12 +4,30 @@ namespace CS2TS;
 
 public class Function : CodeNode
 {
-  public string Name { get; set; }
+  /// <summary>
+  /// 方法的名称
+  /// </summary>
+  public string Name { get; set; } = "un set function name";
+  /// <summary>
+  /// 是否为静态方法
+  /// </summary>
   public bool IsStatic { get; set; }
+  /// <summary>
+  /// 方法的权限,比如 public private protected
+  /// </summary>
   public PermissionEnum? Permission { get; set; }
-  public List<Parameter> InParameters { get; set; }
-  public Parameter ReturnParameter { get; set; }
+  /// <summary>
+  /// 方法的入参,默认是空数组,但不是null
+  /// </summary>
+  public List<Parameter> InParameters { get; set; } = new List<Parameter>();
+  /// <summary>
+  /// 方法的返回值,当方法是构造函数的时候,是没有返回值的 该属性为null
+  /// </summary>
+  public Parameter? ReturnParameter { get; set; }
 
+  /// <summary>
+  /// 该方法是否为重写方法
+  /// </summary>
   public bool IsOverride { get; set; }
 
   // /// <summary>
@@ -22,7 +40,8 @@ public class Function : CodeNode
 
   //public bool @int { get; set; }
   /// <summary>
-  /// 语句段集合
+  /// 语句段集合,比如 if, else , else if , switch, a=b , calc() 之类的语句段.
+  /// 默认是空数组,不是null,因为一般的函数里面都是有内容的,就算void里面可以不写东西,一般也都会写一个return;的.
   /// </summary>
-  public List<Statement> Statements { get; set; }
+  public List<Statement> Statements { get; set; } = new List<Statement>();
 }
