@@ -32,12 +32,12 @@ namespace CS2TS
     /// <summary>
     /// 分词符号,遇到这个的时候要把前面已经获取到的内容变为一个词条了.比如 using namespace xxx; 是通过分号把前面的未处理的单词和符号变成一个集合进行处理的.
     /// </summary>
-    private readonly List<string> _splitWords = new List<string>() {";", " ", "{", "(", ")", "}", ":", ">", "<", ",", "=", "?", "-", "[", "]"};
+    private readonly List<string> _wordSplitWords = new List<string>() {";", " ", "{", "(", ")", "}", ":", ">", "<", ",", "=", "?", "-", "[", "]"};
 
     /// <summary>
     /// 断句符号,遇到这个的时候证明前面堆积的单词或者符号可以进行一次处理了.
     /// </summary>
-    private readonly List<string> _breakWords = new List<string>() {";", "{", "}", "\r\n", "\n", "*/", ","};
+    private readonly List<string> _sentenceBreakWords = new List<string>() {";", "{", "}", "\r\n", "\n", "*/", ","};
 
     /// <summary>
     /// 将从文件中加载的CSharp(*.cs)文件解析为CodeFile结构.
@@ -67,10 +67,10 @@ namespace CS2TS
         //如果当前待处理的内容中,最后一项或者 \r\n这样的连续项 触发了语句中单词的语义定义  那就处理是该添加什么还是结束什么.
         //目前没有处理小括号 方括号 尖括号. 只处理了大括号.
         //如果最后一个单词或者符号是断句触发,处理待处理的所有的单词
-        if (IsSentenceBreakWord(out var currentBreakWord, out var currentBreakBy))
+        if (IsSentenceBreakWord(out var currentSentenceBreakWord, out var brokeByTempWordOrUnProcessLastWord))
         {
           //如果处理待处理的所有单词失败的话
-          if (!ProcessUnProcessWords(currentBreakWord, currentBreakBy))
+          if (!ProcessUnProcessWords(currentSentenceBreakWord, brokeByTempWordOrUnProcessLastWord))
           {
             //如果当前的临时单词不是空的(当前是用一个词来断开了另外一个词,但是处理失败了 有可能是 \r\n using 断了,但是只有一个using不能处理.
             //把这个临时单词放在待处理列表中.
@@ -95,7 +95,7 @@ namespace CS2TS
     /// <param name="currentBreakWord"></param>
     /// <param name="currentBreakBy"></param>
     /// <returns></returns>
-    private bool ProcessUnProcessWords(string currentBreakWord, string currentBreakBy)
+    private bool ProcessUnProcessWords(string? currentBreakWord, string? currentBreakBy)
     {
       if (TryEndSemanticInvalidArea())
       {
@@ -409,6 +409,12 @@ namespace CS2TS
 
     #endregion
 
+    /// <summary>
+    /// 转换public private等字符串为一个PermissionEnum的枚举值
+    /// 如果解析失败会返回null
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
     private static PermissionEnum? ConvertString2Permission(string str)
     {
       switch (str)
@@ -426,6 +432,11 @@ namespace CS2TS
       }
     }
 
+    /// <summary>
+    /// 当前的单词是否能有效的结束当前领空.
+    /// 比如 大括号可以结束一个有效的if句段或带结构函数等
+    /// </summary>
+    /// <returns></returns>
     private bool IsValidEndWordForCurrent()
     {
       var usingContent = $"{_tempWord}";
@@ -482,16 +493,28 @@ namespace CS2TS
       return false;
     }
 
+    /// <summary>
+    /// 获取当前的备注行(由//开头的),如果不是有效的备注行,则返回null
+    /// </summary>
+    /// <returns></returns>
     private NotesLine GetCurrentNotesLine()
     {
       return (_spaces[^1] as NotesLine)!;
     }
 
+    /// <summary>
+    /// 获取当前的备注块(由/*开头的),如果不是有效的备注块,则返回null
+    /// </summary>
+    /// <returns></returns>
     private NotesArea GetCurrentNotesArea()
     {
       return (_spaces[^1] as NotesArea)!;
     }
 
+    /// <summary>
+    /// 获取当前的 Sharp块(由#开头的),如果不是有效的Sharp块,则返回null
+    /// </summary>
+    /// <returns></returns>
     private SharpLine GetCurrentSharpLine()
     {
       return (_spaces[^1] as SharpLine)!;
