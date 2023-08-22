@@ -94,6 +94,9 @@ public partial class CSharpCodeParser
         return false;
       }
 
+      //在文件级别内,一个文件只能有一个跟namespace
+      //老版本的是 namespace xxx {  这种格式,
+      //新版本的是 namespace xxx ;  这种格式
       if (_unProcessWords.Count == 3 && _unProcessWords[0] == "namespace")
       {
         return true;

@@ -24,7 +24,9 @@ public partial class CSharpCodeParser
     foreach (var c in _sentenceBreakWords)
     {
       // 确定当前是检查临时未完成的词,还是检查未处理的词的最后一项. 如果临时未完成的词是空的,就用未处理的词的最后一项.
-      var checkingWord = _tempWord.Length > 0 ? _tempWord.ToString() : _unProcessWords[^1];
+      var checkingWord = _tempWord.Length > 0 ? _tempWord.ToString() 
+        :_unProcessWords.Count == 0 ? string.Empty 
+        : _unProcessWords[^1];
       // 如果检查的词以断句符号结尾,就返回true,并且把当前的断句符号和检查的词返回.
       if (checkingWord.EndsWith(c))
       {

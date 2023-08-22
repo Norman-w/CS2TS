@@ -15,4 +15,9 @@ public class Parameter:CodeNode
   /// 是否可以不传入或者传入null. 也就是在参数类型后面加入问号
   /// </summary>
   public bool Nullable { get; set; }
+  
+  /// <summary>
+  /// 参数(入参)默认值,也就是在参数类型后面加入等号和默认值
+  /// </summary>
+  public string? DefaultValue { get; set; }
 }

@@ -54,11 +54,29 @@ namespace CS2TS
       {
         //当前字符
         var currentChar = file[i].ToString();
+        #region 使用console输出显示
+
+        Console.Clear();
+        
+        Console.WriteLine($"序号:{i}\t 字符:{currentChar.Replace("\n", "\\n")} " +
+                          $"\r\n未处理的词素:{string.Join(" ", _unProcessWords)} " +
+                          $"\r\n临时单词:{_tempWord} ");
+        //以 -> 的形式显式领空链
+        foreach (var space in _spaces)
+        {
+          Console.Write($"->{space.GetType().Name}");
+        }
+        
+        // Console.WriteLine(file.Substring(0,i+1));
+        System.Threading.Thread.Sleep(10);
+
+        #endregion
         //尝试把当前字符放在半成品单词/备注/字符串 当中.如果已经处理完毕,就可以continue处理下一个字符了.
         if (TryAppend2TempWordOrUnProcessWordsOrSemanticInvalidArea(currentChar))
         {
           continue;
         }
+        
         //走到这里的时候 待处理单词或者词汇表中已经有内容了 不是字符级别的处理了. 这时候就要看怎么处理这个或者这些词.
         if (TryStartSemanticInvalidArea(currentChar))
         {
@@ -69,6 +87,7 @@ namespace CS2TS
         //如果最后一个单词或者符号是断句触发,处理待处理的所有的单词
         if (IsSentenceBreakWord(out var currentSentenceBreakWord, out var brokeByTempWordOrUnProcessLastWord))
         {
+          
           //如果处理待处理的所有单词失败的话
           if (!ProcessUnProcessWords(currentSentenceBreakWord, brokeByTempWordOrUnProcessLastWord))
           {
@@ -81,6 +100,15 @@ namespace CS2TS
             }
             //然后重置临时单词
             _tempWord = new StringBuilder();
+          }
+          else
+          {
+            Console.WriteLine();
+            Console.WriteLine($"断句符号处理成功:{currentSentenceBreakWord?.Replace("\r\n", "\\r\\n").Replace("\n", "\\n")}");
+            // Console.Beep(2000,2000);
+            //mac上不支持beep所以用这个代替
+            // Console.WriteLine("\a");
+            // System.Threading.Thread.Sleep(3000);
           }
         }
         //如果不是有效的断句符,继续下一个字符.
@@ -347,10 +375,24 @@ namespace CS2TS
             currentParam = parent as Parameter;
             continue;
           }
+          case "=":
+          {
+            //遇到等号的时候,记录当前的参数含有默认值
+            currentParam.DefaultValue = "";
+            continue;
+          }
         }
 
         //如果类型已经解析完毕了,下面就到名字了.
+        if (string.IsNullOrEmpty(currentParam.Name))
+        {
           currentParam.Name = current;
+        }
+        //如果当前的参数有默认值但是还没有解析,那么就解析一下
+        if (currentParam.DefaultValue != null)
+        {
+          currentParam.DefaultValue += current;
+        }
       }
 
       //处理完最后一个字符以后,如果当前领空上还是当前参数的话,结束当前参数

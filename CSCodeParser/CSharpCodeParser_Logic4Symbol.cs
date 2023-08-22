@@ -49,10 +49,21 @@ public partial class CSharpCodeParser
       //return true就是执行 continue;
       if (IsUsingAddingWords())
       {
-        CodeFile code = _spaces[0] as CodeFile;
+        var code = _spaces[0] as CodeFile;
         var u = new Using(_unProcessWords[1]);
-        code.Chirldren.Add(u);
+        code?.Chirldren.Add(u);
         // code.GetUsings().Add(_unProcessWords[1]);
+        _tempWord = new StringBuilder();
+        _unProcessWords.Clear();
+        return true;
+      }
+
+      //新版本的namespace是支持 namespace xxx ;的
+      if (IsNamespaceAddingWords())
+      {
+        var code = _spaces[0] as CodeFile;
+        var u = new NameSpace(_unProcessWords[1]);
+        code?.Chirldren.Add(u);
         _tempWord = new StringBuilder();
         _unProcessWords.Clear();
         return true;

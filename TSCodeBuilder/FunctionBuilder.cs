@@ -390,8 +390,10 @@ public class FunctionBuilder
     #endregion
 
     #region 函数名字和参数
+    //ts中,构造函数需要固定的使用constructor
+    var functionName = function.IsConstructor ? "constructor" : function.Name;
 
-    functionCode.Append(function.Name).Append(appendPermissionAfterFuncName).Append('(');
+    functionCode.Append(functionName).Append(appendPermissionAfterFuncName).Append('(');
     //循环参数的类型进行依次的添加.
     StringBuilder allParamsSB = new StringBuilder();
     if (function.InParameters != null)
@@ -414,7 +416,15 @@ public class FunctionBuilder
     //添加所有入参以后添加函数的返回参数信息
     // var tsReturnType = TypeMapDefine.GetTypeScriptTypeName(function.ReturnParameter.Type);
     // _currentCode.Append(allParamsSB).Append(") :").Append(tsReturnType);
-    functionCode.Append(allParamsSB).Append(") :").Append(ParameterBuilder.ProcessParameter(function.ReturnParameter, true));
+    
+    functionCode.Append(allParamsSB).Append(')');
+    //如果不是构造函数,一般的函数需要有返回值 比如  sum (a: number, b: number) : int {};  后面的 : int 就是返回值的信息
+    if (!function.IsConstructor)
+    {
+      if (function.ReturnParameter != null)
+        functionCode.Append(':').Append(ParameterBuilder.ProcessParameter(function.ReturnParameter, true));
+    }
+      
     //要用type来判断 不能用 is Interface 判断.因为Class is Interface 是成立的.只要继承就会是true
     if (parent.GetType() == typeof(Interface) || asFunctionHeader)
     {

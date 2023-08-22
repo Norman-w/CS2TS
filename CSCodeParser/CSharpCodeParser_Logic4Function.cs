@@ -44,6 +44,28 @@ public partial class CSharpCodeParser
 
       #endregion
       int returnTYpeDefWordsCount = nameIndex - returnTypeDefStartPos;
+      
+      //构造函数的返回值
+      Parameter? constructorReturnParameter = null;
+      //如果nameIndex在第0位的话,那一定是构造函数,忽略了返回值类型,也忽略了public等关键字
+      //如果nameIndex在第1位的话,那一定是构造函数,忽略了返回值类型,但是没有忽略public等关键字
+      if (nameIndex is 0 or 1)
+      {
+        returnTypeDefStartPos = 0;
+        returnTYpeDefWordsCount = 0;
+        var parentClassName = (parent as Class)?.Name;
+        if (parentClassName != null)
+          constructorReturnParameter = new Parameter()
+          {
+            Name = "this",
+            Type = new TypeDefine()
+            {
+              Name = parentClassName,
+            }
+          };
+        fn.ReturnParameter = constructorReturnParameter;
+        fn.IsConstructor = true;
+      }
       // StringBuilder returnType = new StringBuilder();
       // for (int ri = 0; ri < returnTYpeDefWordsCount; ri++)
       // {
@@ -51,14 +73,19 @@ public partial class CSharpCodeParser
       // }
       // fn.ReturnParameter = new Parameter();
       // fn.ReturnParameter.Type = new TypeDefine() {Name = returnType.ToString()};
-      var returnParameterDefineWords = _unProcessWords.Skip(returnTypeDefStartPos).Take(returnTYpeDefWordsCount);
-      var returnParameters = Convert2Parameters(new List<string>(returnParameterDefineWords));
-      if (returnParameters.Count>1)
+      if (!fn.IsConstructor)
       {
-        throw new NotImplementedException("错误,解析到的返回值不止1个");
-      }
+        //不是构造函数,那就是一般的函数,返回值正常处理
+        var returnParameterDefineWords = _unProcessWords.Skip(returnTypeDefStartPos).Take(returnTYpeDefWordsCount);
+        var returnParameters = Convert2Parameters(new List<string>(returnParameterDefineWords));
+        if (returnParameters.Count>1)
+        {
+          throw new NotImplementedException("错误,解析到的返回值不止1个");
+        }
 
-      fn.ReturnParameter = returnParameters[0];
+        fn.ReturnParameter = returnParameters[0];
+      }
+      
 
       //class 标记后面的一个为类名称
       fn.Name = name.Replace("\r", "").Replace("\n","").Trim();

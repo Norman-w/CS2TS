@@ -43,5 +43,10 @@ public class Function : CodeNode
   /// 语句段集合,比如 if, else , else if , switch, a=b , calc() 之类的语句段.
   /// 默认是空数组,不是null,因为一般的函数里面都是有内容的,就算void里面可以不写东西,一般也都会写一个return;的.
   /// </summary>
+
+  /// <summary>
+  /// 是否为构造函数
+  /// </summary>
+  public bool IsConstructor { get; set; }
   public List<Statement> Statements { get; set; } = new List<Statement>();
 }
