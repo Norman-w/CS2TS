@@ -1,3 +1,4 @@
+using CS2TS.CSCodeParser.V2;
 using CS2TS.Model;
 
 namespace CS2TS;
@@ -6,7 +7,10 @@ namespace CS2TS;
 /// 类,内部可以包含 变量/字段/属性 方法,类   不能包含接口,命名空间
 /// </summary>
 public class Class : Interface,
-  IClassContainer, IVariableContainer
+  //里面能包含啥
+  IClassContainer, IVariableContainer, 
+  //可以放在哪里
+  IItemOfClass, IItemOfCodeFile,IItemOfNameSpace
 {
   public List<Class> GetClasses()
   {
