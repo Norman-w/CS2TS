@@ -10,37 +10,61 @@ namespace CS2TS.Model;
 // {
 //   List<NoteBase> Notes { get; }
 // }
-public interface IExtendAble
+public interface IExtendAble : ICodeNode
 {
-  public string Name { get; set; }
-}
-public interface IClassContainer :IExtendAble
-{
-  List<Class> GetClasses();
+	public string Name { get; set; }
 }
 
-public interface IFunctionContainer
+public interface IContainer4Class : IExtendAble
 {
-  List<Function> GetFunctions();
+	// List<Container4Class> GetClasses();
+	public List<Class> Classes { get; }
 }
 
-public interface INamespaceContainer : IExtendAble
+public interface IContainer4Function
 {
-  List<NameSpace> GetNamespaces();
+	// List<Function> GetFunctions();
+	public List<Function> Functions { get; }
 }
 
-public interface IInterfaceContainer :IExtendAble
+public interface IContainer4Namespace : IExtendAble
 {
-  List<Interface> GetInterfaces();
+	// List<NameSpace> GetNamespaces();
+	public List<Namespace> Namespaces { get; }
 }
 
-public interface IVariableContainer
+public interface IContainer4Interface : IExtendAble
 {
-  List<Variable> GetVariables();
+	// List<Container4Interface> GetInterfaces();
+	public List<Interface> Interfaces { get; }
 }
 
-public interface IEnumContainer
+public interface IContainer4Variable
 {
-  List<EnumDefine> GetEnums();
+	// List<Variable> GetVariables();
+	public List<Variable> Variables { get; }
 }
 
+public interface IContainer4Enum
+{
+	// List<EnumDefine> GetEnums();
+	public List<EnumDefine> Enums { get; }
+}
+
+public interface IContainer4Record
+{
+	// List<Record> GetRecords();
+	public List<Record> Records { get; }
+}
+
+public interface IContainer4Delegate
+{
+	// List<Delegate> GetDelegates();
+	public List<Delegate> Delegates { get; }
+}
+
+public interface IContainer4Using
+{
+	// List<Using> GetUsings();
+	public List<Using> Usings { get; }
+}

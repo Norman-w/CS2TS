@@ -3,36 +3,21 @@ using CS2TS.Model;
 namespace CS2TS;
 
 /// <summary>
-/// 命名空间,里面可以包含命名空间,类,接口
+///     命名空间,里面可以包含命名空间,类,接口
 /// </summary>
-public class NameSpace : CodeNode,
-  INamespaceContainer,IClassContainer,IInterfaceContainer,IEnumContainer
+public class Namespace : CodeNode,
+	IContainer4Namespace, IContainer4Class, IContainer4Interface, IContainer4Enum
 {
-  public NameSpace(string name)
-  {
-    Name = name;
-  }
+	public Namespace(string name)
+	{
+		Name = name;
+	}
 
-  public List<NameSpace> GetNamespaces()
-  {
-    throw new NotImplementedException();
-  }
+	public List<Class> Classes => Chirldren.OfType<Class>().ToList();
+	public List<EnumDefine> Enums => Chirldren.OfType<EnumDefine>().ToList();
+	public List<Interface> Interfaces => Chirldren.OfType<Interface>().ToList();
 
-  public List<Class> GetClasses()
-  {
-    throw new NotImplementedException();
-  }
+	public string Name { get; set; }
 
-  public List<Interface> GetInterfaces()
-  {
-    throw new NotImplementedException();
-  }
-
-  public List<EnumDefine> GetEnums()
-  {
-    throw new NotImplementedException();
-  }
-
-  public string Name { get; set; }
+	public List<Namespace> Namespaces => Chirldren.OfType<Namespace>().ToList();
 }
-
