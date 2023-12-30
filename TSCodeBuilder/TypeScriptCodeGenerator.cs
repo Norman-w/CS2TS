@@ -64,7 +64,7 @@ public class TypeScriptCodeGenerator
 	/// <returns></returns>
 	private string FindExtentFullPath(string childName)
 	{
-		var ancestors = CodeNode.FindAncestors<Class>(_file, typeof(IContainer4Class), childName);
+		var ancestors = CodeNode.FindAncestors<Class>(_file, typeof(IContainer4DefineClass), childName);
 		//ts中命名空间可以嵌套,类不能嵌套  类会被提权到他所在的命名你空间的儿子级.
 		//所以继承的类如果还在某个类当中定义,就不需要那个类
 		//比如ClassG定义在 namespaceA namespace B namespaceC classD classE classF当中.
@@ -74,7 +74,7 @@ public class TypeScriptCodeGenerator
 		{
 			var ancestor = ancestors[index];
 			//如果最后一项是class/interface的话 保留
-			if (ancestor is IContainer4Class && index != ancestors.Count - 1) continue;
+			if (ancestor is IContainer4DefineClass && index != ancestors.Count - 1) continue;
 
 			if (ancestorsPathBuilder.Length > 0) ancestorsPathBuilder.Append('.');
 
@@ -88,7 +88,7 @@ public class TypeScriptCodeGenerator
 	private string FindInterfaceFullPath(string interfaceName)
 	{
 		var ancestors =
-			CodeNode.FindAncestors<IContainer4Interface>(_file, typeof(IContainer4Interface), interfaceName);
+			CodeNode.FindAncestors<IContainer4DefineInterface>(_file, typeof(IContainer4DefineInterface), interfaceName);
 		//ts中命名空间可以嵌套,类不能嵌套  类会被提权到他所在的命名你空间的儿子级.
 		//所以继承的类如果还在某个类当中定义,就不需要那个类
 		//比如ClassG定义在 namespaceA namespace B namespaceC classD classE classF当中.
@@ -98,7 +98,7 @@ public class TypeScriptCodeGenerator
 		{
 			var ancestor = ancestors[index];
 			//如果最后一项是class/interface的话 保留
-			if (ancestor is IContainer4Interface && index != ancestors.Count - 1) continue;
+			if (ancestor is IContainer4DefineInterface && index != ancestors.Count - 1) continue;
 
 			if (ancestorsPathBuilder.Length > 0) ancestorsPathBuilder.Append('.');
 
@@ -134,11 +134,11 @@ public class TypeScriptCodeGenerator
 			{
 				ProcessNamespace(chirld as Namespace);
 			}
-			else if (childType == typeof(IContainer4Class))
+			else if (childType == typeof(IContainer4DefineClass))
 			{
 				ProcessClass(chirld as Class);
 			}
-			else if (childType == typeof(IContainer4Interface))
+			else if (childType == typeof(IContainer4DefineInterface))
 			{
 				ProcessInterface(chirld as Interface);
 			}
@@ -156,7 +156,7 @@ public class TypeScriptCodeGenerator
 			}
 			else if (chirld is Variable)
 			{
-				if (parent is IContainer4Class)
+				if (parent is IContainer4DefineClass)
 					ProcessVariable(chirld as Variable,
 						true,
 						true,
@@ -417,7 +417,7 @@ public class TypeScriptCodeGenerator
 
 			_currentCode.Append(vns.Name);
 			//类中如果变量没有值,那就设置为可为空
-			if (parent.GetType() == typeof(IContainer4Class) && vns.Value == null) _currentCode.Append('?');
+			if (parent.GetType() == typeof(IContainer4DefineClass) && vns.Value == null) _currentCode.Append('?');
 			if (vns.Value != null)
 				_currentCode.AppendFormat(": {0} = {1}", typeName, vns.Value);
 			else if (setDefaultValue && !string.IsNullOrEmpty(defaultValue))
@@ -439,7 +439,7 @@ public class TypeScriptCodeGenerator
 		CodeNode parent
 	)
 	{
-		if (parent is IContainer4Class && vws.Getter == null && vws.Setter == null)
+		if (parent is IContainer4DefineClass && vws.Getter == null && vws.Setter == null)
 		{
 			ProcessVariableNoStructure(vws, ignorePermission, ignoreStatic, parent, false);
 			return;
@@ -483,7 +483,7 @@ public class TypeScriptCodeGenerator
 		 * 当一个类中出现多个同名函数的时候，在第一个同名函数被发现时执行批量操作生成方法导向和对应的要调用的结构。
 		 * 后面遍历到类中的其他这个同名函数的时候直接跳过即可。
 		 */
-		if (parent.GetType() != typeof(IContainer4Interface))
+		if (parent.GetType() != typeof(IContainer4DefineInterface))
 		{
 			//查找同名字的方法
 			var sameNameFunctions = FunctionBuilder.GetSameNameFunctions(function.Name, parent);

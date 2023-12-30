@@ -10,11 +10,11 @@ public static class Define
 }
 
 public class CodeFile : CodeNode,
-	IContainer4Namespace,
-	IContainer4Class,
-	IContainer4Enum,
-	IContainer4Function,
-	IContainer4Using
+	IContainer4DefineNamespace,
+	IContainer4DefineClass,
+	IContainer4DefineEnum,
+	IContainer4DefineFunction,
+	IContainer4DefineUsing
 {
 	public List<Class> Classes => Chirldren.OfType<Class>().ToList();
 	public List<EnumDefine> Enums => Chirldren.OfType<EnumDefine>().ToList();

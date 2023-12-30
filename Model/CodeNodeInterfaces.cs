@@ -15,55 +15,55 @@ public interface IExtendAble : ICodeNode
 	public string Name { get; set; }
 }
 
-public interface IContainer4Class : IExtendAble
+public interface IContainer4DefineClass : IExtendAble
 {
 	// List<Container4Class> GetClasses();
 	public List<Class> Classes { get; }
 }
 
-public interface IContainer4Function
+public interface IContainer4DefineFunction
 {
 	// List<Function> GetFunctions();
 	public List<Function> Functions { get; }
 }
 
-public interface IContainer4Namespace : IExtendAble
+public interface IContainer4DefineNamespace : IExtendAble
 {
 	// List<NameSpace> GetNamespaces();
 	public List<Namespace> Namespaces { get; }
 }
 
-public interface IContainer4Interface : IExtendAble
+public interface IContainer4DefineInterface : IExtendAble
 {
 	// List<Container4Interface> GetInterfaces();
 	public List<Interface> Interfaces { get; }
 }
 
-public interface IContainer4Variable
+public interface IContainer4DefineVariable
 {
 	// List<Variable> GetVariables();
 	public List<Variable> Variables { get; }
 }
 
-public interface IContainer4Enum
+public interface IContainer4DefineEnum
 {
 	// List<EnumDefine> GetEnums();
 	public List<EnumDefine> Enums { get; }
 }
 
-public interface IContainer4Record
+public interface IContainer4DefineRecord
 {
 	// List<Record> GetRecords();
 	public List<Record> Records { get; }
 }
 
-public interface IContainer4Delegate
+public interface IContainer4DefineDelegate
 {
 	// List<Delegate> GetDelegates();
 	public List<Delegate> Delegates { get; }
 }
 
-public interface IContainer4Using
+public interface IContainer4DefineUsing
 {
 	// List<Using> GetUsings();
 	public List<Using> Usings { get; }

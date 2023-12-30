@@ -6,7 +6,7 @@ namespace CS2TS;
 ///     类,内部可以包含 变量/字段/属性 方法,类   不能包含接口,命名空间
 /// </summary>
 public class Class : Interface,
-	IContainer4Class, IContainer4Variable
+	IContainer4DefineClass, IContainer4DefineVariable
 {
 	public Class(string name, List<string> extends) : base(name, extends)
 	{

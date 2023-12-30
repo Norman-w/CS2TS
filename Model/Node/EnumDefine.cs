@@ -6,7 +6,7 @@ namespace CS2TS;
 ///     枚举类型的定义.
 /// </summary>
 public class EnumDefine : VariableWithStructure,
-	IContainer4Variable
+	IContainer4DefineVariable
 {
 	public EnumDefine(string name,
 		PermissionEnum? permission,

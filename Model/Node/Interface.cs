@@ -3,7 +3,7 @@ using CS2TS.Model;
 namespace CS2TS;
 
 public class Interface : VariableWithStructure,
-	IContainer4Interface, IContainer4Function, IContainer4Variable
+	IContainer4DefineInterface, IContainer4DefineFunction, IContainer4DefineVariable
 {
 	// public List<Function> GetFunctions()
 	// {

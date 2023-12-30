@@ -331,7 +331,7 @@ public class FunctionBuilder
 	/// <returns></returns>
 	public static bool IsExtendFromInterface(Function function, ICodeNode container4Interface)
 	{
-		var functionsContainer = container4Interface as IContainer4Function;
+		var functionsContainer = container4Interface as IContainer4DefineFunction;
 		var functions = functionsContainer?.Functions;
 		if (functions != null && functions.Count == 0)
 			return false;
@@ -405,7 +405,7 @@ public class FunctionBuilder
 				functionCode.Append(':').Append(ParameterBuilder.ProcessParameter(function.ReturnParameter, true));
 
 		//要用type来判断 不能用 is Interface 判断.因为Class is Interface 是成立的.只要继承就会是true
-		if (parent is IContainer4Interface || asFunctionHeader)
+		if (parent is IContainer4DefineInterface || asFunctionHeader)
 		{
 			functionCode.AppendLine(";");
 		}
@@ -436,7 +436,7 @@ public class FunctionBuilder
 	private static string BuildPermission(Function function, ICodeNode parent)
 	{
 		var functionCode = new StringBuilder();
-		if (parent is IContainer4Interface)
+		if (parent is IContainer4DefineInterface)
 		{
 			//当cs中没有默认的权限信息的时候,是private.在ts中private需要默认指定.如果不指定就是public
 			if (function.Permission == null)

@@ -6,7 +6,7 @@ namespace CS2TS;
 ///     命名空间,里面可以包含命名空间,类,接口
 /// </summary>
 public class Namespace : CodeNode,
-	IContainer4Namespace, IContainer4Class, IContainer4Interface, IContainer4Enum
+	IContainer4DefineNamespace, IContainer4DefineClass, IContainer4DefineInterface, IContainer4DefineEnum
 {
 	public Namespace(string name)
 	{
