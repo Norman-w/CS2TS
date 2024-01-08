@@ -31,6 +31,26 @@ public static class Utils
 	}
 
 	/// <summary>
+	///     序列化一个静态类,得到一个JObject对象
+	/// </summary>
+	/// <param name="type"></param>
+	/// <param name="containsSelfName"></param>
+	/// <returns></returns>
+	public static JObject SerializeStaticClassToJObject(Type type, bool containsSelfName = false)
+	{
+		var jObject = new JObject();
+		_toJson(jObject, type);
+		if (!containsSelfName) return jObject;
+		var ret = new JObject { { type.Name, jObject } };
+		return ret;
+	}
+
+	public static JObject SerializeStaticClassToJObject<T>(bool containsSelfName = false)
+	{
+		return SerializeStaticClassToJObject(typeof(T), containsSelfName);
+	}
+
+	/// <summary>
 	///     递归方法,将一个静态类序列化成一个JObject对象
 	/// </summary>
 	/// <param name="parent"></param>
