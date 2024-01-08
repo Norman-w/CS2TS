@@ -90,3 +90,7 @@ Request由本项目来定义.flutter项目中解析.
 比如语句 using namespace xxx;
 其中集合中包含 ```["using","namespace","xxx",";"]```
 有的符号可能还是多个char的组合,比如  */ 是注释的结束符号 \r\n 是换行的符号
+
+
+2024年01月08日18:02:53 添加了Utils里面的将静态类序列化为json的方法
+同时添加了对WebSocket的支持
