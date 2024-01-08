@@ -21,6 +21,16 @@ public static class Utils
 	}
 
 	/// <summary>
+	///     序列化一个静态类
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
+	/// <returns></returns>
+	public static string SerializeStaticClass<T>()
+	{
+		return SerializeStaticClass(typeof(T));
+	}
+
+	/// <summary>
 	///     递归方法,将一个静态类序列化成一个JObject对象
 	/// </summary>
 	/// <param name="parent"></param>
