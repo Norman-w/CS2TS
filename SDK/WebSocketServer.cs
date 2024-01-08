@@ -80,7 +80,7 @@ public class WebSocketServer
 		switch (client?.SubProtocol)
 		{
 			//判断是cs代码查看器客户端还是日志查看器客户端
-			case CONSTANT.STRING.WEB_SOCKET.SUB_PROTOCOL.CS_CODE_VIEWER:
+			case Constant.String.WebSocket.SubProtocol.CsCodeViewer:
 			{
 				//cs代码查看器客户端
 				lock (_csCodeViewerClientListLock)
@@ -90,7 +90,7 @@ public class WebSocketServer
 
 				break;
 			}
-			case CONSTANT.STRING.WEB_SOCKET.SUB_PROTOCOL.LOGGER:
+			case Constant.String.WebSocket.SubProtocol.Logger:
 			{
 				//日志查看器客户端
 				lock (_loggerClientListLock)
@@ -162,7 +162,7 @@ public class WebSocketServer
 		switch (client.SubProtocol)
 		{
 			//判断客户端类型
-			case CONSTANT.STRING.WEB_SOCKET.SUB_PROTOCOL.CS_CODE_VIEWER:
+			case Constant.String.WebSocket.SubProtocol.CsCodeViewer:
 			{
 				//cs代码查看器客户端
 				lock (_csCodeViewerClientListLock)
@@ -172,7 +172,7 @@ public class WebSocketServer
 
 				break;
 			}
-			case CONSTANT.STRING.WEB_SOCKET.SUB_PROTOCOL.LOGGER:
+			case Constant.String.WebSocket.SubProtocol.Logger:
 			{
 				//日志查看器客户端
 				lock (_loggerClientListLock)
@@ -258,11 +258,11 @@ public class WebSocketServer
 		switch (client.SubProtocol)
 		{
 			//判断是cs代码查看器客户端还是日志查看器客户端
-			case CONSTANT.STRING.WEB_SOCKET.SUB_PROTOCOL.CS_CODE_VIEWER:
+			case Constant.String.WebSocket.SubProtocol.CsCodeViewer:
 				//游戏登录器客户端
 				await OnCsCodeViewerClientMessageReceived(client, message);
 				break;
-			case CONSTANT.STRING.WEB_SOCKET.SUB_PROTOCOL.LOGGER:
+			case Constant.String.WebSocket.SubProtocol.Logger:
 				//游戏服务端客户端
 				await OnLoggerClientMessageReceived(client, message);
 				break;

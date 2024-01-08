@@ -37,6 +37,9 @@ When get user config, also carry (1 version, 2 timestamp) in header, then return
 
 */
 
+using System.ComponentModel;
+using Newtonsoft.Json.Linq;
+
 namespace CS2TS;
 
 public class AppData
@@ -68,7 +71,7 @@ public class AppData
 		/// <summary>
 		///     Constant内容,用于传递给客户端
 		/// </summary>
-		public object Constant => CONSTANT.Instance;
+		public JObject Constant => Utils.SerializeStaticClassToJObject<Container>();
 	}
 
 	#endregion
