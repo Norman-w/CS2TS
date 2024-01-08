@@ -13,21 +13,10 @@
     </ItemGroup>
 
     <ItemGroup>
-<<<<<<< HEAD
-      <TypeScriptCompile Include="LearningTS.ts" />
-      <TypeScriptCompile Include="Test\_2_OutGeneratedTSFiles\TODO.ts" />
-      <TypeScriptCompile Include="Test\_2_OutGeneratedTSFiles\WIP.ts" />
-=======
         <TypeScriptCompile Include="GeneratedTSFiles\TODO.ts"/>
         <TypeScriptCompile Include="GeneratedTSFiles\WIP.ts"/>
         <TypeScriptCompile Include="LearningTS.ts"/>
->>>>>>> WebSocket支持
     </ItemGroup>
-
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2-beta1"/>
-      <TypeScriptCompile Include="LearningTS.ts" />
-      <TypeScriptCompile Include="Test\_2_OutGeneratedTSFiles\TODO.ts" />
-      <TypeScriptCompile Include="Test\_2_OutGeneratedTSFiles\WIP.ts" />
 
 
 </Project>
