@@ -2,15 +2,17 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CS2TS.SDK;
+namespace CS2TS.SDK.WebSocketServer;
 
-public class WebSocketServer
+/// <summary>
+///     WebSocketSession管理器
+/// </summary>
+public class ClientManager : IClientManager
 {
 	#region 字段
 
 	//单例模式
-	public static WebSocketServer Instance { get; } = new();
-
+	public static ClientManager Instance { get; } = new();
 
 	//WebSocket cs代码查看器客户端列表
 	private readonly Dictionary<string, WebSocket?> _csCodeViewerClientList = new();
@@ -112,7 +114,7 @@ public class WebSocketServer
 		try
 		{
 			//接收客户端消息
-			await Receive(client);
+			await OnClientMessage(client);
 		}
 		catch (Exception e)
 		{
@@ -144,7 +146,7 @@ public class WebSocketServer
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	private async Task OnClientDisconnected(WebSocket? client)
+	public async Task OnClientDisconnected(WebSocket? client)
 	{
 		if (client == null)
 		{
@@ -197,7 +199,7 @@ public class WebSocketServer
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	public async Task Receive(WebSocket? client)
+	public async Task OnClientMessage(WebSocket? client)
 	{
 		try
 		{
