@@ -19,9 +19,4 @@
     </ItemGroup>
 
 
-
-    <ItemGroup>
-      <Folder Include="Service\" />
-    </ItemGroup>
-
 </Project>
