@@ -61,18 +61,37 @@ public class ClientManager : IClientManager
 	public static ClientManager Instance { get; } = new();
 
 	//WebSocket cs代码查看器客户端列表
-	private readonly Dictionary<string, WebSocket?> _csCodeViewerClientList = new();
+	private readonly Dictionary<string, Client> _csCodeViewerClientList = new();
+
+	/// <summary>
+	///     WebSocket cs代码查看器客户端列表
+	/// </summary>
+	public Dictionary<string, Client> CsCodeViewerClientList
+	{
+		get
+		{
+			lock (_csCodeViewerClientListLock)
+			{
+				return _csCodeViewerClientList;
+			}
+		}
+	}
 
 	//cs代码查看器客户端锁
 	private readonly object _csCodeViewerClientListLock = new();
 
-	private string AddCsCodeViewerClient(WebSocket? client)
+
+	private string AddCsCodeViewerClient(WebSocket webSocket)
 	{
+		var client = new Client
+		{
+			Id = Guid.NewGuid(), WebSocketConnection = webSocket, ConnectTime = DateTime.Now,
+			LastActiveTime = DateTime.Now, IsOnline = true
+		};
 		lock (_csCodeViewerClientListLock)
 		{
-			var clientId = Guid.NewGuid().ToString();
-			_csCodeViewerClientList.Add(clientId, client);
-			return clientId;
+			_csCodeViewerClientList.Add(client.Id.ToString(), client);
+			return client.Id.ToString();
 		}
 	}
 

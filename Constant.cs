@@ -44,17 +44,17 @@ public class CONSTANT
 				/// <summary>
 				///     C# cs代码查看器
 				/// </summary>
-				public const string CS_CODE_VIEWER = "/csCodeViewer";
+				public const string CS_CODE_VIEWER = "csCodeViewer";
 
 				/// <summary>
 				///     日志查看器,可以通过Logger这个路径来连接一个日志查看器,这样产生日志的时候,就可以通过这个日志查看器来实时查看日志了
 				/// </summary>
-				public const string LOGGER = "/logger";
+				public const string LOGGER = "logger";
 
 				/// <summary>
 				///     控制面板,可以通过ControlPanel这个路径来连接一个控制面板,这样就可以通过控制面板来控制服务器了
 				/// </summary>
-				public const string CONTROL_PANEL = "/controlPanel";
+				public const string CONTROL_PANEL = "controlPanel";
 
 				public string ControlPanel = CONTROL_PANEL;
 				public string CsCodeViewer = CS_CODE_VIEWER;

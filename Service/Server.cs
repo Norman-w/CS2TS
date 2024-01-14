@@ -8,9 +8,41 @@
 
 */
 
+
+using CS2TS.Service.WebSocketServer;
+
 namespace CS2TS.Service;
 
 public class Server
 {
-	private WebSocketServer.Server _server = new(8000);
+	private readonly ClientManager _clientManager = new();
+
+	/// <summary>
+	///     C#代码显示器交互器
+	/// </summary>
+	private readonly CsCodeViewerCommunicator? _csCodeViewerCommunicator;
+
+	private readonly WebSocketServer.Server _server = new(8000);
+
+	public Server()
+	{
+		_clientManager.Server = _server;
+		_server.OnServerStarted += server =>
+		{
+			//启动成功
+			Console.WriteLine("Server started");
+		};
+		_server.OnServerStopped += server =>
+		{
+			//启动失败
+			Console.WriteLine("Server stopped");
+		};
+		_server.Listen();
+		_csCodeViewerCommunicator = new CsCodeViewerCommunicator(_clientManager);
+	}
+
+	public bool ShowCsCodeString(string code)
+	{
+		return _csCodeViewerCommunicator?.ShowCsCodeString(code) ?? false;
+	}
 }

@@ -11,6 +11,13 @@ namespace CS2TS.Service.WebSocketServer;
 /// </summary>
 public class Server
 {
+	/// <summary>
+	///     服务器启动事件
+	/// </summary>
+	public delegate void ServerStartedEventHandler(Server server);
+
+	public delegate void ServerStoppedEventHandler(Server server);
+
 	public delegate void WebSocketErrorHandler(WebSocket webSocket, Exception e);
 
 	/// <summary>
@@ -55,6 +62,11 @@ public class Server
 
 	public event WebSocketErrorHandler? OnError;
 
+	public event ServerStartedEventHandler? OnServerStarted;
+
+	public event ServerStoppedEventHandler? OnServerStopped;
+
+
 	/// <summary>
 	///     监听
 	/// </summary>
@@ -66,6 +78,7 @@ public class Server
 			_listener = new HttpListener();
 			_listener.Prefixes.Add($"http://*:{_listenPort}/");
 			_listener.Start();
+			OnServerStarted?.Invoke(this);
 			Task.Run(async () =>
 			{
 				while (true)
@@ -79,6 +92,8 @@ public class Server
 					);
 				}
 			});
+			//监听退出事件
+			AppDomain.CurrentDomain.ProcessExit += (sender, args) => { OnServerStopped?.Invoke(this); };
 		}
 		catch (HttpListenerException e)
 		{
@@ -98,7 +113,7 @@ public class Server
 	/// </summary>
 	private async Task Accept(HttpListenerContext httpListenerContext)
 	{
-		var webSocketContext = await httpListenerContext.AcceptWebSocketAsync(null);
+		var webSocketContext = await httpListenerContext.AcceptWebSocketAsync("csCodeViewer");
 		// var client = new Client
 		// {
 		// 	ConnectTime = DateTime.Now,
@@ -129,6 +144,7 @@ public class Server
 			}
 			finally
 			{
+				Console.WriteLine("释放buffer,因为客户端已经退出");
 				ArrayPool<byte>.Shared.Return(buffer);
 			}
 		}
@@ -168,7 +184,7 @@ public class Server
 	/// <param name="token"></param>
 	/// <param name="data"></param>
 	/// <returns></returns>
-	private void SendAsync(WebSocket token, string data)
+	public void SendAsync(WebSocket token, string data)
 	{
 		SendAsync(token, Encoding.UTF8.GetBytes(data));
 	}
@@ -188,6 +204,19 @@ public class Server
 				v.Enqueue(data);
 				return v;
 			});
+			//发送消息
+			_ = Task.Run(async () =>
+			{
+				while (true)
+				{
+					if (!_sends.TryGetValue(token, out var queue)) return;
+					if (queue.TryDequeue(out var bytes))
+						await token.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true,
+							CancellationToken.None);
+					else
+						break;
+				}
+			});
 		}
 		catch (Exception)
 		{
@@ -199,5 +228,19 @@ public class Server
 	protected virtual void OnOnError(WebSocket websocket, Exception? e)
 	{
 		OnError?.Invoke(websocket, e);
+	}
+
+	public bool Stop()
+	{
+		try
+		{
+			_listener?.Stop();
+			return true;
+		}
+		catch (Exception)
+		{
+			Console.WriteLine("停止失败");
+			return false;
+		}
 	}
 }
