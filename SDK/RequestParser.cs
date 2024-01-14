@@ -4,15 +4,15 @@ namespace CS2TS;
 
 public static class RequestParser
 {
-  /// <summary>
-  ///     请求名称到请求类型的字典,通过
-  ///     <see>
-  ///         <cref>BaseRequest.GetApiName</cref>
-  ///     </see>
-  ///     来获取请求名称
-  ///     比如想获取字符串中保存的api name 为 process.list 获取到 ProcessListRequest 类型
-  /// </summary>
-  public static readonly Dictionary<string, Type> RequestNameToTypeDic = new();
+	/// <summary>
+	///     请求名称到请求类型的字典,通过
+	///     <see>
+	///         <cref>BaseRequest.GetApiName</cref>
+	///     </see>
+	///     来获取请求名称
+	///     比如想获取字符串中保存的api name 为 process.list 获取到 ProcessListRequest 类型
+	/// </summary>
+	public static readonly Dictionary<string, Type> RequestNameToTypeDic = new();
 
 	//初始化时,异步的执行InitDic
 	static RequestParser()
@@ -26,7 +26,13 @@ public static class RequestParser
 		//记录初始化列表时间
 		var startTime = DateTime.Now;
 		var assembly = Assembly.GetExecutingAssembly();
-		var types = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BaseRequest)));
+		// var types = assembly.GetTypes().Where(x => x.IsSubclassOf(typeof(BaseRequest)));
+		// 获取所有继承自BaseRequest的类(BaseRequest<T>)
+		var types = assembly.GetTypes()
+			.Where(
+				x => x.BaseType is { IsGenericType: true }
+				     && x.BaseType.GetGenericTypeDefinition() == typeof(BaseRequest<>)
+			);
 		foreach (var type in types)
 		{
 			//实例化一个对象,并通过调用它的GetApiName方法来获取请求的名称
