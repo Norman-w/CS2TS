@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 
-namespace CS2TS.SDK.WebSocketServer;
+namespace CS2TS.Service.WebSocketServer;
 
 /// <summary>
 ///     WebSocket每个连接的客户端会话

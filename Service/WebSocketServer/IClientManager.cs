@@ -1,6 +1,6 @@
 using System.Net.WebSockets;
 
-namespace CS2TS.SDK.WebSocketServer;
+namespace CS2TS.Service.WebSocketServer;
 
 public interface IClientManager
 {

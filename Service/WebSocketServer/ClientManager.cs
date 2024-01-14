@@ -2,7 +2,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CS2TS.SDK.WebSocketServer;
+namespace CS2TS.Service.WebSocketServer;
 
 /// <summary>
 ///     WebSocketSession管理器

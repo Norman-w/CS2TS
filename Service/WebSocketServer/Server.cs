@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 
-namespace CS2TS.SDK.WebSocketServer;
+namespace CS2TS.Service.WebSocketServer;
 
 /// <summary>
 ///     WebSocketServer
