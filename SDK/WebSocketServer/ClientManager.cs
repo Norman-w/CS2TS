@@ -11,6 +11,52 @@ public class ClientManager : IClientManager
 {
 	#region 字段
 
+	private Server? _server;
+
+	/// <summary>
+	///     被管理的WebSocketServer对象,在设置的时候,会自动添加事件
+	/// </summary>
+	public Server? Server
+	{
+		get => _server;
+		set
+		{
+			_server = value;
+			if (_server == null) return;
+			//先清空事件
+			_server.OnClose -= ServerOnClose;
+			_server.OnOpen -= ServerOnOpen;
+			_server.OnMessage -= ServerOnMessage;
+			_server.OnError -= ServerOnError;
+
+			//再添加事件,防止悬空事件
+			_server.OnClose += ServerOnClose;
+			_server.OnOpen += ServerOnOpen;
+			_server.OnMessage += ServerOnMessage;
+			_server.OnError += ServerOnError;
+		}
+	}
+
+	private void ServerOnClose(WebSocket webSocket, byte[]? bytes)
+	{
+		Task.Run(async () => await OnClientWebSocketDisconnected(webSocket));
+	}
+
+	private void ServerOnOpen(WebSocket webSocket, byte[]? bytes)
+	{
+		Task.Run(async () => await OnClientWebSocketConnected(webSocket));
+	}
+
+	private void ServerOnMessage(WebSocket webSocket, byte[]? bytes)
+	{
+		Task.Run(async () => await OnClientMessage(webSocket));
+	}
+
+	private void ServerOnError(WebSocket webSocket, Exception e)
+	{
+		Task.Run(async () => await OnClientWebSocketError(webSocket, e));
+	}
+
 	//单例模式
 	public static ClientManager Instance { get; } = new();
 
@@ -72,11 +118,11 @@ public class ClientManager : IClientManager
 	#region 回调函数
 
 	/// <summary>
-	///     WebSocket客户端连接回调函数
+	///     WebSocket客户端连接回调函数,在单例模式时,可以适用于Swagger等.
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	public async Task OnClientConnected(WebSocket? client)
+	public async Task OnClientWebSocketConnected(WebSocket? client)
 	{
 		string? clientId;
 		switch (client?.SubProtocol)
@@ -146,7 +192,7 @@ public class ClientManager : IClientManager
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	public async Task OnClientDisconnected(WebSocket? client)
+	public async Task OnClientWebSocketDisconnected(WebSocket? client)
 	{
 		if (client == null)
 		{
@@ -194,6 +240,14 @@ public class ClientManager : IClientManager
 		}
 	}
 
+	private Task OnClientWebSocketError(WebSocket webSocket, Exception e)
+	{
+		Console.ForegroundColor = ConsoleColor.Red;
+		Console.WriteLine("WebSocket错误:" + e.Message);
+		Console.ResetColor();
+		return Task.CompletedTask;
+	}
+
 	/// <summary>
 	///     WebSocket客户端接收消息回调函数
 	/// </summary>
@@ -215,7 +269,7 @@ public class ClientManager : IClientManager
 				var result = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 				if (result.MessageType == WebSocketMessageType.Close)
 				{
-					await OnClientDisconnected(client);
+					await OnClientWebSocketDisconnected(client);
 				}
 				else if (result.MessageType == WebSocketMessageType.Text)
 				{

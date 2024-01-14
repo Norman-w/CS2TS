@@ -11,10 +11,12 @@ namespace CS2TS.SDK.WebSocketServer;
 /// </summary>
 public class Server
 {
+	public delegate void WebSocketErrorHandler(WebSocket webSocket, Exception e);
+
 	/// <summary>
 	///     WebSocket事件
 	/// </summary>
-	public delegate void WebSocketHandler(Client webSocketSession, byte[]? data);
+	public delegate void WebSocketHandler(WebSocket webSocket, byte[]? data);
 
 	/// <summary>
 	///     服务器监听的端口
@@ -24,7 +26,7 @@ public class Server
 	/// <summary>
 	///     发送队列
 	/// </summary>
-	private readonly ConcurrentDictionary<Client, ConcurrentQueue<byte[]>> _sends = new();
+	private readonly ConcurrentDictionary<WebSocket, ConcurrentQueue<byte[]>> _sends = new();
 
 	/// <summary>
 	///     服务端监听对象
@@ -35,11 +37,6 @@ public class Server
 	{
 		_listenPort = port;
 	}
-
-	/// <summary>
-	///     WebSocketSession管理器
-	/// </summary>
-	public IClientManager? ClientManager { get; set; }
 
 	/// <summary>
 	///     新用户已连接到服务器事件
@@ -55,6 +52,8 @@ public class Server
 	///     收到用户消息事件
 	/// </summary>
 	public event WebSocketHandler? OnMessage;
+
+	public event WebSocketErrorHandler? OnError;
 
 	/// <summary>
 	///     监听
@@ -100,77 +99,67 @@ public class Server
 	private async Task Accept(HttpListenerContext httpListenerContext)
 	{
 		var webSocketContext = await httpListenerContext.AcceptWebSocketAsync(null);
-		var client = new Client
-		{
-			ConnectTime = DateTime.Now,
-			WebSocketConnection = webSocketContext.WebSocket,
-			RemoteEndPoint = httpListenerContext.Request.RemoteEndPoint
-		};
+		// var client = new Client
+		// {
+		// 	ConnectTime = DateTime.Now,
+		// 	WebSocketConnection = webSocketContext.WebSocket,
+		// 	RemoteEndPoint = httpListenerContext.Request.RemoteEndPoint
+		// };
 		try
 		{
-			if (ClientManager != null)//如果有客户端管理器的话由客户端管理器来进行处理
+			NewAcceptHandler(webSocketContext.WebSocket);
+			var buffer = ArrayPool<byte>.Shared.Rent(1024 * 1024 * 1);
+			try
 			{
-				// ClientManager.OnClientConnected(webSocketContext.WebSocket);
-				await ClientManager.OnClientConnected(webSocketContext.WebSocket);
+				// var webSocket = client.WebSocketConnection;
+				var webSocket = webSocketContext.WebSocket;
+				var bufferData = new List<byte>();
+				while (webSocket.State == WebSocketState.Open)
+				{
+					var result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+					if (result.MessageType == WebSocketMessageType.Close)
+						await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure,
+							"Closing", CancellationToken.None);
+					bufferData.AddRange(buffer.Take(result.Count).ToArray());
+					if (!result.EndOfMessage) continue;
+					var data = bufferData.ToArray();
+					_ = Task.Run(() => { OnMessage?.Invoke(webSocket, data); });
+					bufferData.Clear();
+				}
 			}
-			else//否则使用默认的处理方式
+			finally
 			{
-				NewAcceptHandler(client);
-				var buffer = ArrayPool<byte>.Shared.Rent(1024 * 1024 * 1);
-				try
-				{
-					var webSocket = client.WebSocketConnection;
-					var bufferData = new List<byte>();
-					while (webSocket.State == WebSocketState.Open)
-					{
-						var result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
-						if (result.MessageType == WebSocketMessageType.Close)
-							await client.WebSocketConnection.CloseAsync(WebSocketCloseStatus.NormalClosure,
-								"Closing", CancellationToken.None);
-						bufferData.AddRange(buffer.Take(result.Count).ToArray());
-						if (!result.EndOfMessage) continue;
-						var data = bufferData.ToArray();
-						_ = Task.Run(() => { OnMessage?.Invoke(client, data); });
-						bufferData.Clear();
-					}
-				}
-				finally
-				{
-					ArrayPool<byte>.Shared.Return(buffer);
-				}
+				ArrayPool<byte>.Shared.Return(buffer);
 			}
 		}
 		catch (Exception e)
 		{
 			Console.WriteLine(e.Message);
+			OnOnError(webSocketContext.WebSocket, null);
 		}
 		finally
 		{
-			if(ClientManager != null) // 如果有客户端管理器的话由客户端管理器来进行处理
-				await ClientManager.OnClientDisconnected(webSocketContext.WebSocket);
-			else // 否则使用默认的处理方式
-				NewQuitHandler(client);
+			NewQuitHandler(webSocketContext.WebSocket);
 		}
 	}
 
 	/// <summary>
 	///     新用户连接
 	/// </summary>
-	private void NewAcceptHandler(Client webSocketSession)
+	private void NewAcceptHandler(WebSocket webSocketSession)
 	{
 		OnOpen?.Invoke(webSocketSession, null);
-		Console.WriteLine("新链接:" + webSocketSession.RemoteEndPoint);
-		//发送消息告诉他你上来了
-		SendAsync(webSocketSession, "你已作为客户端连接到服务器,来源:" + webSocketSession.RemoteEndPoint);
+		// //发送消息告诉他你上来了
+		// SendAsync(webSocketSession, "你已作为客户端连接到服务器,来源:" + webSocketSession.RemoteEndPoint);
 	}
 
 	/// <summary>
 	///     用户退出
 	/// </summary>
-	private void NewQuitHandler(Client webSocketSession)
+	private void NewQuitHandler(WebSocket webSocketSession)
 	{
 		OnClose?.Invoke(webSocketSession, null);
-		Console.WriteLine("退出链接:" + webSocketSession.RemoteEndPoint);
+		// Console.WriteLine("退出链接:" + webSocketSession.RemoteEndPoint);
 	}
 
 	/// <summary>
@@ -179,7 +168,7 @@ public class Server
 	/// <param name="token"></param>
 	/// <param name="data"></param>
 	/// <returns></returns>
-	private void SendAsync(Client token, string data)
+	private void SendAsync(WebSocket token, string data)
 	{
 		SendAsync(token, Encoding.UTF8.GetBytes(data));
 	}
@@ -190,7 +179,7 @@ public class Server
 	/// <param name="token"></param>
 	/// <param name="data"></param>
 	/// <returns></returns>
-	public void SendAsync(Client token, byte[] data)
+	public void SendAsync(WebSocket token, byte[] data)
 	{
 		try
 		{
@@ -202,7 +191,13 @@ public class Server
 		}
 		catch (Exception)
 		{
+			OnOnError(token, null);
 			Console.WriteLine("发送消息失败");
 		}
+	}
+
+	protected virtual void OnOnError(WebSocket websocket, Exception? e)
+	{
+		OnError?.Invoke(websocket, e);
 	}
 }

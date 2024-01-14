@@ -9,12 +9,12 @@ public interface IClientManager
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	Task OnClientConnected(WebSocket? client);
+	Task OnClientWebSocketConnected(WebSocket? client);
 
 	/// <summary>
 	///     WebSocket客户端断开回调函数
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	Task OnClientDisconnected(WebSocket? client);
+	Task OnClientWebSocketDisconnected(WebSocket? client);
 }
