@@ -244,7 +244,7 @@ public class ClientManager : IClientManager
 				//日志查看器客户端
 				lock (_loggerClientListLock)
 				{
-					RemoveCsCodeViewerClient(clientId);
+					RemoveLoggerClient(clientId);
 				}
 
 				break;
