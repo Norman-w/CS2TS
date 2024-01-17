@@ -9,6 +9,7 @@
 */
 
 
+using CS2TS.Model;
 using CS2TS.Service.WebSocketServer;
 
 namespace CS2TS.Service;
@@ -44,5 +45,15 @@ public class Server
 	public bool ShowCsCodeString(string code)
 	{
 		return _csCodeViewerCommunicator?.ShowCsCodeString(code) ?? false;
+	}
+
+	public bool ShowSegments(List<Segment> segments)
+	{
+		return _csCodeViewerCommunicator?.ShowSegments(segments) ?? false;
+	}
+
+	public bool AddSegments(List<Segment> segments)
+	{
+		return _csCodeViewerCommunicator?.AddSegments(segments) ?? false;
 	}
 }
