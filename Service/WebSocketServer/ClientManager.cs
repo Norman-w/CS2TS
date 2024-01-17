@@ -2,29 +2,96 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CS2TS.SDK;
+namespace CS2TS.Service.WebSocketServer;
 
-public class WebSocketServer
+/// <summary>
+///     WebSocketSession管理器
+/// </summary>
+public class ClientManager : IClientManager
 {
 	#region 字段
 
-	//单例模式
-	public static WebSocketServer Instance { get; } = new();
+	private Server? _server;
 
+	/// <summary>
+	///     被管理的WebSocketServer对象,在设置的时候,会自动添加事件
+	/// </summary>
+	public Server? Server
+	{
+		get => _server;
+		set
+		{
+			_server = value;
+			if (_server == null) return;
+			//先清空事件
+			_server.OnClose -= ServerOnClose;
+			_server.OnOpen -= ServerOnOpen;
+			_server.OnMessage -= ServerOnMessage;
+			_server.OnError -= ServerOnError;
+
+			//再添加事件,防止悬空事件
+			_server.OnClose += ServerOnClose;
+			_server.OnOpen += ServerOnOpen;
+			_server.OnMessage += ServerOnMessage;
+			_server.OnError += ServerOnError;
+		}
+	}
+
+	private void ServerOnClose(WebSocket webSocket, byte[]? bytes)
+	{
+		Task.Run(async () => await OnClientWebSocketDisconnected(webSocket));
+	}
+
+	private void ServerOnOpen(WebSocket webSocket, byte[]? bytes)
+	{
+		Task.Run(async () => await OnClientWebSocketConnected(webSocket));
+	}
+
+	private void ServerOnMessage(WebSocket webSocket, byte[]? bytes)
+	{
+		Task.Run(async () => await OnClientMessage(webSocket));
+	}
+
+	private void ServerOnError(WebSocket webSocket, Exception e)
+	{
+		Task.Run(async () => await OnClientWebSocketError(webSocket, e));
+	}
+
+	//单例模式
+	public static ClientManager Instance { get; } = new();
 
 	//WebSocket cs代码查看器客户端列表
-	private readonly Dictionary<string, WebSocket?> _csCodeViewerClientList = new();
+	private readonly Dictionary<string, Client> _csCodeViewerClientList = new();
+
+	/// <summary>
+	///     WebSocket cs代码查看器客户端列表
+	/// </summary>
+	public Dictionary<string, Client> CsCodeViewerClientList
+	{
+		get
+		{
+			lock (_csCodeViewerClientListLock)
+			{
+				return _csCodeViewerClientList;
+			}
+		}
+	}
 
 	//cs代码查看器客户端锁
 	private readonly object _csCodeViewerClientListLock = new();
 
-	private string AddCsCodeViewerClient(WebSocket? client)
+
+	private string AddCsCodeViewerClient(WebSocket webSocket)
 	{
+		var client = new Client
+		{
+			Id = Guid.NewGuid(), WebSocketConnection = webSocket, ConnectTime = DateTime.Now,
+			LastActiveTime = DateTime.Now, IsOnline = true
+		};
 		lock (_csCodeViewerClientListLock)
 		{
-			var clientId = Guid.NewGuid().ToString();
-			_csCodeViewerClientList.Add(clientId, client);
-			return clientId;
+			_csCodeViewerClientList.Add(client.Id.ToString(), client);
+			return client.Id.ToString();
 		}
 	}
 
@@ -70,11 +137,11 @@ public class WebSocketServer
 	#region 回调函数
 
 	/// <summary>
-	///     WebSocket客户端连接回调函数
+	///     WebSocket客户端连接回调函数,在单例模式时,可以适用于Swagger等.
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	public async Task OnClientConnected(WebSocket? client)
+	public async Task OnClientWebSocketConnected(WebSocket? client)
 	{
 		string? clientId;
 		switch (client?.SubProtocol)
@@ -112,7 +179,7 @@ public class WebSocketServer
 		try
 		{
 			//接收客户端消息
-			await Receive(client);
+			await OnClientMessage(client);
 		}
 		catch (Exception e)
 		{
@@ -144,7 +211,7 @@ public class WebSocketServer
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	private async Task OnClientDisconnected(WebSocket? client)
+	public async Task OnClientWebSocketDisconnected(WebSocket? client)
 	{
 		if (client == null)
 		{
@@ -177,7 +244,7 @@ public class WebSocketServer
 				//日志查看器客户端
 				lock (_loggerClientListLock)
 				{
-					RemoveCsCodeViewerClient(clientId);
+					RemoveLoggerClient(clientId);
 				}
 
 				break;
@@ -192,12 +259,20 @@ public class WebSocketServer
 		}
 	}
 
+	private Task OnClientWebSocketError(WebSocket webSocket, Exception e)
+	{
+		Console.ForegroundColor = ConsoleColor.Red;
+		Console.WriteLine("WebSocket错误:" + e.Message);
+		Console.ResetColor();
+		return Task.CompletedTask;
+	}
+
 	/// <summary>
 	///     WebSocket客户端接收消息回调函数
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	public async Task Receive(WebSocket? client)
+	public async Task OnClientMessage(WebSocket? client)
 	{
 		try
 		{
@@ -213,7 +288,7 @@ public class WebSocketServer
 				var result = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 				if (result.MessageType == WebSocketMessageType.Close)
 				{
-					await OnClientDisconnected(client);
+					await OnClientWebSocketDisconnected(client);
 				}
 				else if (result.MessageType == WebSocketMessageType.Text)
 				{
