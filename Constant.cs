@@ -4,6 +4,16 @@ namespace CS2TS;
 
 public class Constant
 {
+	public static List<string> WhiteSpaceChars = new()
+	{
+		" ",
+		"\n",
+		"\t",
+		"\r",
+		"\f",
+		"\v"
+	};
+
 	/// <summary>
 	///     String常量
 	/// </summary>
