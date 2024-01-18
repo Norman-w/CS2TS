@@ -91,6 +91,13 @@ Request由本项目来定义.flutter项目中解析.
 其中集合中包含 ```["using","namespace","xxx",";"]```
 有的符号可能还是多个char的组合,比如  */ 是注释的结束符号 \r\n 是换行的符号
 
-
 2024年01月08日18:02:53 添加了Utils里面的将静态类序列化为json的方法
 同时添加了对WebSocket的支持
+
+2024年01月18日22:20:52 基本完成了断语义最小单元,也就是分char为char组合出来单词或者符号等.
+也完成了向前粘连,比如/向前粘连一个/就变成了// 也就是Segments中的静态AnnotationLineSymbol.
+完成了较为明显的输出方法.可尝试使用l命令读取文件,然后sa,获取Segments all, 然后使用 rai, remove all invisible, 然后使用
+tma , test/try merge all.
+这样就能把该粘连到一块的都粘连上了而且不会有多余的空格(不可见字符和换行符等.)
+再次重复一次测试顺序.
+(ctrl+d)/(F5),l, sa, rai, tma试试看效果吧.
