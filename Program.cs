@@ -39,14 +39,7 @@ public static class Program
 				#region 输入l,load并显示csCodeString
 
 				case "l":
-					var exePath = Environment.CurrentDirectory;
-					var testCodeFilePath = "../../../Test/_1_InTestCSFiles/Test.cs";
-					testCodeFilePath = Path.Combine(exePath, testCodeFilePath);
-					var fileContent = File.ReadAllText(testCodeFilePath);
-					server.ShowCsCodeString(fileContent);
-					Console.WriteLine("已经发送了代码");
-					cursorPosition = 0;
-					csCodeString = fileContent;
+					server.MockShowCsCode(ref cursorPosition, ref csCodeString);
 					break;
 
 				#endregion
@@ -54,10 +47,7 @@ public static class Program
 				#region 输入s,将csCodeString解析一个最小语义单元(segment),然后进行显示
 
 				case "s":
-					var nextSegment = NewParser.GetNextSegment(csCodeString, cursorPosition);
-					cursorPosition += nextSegment.Length;
-					// server.AddSegments(new List<Segment> { nextSegment });
-					Console.WriteLine($"已经发送了代码内容:{nextSegment.Content},当前游标位置:{cursorPosition}");
+					server.MockParseOutASegment(ref cursorPosition, ref csCodeString);
 					break;
 
 				#endregion
@@ -65,20 +55,23 @@ public static class Program
 				#region 输入ss,将csCodeString解析成一个最小语义单元(segment),并尝试和前一个segment粘连 然后进行显示
 
 				case "ss":
-					var nextSegment2 = NewParser.GetNextSegment(csCodeString, cursorPosition);
-					// server.AddSegments(new List<Segment> { nextSegment2 });
-					segments.Add(nextSegment2);
-					var mergedSegment = Segments.MergeBackwards(nextSegment2,
-						segments.Count > 1 ? segments.GetRange(0, segments.Count - 1) : new List<Segment>(),
-						out var mergeSegmentCount,
-						out var mergedTotalSegmentCharCount);
-					cursorPosition += mergeSegmentCount > 0 ? (int)mergedTotalSegmentCharCount : nextSegment2.Length;
-					//移除掉吃掉的segment
-					var currentIndex = segments.Count - 1;
-					segments.RemoveRange(currentIndex - (int)mergeSegmentCount, (int)mergeSegmentCount);
-					//替换成合并完的segment
-					segments[^1] = mergedSegment;
-					Console.WriteLine($"已经发送了代码内容:{mergedSegment.Content},当前游标位置:{cursorPosition}");
+					server.MockParseOutASegmentAndMergeBackward(ref cursorPosition, ref csCodeString, ref segments);
+					break;
+
+				#endregion
+
+				#region 输入sa将csCodeString全部解析,也就是segment all,并且会尝试和前一个或多个segment粘连 然后进行显示
+
+				case "sa":
+					server.MockParseOutAllSegmentsAndMergeBackward(ref cursorPosition, ref csCodeString, ref segments);
+					break;
+
+				#endregion
+
+				#region 输入pa, print all 将所有的segment打印出来
+
+				case "pa":
+					server.MockPrintAllVisibleSegments(segments);
 					break;
 
 				#endregion
