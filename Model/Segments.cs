@@ -30,6 +30,13 @@ public static class Segments
 		//查找segments里面所有的static的字段
 		var staticFields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
 		var staticSegments = staticFields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
+		//找重复的
+		var duplicateItems = staticSegments.GroupBy(s => s.Content).Where(g => g.Count() > 1)
+			.Select(g => g.Key)
+			.ToList();
+		//抛出异常
+		if (duplicateItems.Count > 0)
+			throw new Exception($"重复的项:{string.Join(",", duplicateItems)}");
 		while (mergeSucceed && index >= 0)
 		{
 			var currentWaitMergeSegment = previousSegments[index];
@@ -57,6 +64,47 @@ public static class Segments
 	}
 
 	#region 一个字符的
+
+	/// <summary>
+	///     换行符,用于终止注释行.空格不算,因为空格只是断语义符.换行比较特殊,是本项目中才会用到的.
+	///     正常的CS代码中的换行符是不具备什么用途的,都可以完全被替换掉不会影响逻辑.
+	/// </summary>
+	public static Segment LineBreakSymbol = new() { Content = "\n" };
+
+	/// <summary> 逗号,连接参数符号 </summary>
+	public static Segment JoinParameterSymbol = new() { Content = "," };
+
+	/// <summary> 分号,用于终止语句 </summary>
+	public static Segment SemicolonSymbol = new() { Content = ";" };
+
+	/// <summary> 大括号开始符号 </summary>
+	public static Segment BracesStartSymbol = new() { Content = "{" };
+
+	/// <summary> 大括号结束符号 </summary>
+	public static Segment BracesEndSymbol = new() { Content = "}" };
+
+	/// <summary> 方括号开始符号 </summary>
+	public static Segment SquareBracketsStartSymbol = new() { Content = "[" };
+
+	/// <summary> 方括号结束符号 </summary>
+	public static Segment SquareBracketsEndSymbol = new() { Content = "]" };
+
+	/*尖括号开始和结束是跟大于等于号一样的,省略*/
+
+	/// <summary> 小括号开始符号 </summary>
+	public static Segment ParenthesesStartSymbol = new() { Content = "(" };
+
+	/// <summary> 小括号结束符号 </summary>
+	public static Segment ParenthesesEndSymbol = new() { Content = ")" };
+
+	/// <summary> 点符号 </summary>
+	public static Segment DotSymbol = new() { Content = "." };
+
+	/// <summary> #井号,用于region, define之类 </summary>
+	public static Segment SharpSymbol = new() { Content = "#" };
+
+	/// <summary> 冒号 </summary>
+	public static Segment ColonSymbol = new() { Content = ":" };
 
 	/// <summary> 除法符号 </summary>
 	public static Segment DivisionSymbol = new() { Content = "/" };

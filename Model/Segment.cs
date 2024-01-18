@@ -107,16 +107,49 @@ public partial class Segment
 	/// <summary>
 	///     是否为不可见字符
 	/// </summary>
-	public bool IsWhitespace => Constant.WhiteSpaceChars.Contains(Content);
+	public bool IsWhitespace =>
+		// Constant.NonOperatorWhitespaceChars.Contains(Content);
+		//要每一个都是不可见字符才行
+		Content.ToCharArray().All(c => Constant.NonOperatorWhitespaceChars.Contains(c.ToString()));
 }
 
 public partial class Segment
 {
-	private static readonly List<string> wordBreakWords = new()
+	private static List<string>? _wordBreakWords;
+
+	public static List<string> WordBreakWords
 	{
-		" ", "\n", "\t", "\r", "\f", "\v", "(", ")", "{", "}", "[", "]", "<", ">", ",", ".", ";", ":", "+", "-", "*",
-		"/", "=", "!", "@", "#", "$", "%", "^", "&", "|", "\\", "\"", "'", "`", "~", "?", " "
-	};
+		get
+		{
+			if (_wordBreakWords == null) InitWordBreakWords();
+
+			return _wordBreakWords!;
+		}
+	}
+
+	/// <summary>
+	///     初始化_wordBreakWords,其中包含所有的Segments中static字段的content是1个字符的
+	///     另外还包括一些虽然不是操作符(没有逻辑语义不会打断内容的含义),但是也会影响拆词/拆语义的,比如空格,(换行不是,因为换行具备终止注释行的能力),制表符,回车,换页符,垂直制表符等等
+	/// </summary>
+	private static void InitWordBreakWords()
+	{
+		if (_wordBreakWords != null && _wordBreakWords.Count != 0) return;
+		//获取所有的static字段
+		var type = typeof(Segments);
+		var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static);
+		var staticSegments = fields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
+		var staticSegmentsContent = staticSegments.Select(staticSegment => staticSegment.Content).ToList();
+		_wordBreakWords = staticSegmentsContent;
+		_wordBreakWords.AddRange(Constant.InvisibleChars);
+		//检查重复项
+		var duplicateItems = _wordBreakWords.GroupBy(x => x).Where(g => g.Count() > 1).Select(y => y.Key)
+			.ToList();
+		//输出重复项
+		if (duplicateItems.Count > 0)
+			Console.WriteLine($"重复的项:{string.Join(",", duplicateItems)}");
+		//去重
+		_wordBreakWords = _wordBreakWords.Distinct().ToList();
+	}
 
 	//拓展方法集合
 	/// <summary>
@@ -130,15 +163,19 @@ public partial class Segment
 	{
 		var segmentContent = new StringBuilder();
 		var index = 0;
-		while (true)
+		while (index < csCodeString.Length)
 		{
 			var currentChar = csCodeString[index];
+			if (currentChar == '\n')
+			{
+			}
+
 			segmentContent.Append(currentChar);
-			if (wordBreakWords.Contains(currentChar.ToString()))
+			if (WordBreakWords.Contains(currentChar.ToString()))
 			{
 				//但是如果segmentContent是空的,当前也是空的,那就继续往下走
 				if (segmentContent.Length > 0 && string.IsNullOrWhiteSpace(segmentContent.ToString()) &&
-				    Constant.WhiteSpaceChars.Contains(currentChar.ToString()))
+				    Constant.NonOperatorWhitespaceChars.Contains(currentChar.ToString()))
 				{
 					index += 1;
 					continue;

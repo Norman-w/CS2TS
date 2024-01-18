@@ -4,15 +4,29 @@ namespace CS2TS;
 
 public class Constant
 {
-	public static List<string> WhiteSpaceChars = new()
+	/// <summary>
+	///     非操作符的空白字符,\n不算,因为\n可以终止注释行.虽然他也不可见
+	/// </summary>
+	public static readonly List<string> NonOperatorWhitespaceChars = new()
 	{
 		" ",
-		"\n",
 		"\t",
 		"\r",
 		"\f",
 		"\v"
 	};
+
+	private static List<string>? _invisibleChars;
+
+	/// <summary>
+	///     不可见字符,包含换行符
+	/// </summary>
+	/// <returns></returns>
+	public static List<string> InvisibleChars =>
+		_invisibleChars ??= new List<string>(NonOperatorWhitespaceChars)
+		{
+			"\n"
+		};
 
 	/// <summary>
 	///     String常量

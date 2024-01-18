@@ -139,6 +139,10 @@ public static class ServerMockExtensions
 		while (cursorPosition < csCodeString.Length)
 			//调用MockParseOutASegmentAndMergeBackward,不用单独在这里写一遍了
 			server.MockParseOutASegmentAndMergeBackward(ref cursorPosition, ref csCodeString, ref segments);
+		Console.WriteLine("");
+		Console.ForegroundColor = ConsoleColor.Green;
+		Console.WriteLine("解析完毕");
+		Console.ResetColor();
 	}
 
 	/// <summary>
@@ -149,6 +153,10 @@ public static class ServerMockExtensions
 	public static void MockPrintAllVisibleSegments(this Server server, List<Segment> segments)
 	{
 		foreach (var s in segments.Where(s => s is { IsWhitespace: false, IsLineBreak: false }))
-			Console.Write(s.Content + " ");
+			Console.Write(s.Content + "\n");
+		Console.WriteLine("");
+		Console.ForegroundColor = ConsoleColor.Green;
+		Console.WriteLine("打印完毕");
+		Console.ResetColor();
 	}
 }

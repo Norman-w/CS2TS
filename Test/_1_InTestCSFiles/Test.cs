@@ -1,9 +1,10 @@
-﻿//上来就是注释啊
+﻿//		上来就是注释啊,这前面好几个空格
 /* 这是注释区间啊
  */
 
 using cc;
 using cc.dd.ee.ff;
+
 //这里是注释区域,里面我用了{还有/还有;还有其他的 之类的东西./*
 ///*注释区里面还可以有注释///////所以如果//或者/**/不再行的开头,都不是新注释行
 
@@ -14,10 +15,10 @@ namespace
 	aa
 {
 	//这是普通的行注释
-    /// <summary>
-    ///     这是一个类
-    /// </summary>
-    public class a
+	/// <summary>
+	///     这是一个类
+	/// </summary>
+	public class a
 	{
 		protected int AA;
 
@@ -82,13 +83,13 @@ namespace
 			return "this is fii func no param and return string";
 		}
 
-        /// <summary>
-        ///     这是一个函数
-        /// </summary>
-        /// <param name="a">函数的参数1</param>
-        /// <param name="b">函数的参数2</param>
-        /// <returns>返回结果</returns>
-        public static int sum(int a, int b)
+		/// <summary>
+		///     这是一个函数
+		/// </summary>
+		/// <param name="a">函数的参数1</param>
+		/// <param name="b">函数的参数2</param>
+		/// <returns>返回结果</returns>
+		public static int sum(int a, int b)
 		{
 			return a + b;
 		}
@@ -98,13 +99,13 @@ namespace
 			Console.WriteLine(a + b);
 		}
 
-        /// <summary>
-        ///     遍历每一个to内的元素,如果from有同名的,替换to内的值
-        /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <returns></returns>
-        public Dictionary<string, string> replace(Dictionary<string, Dictionary<string, int>> from,
+		/// <summary>
+		///     遍历每一个to内的元素,如果from有同名的,替换to内的值
+		/// </summary>
+		/// <param name="from"></param>
+		/// <param name="to"></param>
+		/// <returns></returns>
+		public Dictionary<string, string> replace(Dictionary<string, Dictionary<string, int>> from,
 			Dictionary<string, Dictionary<string, int>> to)
 		{
 			var ret = new Dictionary<string, string>();
