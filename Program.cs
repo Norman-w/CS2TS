@@ -76,6 +76,23 @@ public static class Program
 
 				#endregion
 
+				#region 输入rai, remove all invisible 删除所有的不可见字符
+
+				case "rai":
+					server.MockRemoveAllInvisibleSegments(segments);
+					break;
+
+				#endregion
+
+				#region 输入 tma, test merge all 测试合并所有的segment(能合并的都合并,用于在移除了不可见的以后,测试能不能把{}这样的合并到一起
+
+				case "tma":
+					//调用顺序:l, sa, rai, tma
+					server.MockTryMergeAllBackward(segments);
+					break;
+
+				#endregion
+
 				#region 退出
 
 				case "exit":

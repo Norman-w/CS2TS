@@ -13,6 +13,7 @@
 */
 
 
+using System.Reflection;
 using CS2TS.Model;
 using CS2TS.Service.WebSocketServer;
 
@@ -164,5 +165,89 @@ public static class ServerMockExtensions
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("打印完毕");
 		Console.ResetColor();
+	}
+
+	public static void MockRemoveAllInvisibleSegments(this Server server, List<Segment> segments)
+	{
+		segments.RemoveAll(s => s.IsLineBreak || s.IsWhitespace);
+		Console.WriteLine("");
+		Console.ForegroundColor = ConsoleColor.Green;
+		Console.WriteLine("删除完毕");
+		Console.ResetColor();
+	}
+
+	public static void MockTryMergeAllBackward(this Server server, List<Segment> segments)
+	{
+		var mergedSegments = new List<Segment>();
+		var index = segments.Count - 1;
+		while (index >= 0)
+		{
+			var currentSegment = segments[index];
+			//测试代码如果当前是},看前一个是不是{
+			if (currentSegment == Segments.BracesEndSymbol)
+			{
+				var previousSegment = index > 0 ? segments[index - 1] : null;
+				if (previousSegment == Segments.BracesStartSymbol)
+				{
+				}
+			}
+
+			//提取segments的index之前的所有segment
+			var previousSegments = segments.GetRange(0, index);
+
+			index--;
+			var mergedSegment = Segments.MergeBackwards(currentSegment, previousSegments, out var mergeSegmentCount,
+				out var mergedTotalSegmentCharCount);
+			mergedSegments.Add(mergedSegment);
+			//移除掉吃掉的segment
+			segments.RemoveRange(index + 1 - (int)mergeSegmentCount, (int)mergeSegmentCount);
+			//替换成合并完的segment
+			segments[^1] = mergedSegment;
+		}
+
+		Console.WriteLine("");
+		Console.ForegroundColor = ConsoleColor.Green;
+		Console.WriteLine("合并完毕");
+		Console.ResetColor();
+
+		//获取所有Segments静态类中的字段,里面是2个字符的segment
+		var fields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
+		var staticSegments = fields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
+		var duplicateItems = staticSegments.GroupBy(s => s.Content).Where(g => g.Count() > 1)
+			.Select(g => g.Key)
+			.ToList();
+		//抛出异常
+		if (duplicateItems.Count > 0)
+			throw new Exception($"重复的项:{string.Join(",", duplicateItems)}");
+		//2个字符的segment
+		var twoCharSegments = staticSegments.Where(s => s.Length == 2).ToList();
+		//3个字符的segment
+		var threeCharSegments = staticSegments.Where(s => s.Length == 3).ToList();
+		foreach (var s in segments.Where(s => s is { IsWhitespace: false, IsLineBreak: false }))
+		{
+			//2个字符的用粉色
+			if (twoCharSegments.Contains(s))
+			{
+				Console.ForegroundColor = ConsoleColor.Magenta;
+				Console.BackgroundColor = ConsoleColor.DarkCyan;
+			}
+			//3个字符的用黄色
+			else if (threeCharSegments.Contains(s))
+			{
+				Console.ForegroundColor = ConsoleColor.Yellow;
+				Console.BackgroundColor = ConsoleColor.DarkBlue;
+			}
+			//其他的用白色
+			else
+			{
+				Console.ForegroundColor = ConsoleColor.White;
+				Console.BackgroundColor = ConsoleColor.Black;
+			}
+
+			Console.Write(s.Content);
+			Console.BackgroundColor = ConsoleColor.Gray;
+			Console.Write(" ");
+			Console.ResetColor();
+		}
 	}
 }

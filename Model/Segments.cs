@@ -118,6 +118,9 @@ public static class Segments
 	/// <summary> 减法符号 </summary>
 	public static Segment SubtractionSymbol = new() { Content = "-" };
 
+	/// <summary> 取余符号 </summary>
+	public static Segment ModuloSymbol = new() { Content = "%" };
+
 	/// <summary> 等于符号 </summary>
 	public static Segment EqualSymbol = new() { Content = "=" };
 

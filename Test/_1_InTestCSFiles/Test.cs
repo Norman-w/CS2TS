@@ -96,7 +96,11 @@ namespace
 
 		public void voidFunc(int a, int b)
 		{
-			Console.WriteLine(a + b);
+			int? c = 1;
+			c ??= 0;
+			c >>= 1;
+			c <<= 2;
+			Console.WriteLine(a + b % c);
 		}
 
 		/// <summary>
