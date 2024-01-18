@@ -178,19 +178,11 @@ public static class ServerMockExtensions
 
 	public static void MockTryMergeAllBackward(this Server server, List<Segment> segments)
 	{
-		var mergedSegments = new List<Segment>();
+		// var mergedSegments = new List<Segment>();
 		var index = segments.Count - 1;
 		while (index >= 0)
 		{
 			var currentSegment = segments[index];
-			//测试代码如果当前是},看前一个是不是{
-			if (currentSegment == Segments.BracesEndSymbol)
-			{
-				var previousSegment = index > 0 ? segments[index - 1] : null;
-				if (previousSegment == Segments.BracesStartSymbol)
-				{
-				}
-			}
 
 			//提取segments的index之前的所有segment
 			var previousSegments = segments.GetRange(0, index);
@@ -198,7 +190,7 @@ public static class ServerMockExtensions
 			index--;
 			var mergedSegment = Segments.MergeBackwards(currentSegment, previousSegments, out var mergeSegmentCount,
 				out var mergedTotalSegmentCharCount);
-			mergedSegments.Add(mergedSegment);
+			// mergedSegments.Add(mergedSegment);
 			//移除掉吃掉的segment
 			segments.RemoveRange(index + 1 - (int)mergeSegmentCount, (int)mergeSegmentCount);
 			//替换成合并完的segment
@@ -209,6 +201,8 @@ public static class ServerMockExtensions
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("合并完毕");
 		Console.ResetColor();
+
+		#region 输出,高亮显示2个字符和3个字符的segment
 
 		//获取所有Segments静态类中的字段,里面是2个字符的segment
 		var fields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
@@ -249,5 +243,7 @@ public static class ServerMockExtensions
 			Console.Write(" ");
 			Console.ResetColor();
 		}
+
+		#endregion
 	}
 }
