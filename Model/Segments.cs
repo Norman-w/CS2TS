@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace CS2TS.Model;
 
 public static class Segments
@@ -40,49 +42,28 @@ public static class Segments
 		var mergeSucceed = true;
 		var index = previousSegments.Count - 1;
 		var currentAfterMergeSegment = segment;
+		//查找segments里面所有的static的字段
+		var staticFields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
+		var staticSegments = staticFields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
 		while (mergeSucceed && index >= 0)
 		{
 			var currentWaitMergeSegment = previousSegments[index];
 			index--;
-			//如果当前是/ 看前面是啥
-			if (segment == DivisionSymbol)
+			var mergedContent = currentWaitMergeSegment.Content + currentAfterMergeSegment.Content;
+			//匹配mergedContent是否是staticSegments中的一个
+			var matchedStaticSegment =
+				staticSegments.FirstOrDefault(staticSegment => staticSegment.Content == mergedContent);
+			if (matchedStaticSegment != null)
 			{
-				//如果前一个也是 / 那么就是注释
-				if (currentWaitMergeSegment == DivisionSymbol)
-				{
-					mergeSucceed = true;
-					_mergeSegmentCount++;
-					_mergedTotalSegmentCharCount += (uint)DivisionSymbol.Length;
-					currentAfterMergeSegment = AnnotationLineSymbol;
-				}
-				//如果前面是 */ 那么就是多行注释的开始
-				else if (currentWaitMergeSegment == MultiplicationSymbol)
-				{
-					mergeSucceed = true;
-					_mergeSegmentCount++;
-					_mergedTotalSegmentCharCount += (uint)MultiplicationSymbol.Length;
-					currentAfterMergeSegment = AnnotationAreaEndSymbol;
-				}
-				else
-				{
-					mergeSucceed = false;
-				}
+				mergeSucceed = true;
+				_mergeSegmentCount++;
+				_mergedTotalSegmentCharCount +=
+					(uint)matchedStaticSegment.Length - (uint)currentAfterMergeSegment.Content.Length;
+				currentAfterMergeSegment = matchedStaticSegment;
+				continue;
 			}
-			//如果当前是* 前面是/ 那就是多行注释的起点
-			else if (segment == MultiplicationSymbol)
-			{
-				if (currentWaitMergeSegment == DivisionSymbol)
-				{
-					mergeSucceed = true;
-					_mergeSegmentCount++;
-					_mergedTotalSegmentCharCount += (uint)DivisionSymbol.Length;
-					currentAfterMergeSegment = AnnotationAreaStartSymbol;
-				}
-				else
-				{
-					mergeSucceed = false;
-				}
-			}
+
+			break;
 		}
 
 		mergeSegmentCount = _mergeSegmentCount;
