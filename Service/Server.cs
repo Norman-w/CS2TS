@@ -153,7 +153,13 @@ public static class ServerMockExtensions
 	public static void MockPrintAllVisibleSegments(this Server server, List<Segment> segments)
 	{
 		foreach (var s in segments.Where(s => s is { IsWhitespace: false, IsLineBreak: false }))
-			Console.Write(s.Content + "\n");
+		{
+			Console.Write(s.Content);
+			Console.BackgroundColor = ConsoleColor.Gray;
+			Console.Write(" ");
+			Console.ResetColor();
+		}
+
 		Console.WriteLine("");
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("打印完毕");
