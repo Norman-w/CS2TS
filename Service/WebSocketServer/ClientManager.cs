@@ -37,24 +37,24 @@ public class ClientManager : IClientManager
 		}
 	}
 
-	private void ServerOnClose(WebSocket webSocket, byte[]? bytes)
+	private void ServerOnClose(Client client, byte[]? bytes)
 	{
-		Task.Run(async () => await OnClientWebSocketDisconnected(webSocket));
+		Task.Run(async () => await OnClientWebSocketDisconnected(client));
 	}
 
-	private void ServerOnOpen(WebSocket webSocket, byte[]? bytes)
+	private void ServerOnOpen(Client client, byte[]? bytes)
 	{
-		Task.Run(async () => await OnClientWebSocketConnected(webSocket));
+		Task.Run(async () => await OnClientWebSocketConnected(client));
 	}
 
-	private void ServerOnMessage(WebSocket webSocket, byte[]? bytes)
+	private void ServerOnMessage(Client client, byte[]? bytes)
 	{
-		Task.Run(async () => await OnClientMessage(webSocket));
+		Task.Run(async () => await OnClientMessage(client));
 	}
 
-	private void ServerOnError(WebSocket webSocket, Exception e)
+	private void ServerOnError(Client client, Exception e)
 	{
-		Task.Run(async () => await OnClientWebSocketError(webSocket, e));
+		Task.Run(async () => await OnClientWebSocketError(client, e));
 	}
 
 	//单例模式
@@ -81,7 +81,7 @@ public class ClientManager : IClientManager
 	private readonly object _csCodeViewerClientListLock = new();
 
 
-	private string AddCsCodeViewerClient(WebSocket webSocket)
+	private Client AddCsCodeViewerClient(WebSocket webSocket)
 	{
 		var client = new Client
 		{
@@ -91,7 +91,7 @@ public class ClientManager : IClientManager
 		lock (_csCodeViewerClientListLock)
 		{
 			_csCodeViewerClientList.Add(client.Id.ToString(), client);
-			return client.Id.ToString();
+			return client;
 		}
 	}
 
@@ -105,18 +105,23 @@ public class ClientManager : IClientManager
 
 
 	//WebSocket 日志查看器客户端列表
-	private readonly Dictionary<string, WebSocket?> _loggerClientList = new();
+	private readonly Dictionary<string, Client?> _loggerClientList = new();
 
 	//日志查看器客户端锁
 	private readonly object _loggerClientListLock = new();
 
-	private string AddLoggerClient(WebSocket? client)
+	private Client AddLoggerClient(WebSocket webSocket)
 	{
 		lock (_loggerClientListLock)
 		{
+			var client = new Client
+			{
+				Id = Guid.NewGuid(), WebSocketConnection = webSocket, ConnectTime = DateTime.Now,
+				LastActiveTime = DateTime.Now, IsOnline = true
+			};
 			var clientId = Guid.NewGuid().ToString();
 			_loggerClientList.Add(clientId, client);
-			return clientId;
+			return client;
 		}
 	}
 
@@ -139,12 +144,11 @@ public class ClientManager : IClientManager
 	/// <summary>
 	///     WebSocket客户端连接回调函数,在单例模式时,可以适用于Swagger等.
 	/// </summary>
-	/// <param name="client"></param>
 	/// <returns></returns>
-	public async Task OnClientWebSocketConnected(WebSocket? client)
+	public async Task OnClientWebSocketConnected(Client? client)
 	{
-		string? clientId;
-		switch (client?.SubProtocol)
+		var webSocket = client?.WebSocketConnection;
+		switch (webSocket?.SubProtocol)
 		{
 			//判断是cs代码查看器客户端还是日志查看器客户端
 			case Constant.String.WebSocket.SubProtocol.CsCodeViewer:
@@ -152,7 +156,7 @@ public class ClientManager : IClientManager
 				//cs代码查看器客户端
 				lock (_csCodeViewerClientListLock)
 				{
-					clientId = AddCsCodeViewerClient(client);
+					client = AddCsCodeViewerClient(webSocket);
 				}
 
 				break;
@@ -162,7 +166,7 @@ public class ClientManager : IClientManager
 				//日志查看器客户端
 				lock (_loggerClientListLock)
 				{
-					clientId = AddLoggerClient(client);
+					client = AddLoggerClient(webSocket);
 				}
 
 				break;
@@ -170,9 +174,9 @@ public class ClientManager : IClientManager
 			default:
 				//未知客户端
 				Console.ForegroundColor = ConsoleColor.Red;
-				Console.WriteLine("未知客户端,关闭连接,客户端协议:" + client?.SubProtocol);
+				Console.WriteLine("未知客户端,关闭连接,客户端协议:" + webSocket?.SubProtocol);
 				Console.ResetColor();
-				await client?.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "未知客户端", CancellationToken.None)!;
+				await webSocket?.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "未知客户端", CancellationToken.None)!;
 				return;
 		}
 
@@ -192,8 +196,8 @@ public class ClientManager : IClientManager
 		finally
 		{
 			// 在连接关闭时，从WebSocket管理器中移除WebSocket
-			RemoveCsCodeViewerClient(clientId);
-			RemoveLoggerClient(clientId);
+			RemoveCsCodeViewerClient(client.Id.ToString());
+			RemoveLoggerClient(client.Id.ToString());
 			Console.ForegroundColor = ConsoleColor.Yellow;
 			Console.WriteLine("在接收完了数据以后,关闭连接");
 			lock (_csCodeViewerClientListLock)
@@ -202,7 +206,7 @@ public class ClientManager : IClientManager
 			}
 
 			Console.ResetColor();
-			await client.CloseOutputAsync(WebSocketCloseStatus.InvalidPayloadData, "你被干掉了", CancellationToken.None);
+			await webSocket.CloseOutputAsync(WebSocketCloseStatus.InvalidPayloadData, "你被干掉了", CancellationToken.None);
 		}
 	}
 
@@ -211,7 +215,7 @@ public class ClientManager : IClientManager
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	public async Task OnClientWebSocketDisconnected(WebSocket? client)
+	public async Task OnClientWebSocketDisconnected(Client? client)
 	{
 		if (client == null)
 		{
@@ -219,14 +223,16 @@ public class ClientManager : IClientManager
 			return;
 		}
 
-		var clientId = client.SubProtocol;
+		var webSocket = client.WebSocketConnection;
+
+		var clientId = webSocket.SubProtocol;
 		if (string.IsNullOrEmpty(clientId))
 		{
 			Console.WriteLine("客户端ID为空");
 			return;
 		}
 
-		switch (client.SubProtocol)
+		switch (webSocket.SubProtocol)
 		{
 			//判断客户端类型
 			case Constant.String.WebSocket.SubProtocol.CsCodeViewer:
@@ -254,14 +260,15 @@ public class ClientManager : IClientManager
 				Console.ForegroundColor = ConsoleColor.Red;
 				Console.WriteLine("未知的客户端~~ default");
 				Console.ResetColor();
-				await client.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "未知客户端", CancellationToken.None);
+				await webSocket.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "未知客户端", CancellationToken.None);
 				return;
 		}
 	}
 
-	private Task OnClientWebSocketError(WebSocket webSocket, Exception e)
+	private Task OnClientWebSocketError(Client client, Exception e)
 	{
 		Console.ForegroundColor = ConsoleColor.Red;
+		Console.WriteLine(client.Id + "客户端发生错误");
 		Console.WriteLine("WebSocket错误:" + e.Message);
 		Console.ResetColor();
 		return Task.CompletedTask;
@@ -272,7 +279,7 @@ public class ClientManager : IClientManager
 	/// </summary>
 	/// <param name="client"></param>
 	/// <returns></returns>
-	public async Task OnClientMessage(WebSocket? client)
+	public async Task OnClientMessage(Client? client)
 	{
 		try
 		{
@@ -282,10 +289,12 @@ public class ClientManager : IClientManager
 				return;
 			}
 
+			var webSocket = client.WebSocketConnection;
+
 			var buffer = new byte[1024 * 4];
-			while (client.State == WebSocketState.Open)
+			while (webSocket.State == WebSocketState.Open)
 			{
-				var result = await client.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+				var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 				if (result.MessageType == WebSocketMessageType.Close)
 				{
 					await OnClientWebSocketDisconnected(client);
@@ -304,10 +313,10 @@ public class ClientManager : IClientManager
 		//在finally中，判断连接是否关闭，如果没有则Abort掉，然后执行dispose，进而消除潜在的隐患。
 		finally
 		{
-			if (client != null && client.State != WebSocketState.Closed)
+			if (client != null && client.WebSocketConnection.State != WebSocketState.Closed)
 			{
-				client.Abort();
-				client.Dispose();
+				client.WebSocketConnection.Abort();
+				client.WebSocketConnection.Dispose();
 			}
 		}
 	}
@@ -322,7 +331,7 @@ public class ClientManager : IClientManager
 	/// <param name="client"></param>
 	/// <param name="message"></param>
 	/// <returns></returns>
-	private static async Task OnMessageReceived(WebSocket? client, string message)
+	private static async Task OnMessageReceived(Client? client, string message)
 	{
 		if (client == null)
 		{
@@ -330,7 +339,9 @@ public class ClientManager : IClientManager
 			return;
 		}
 
-		switch (client.SubProtocol)
+		var webSocket = client.WebSocketConnection;
+
+		switch (webSocket.SubProtocol)
 		{
 			//判断是cs代码查看器客户端还是日志查看器客户端
 			case Constant.String.WebSocket.SubProtocol.CsCodeViewer:
@@ -346,7 +357,7 @@ public class ClientManager : IClientManager
 				Console.ForegroundColor = ConsoleColor.Red;
 				Console.WriteLine("未知的客户端类型!!!!");
 				Console.ResetColor();
-				await client.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "未知客户端", CancellationToken.None);
+				await webSocket.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "未知客户端", CancellationToken.None);
 				return;
 		}
 	}
@@ -359,14 +370,16 @@ public class ClientManager : IClientManager
 	/// <param name="client"></param>
 	/// <param name="message"></param>
 	/// <returns></returns>
-	private static async Task OnCsCodeViewerClientMessageReceived(WebSocket? client, string message)
+	private static Task OnCsCodeViewerClientMessageReceived(Client? client, string message)
 	{
 		//检查client
 		if (client == null)
 		{
 			Console.WriteLine("客户端为空");
-			return;
+			return Task.CompletedTask;
 		}
+
+		var webSocket = client.WebSocketConnection;
 
 		//message发过来应该是一个json,可以获取到里面的内容解析到对应的request,然后根据request的类型进行处理
 		//正则提取 process.list 类似的接口名称 {"apiName":"process.list","xxx":"123456"}
@@ -377,14 +390,14 @@ public class ClientManager : IClientManager
 		var match = Regex.Match(message, pattern);
 		if (!match.Success)
 		{
+			var noticeMessage = $"无效的请求,没有匹配到apiName,消息内容:{message}";
 			//没有匹配到
-			client.Abort();
+			webSocket.Abort();
 			Console.ForegroundColor = ConsoleColor.Red;
-			Console.WriteLine("根据输入的消息没有匹配到apiName,消息内容:" + message);
+			Console.WriteLine(noticeMessage);
 			Console.ResetColor();
-			await client.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "无效的请求,没有匹配到apiName",
-				CancellationToken.None);
-			return;
+			SafetyValveManager.NoticeInvalidRequest(client, null, out _);
+			return Task.CompletedTask;
 		}
 
 		var apiName = match.Groups[1].Value;
@@ -393,16 +406,18 @@ public class ClientManager : IClientManager
 		//判断是否获取到了请求类型
 		if (requestType == null)
 		{
+			var noticeMessage = $"无效的请求,没有匹配到请求类型,消息内容:{message}";
 			//没有获取到请求类型
 			Console.ForegroundColor = ConsoleColor.Red;
-			Console.WriteLine("没有获取到请求类型");
+			Console.WriteLine(noticeMessage);
 			Console.ResetColor();
-			await client.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "无效的请求,没有匹配到请求类型",
-				CancellationToken.None);
+			SafetyValveManager.NoticeInvalidRequest(client, null, out _);
 		}
+
+		return Task.CompletedTask;
 	}
 
-	private static async Task OnLoggerClientMessageReceived(WebSocket? client, string message)
+	private static async Task OnLoggerClientMessageReceived(Client? client, string message)
 	{
 	}
 

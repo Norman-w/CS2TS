@@ -18,12 +18,12 @@ public class Server
 
 	public delegate void ServerStoppedEventHandler(Server server);
 
-	public delegate void WebSocketErrorHandler(WebSocket webSocket, Exception e);
+	public delegate void WebSocketErrorHandler(Client webSocket, Exception e);
 
 	/// <summary>
 	///     WebSocket事件
 	/// </summary>
-	public delegate void WebSocketHandler(WebSocket webSocket, byte[]? data);
+	public delegate void WebSocketHandler(Client client, byte[]? data);
 
 	/// <summary>
 	///     服务器监听的端口
@@ -93,7 +93,11 @@ public class Server
 				}
 			});
 			//监听退出事件
-			AppDomain.CurrentDomain.ProcessExit += (sender, args) => { OnServerStopped?.Invoke(this); };
+			AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+			{
+				Console.WriteLine("服务端退出,端口:{0}", _listenPort);
+				OnServerStopped?.Invoke(this);
+			};
 		}
 		catch (HttpListenerException e)
 		{
@@ -114,15 +118,15 @@ public class Server
 	private async Task Accept(HttpListenerContext httpListenerContext)
 	{
 		var webSocketContext = await httpListenerContext.AcceptWebSocketAsync("csCodeViewer");
-		// var client = new Client
-		// {
-		// 	ConnectTime = DateTime.Now,
-		// 	WebSocketConnection = webSocketContext.WebSocket,
-		// 	RemoteEndPoint = httpListenerContext.Request.RemoteEndPoint
-		// };
+		var client = new Client
+		{
+			ConnectTime = DateTime.Now,
+			WebSocketConnection = webSocketContext.WebSocket,
+			RemoteEndPoint = httpListenerContext.Request.RemoteEndPoint
+		};
 		try
 		{
-			NewAcceptHandler(webSocketContext.WebSocket);
+			NewAcceptHandler(client);
 			var buffer = ArrayPool<byte>.Shared.Rent(1024 * 1024 * 1);
 			try
 			{
@@ -138,7 +142,7 @@ public class Server
 					bufferData.AddRange(buffer.Take(result.Count).ToArray());
 					if (!result.EndOfMessage) continue;
 					var data = bufferData.ToArray();
-					_ = Task.Run(() => { OnMessage?.Invoke(webSocket, data); });
+					_ = Task.Run(() => { OnMessage?.Invoke(client, data); });
 					bufferData.Clear();
 				}
 			}
@@ -151,20 +155,20 @@ public class Server
 		catch (Exception e)
 		{
 			Console.WriteLine(e.Message);
-			OnOnError(webSocketContext.WebSocket, null);
+			OnOnError(client, null);
 		}
 		finally
 		{
-			NewQuitHandler(webSocketContext.WebSocket);
+			NewQuitHandler(client);
 		}
 	}
 
 	/// <summary>
 	///     新用户连接
 	/// </summary>
-	private void NewAcceptHandler(WebSocket webSocketSession)
+	private void NewAcceptHandler(Client client)
 	{
-		OnOpen?.Invoke(webSocketSession, null);
+		OnOpen?.Invoke(client, null);
 		// //发送消息告诉他你上来了
 		// SendAsync(webSocketSession, "你已作为客户端连接到服务器,来源:" + webSocketSession.RemoteEndPoint);
 	}
@@ -172,9 +176,10 @@ public class Server
 	/// <summary>
 	///     用户退出
 	/// </summary>
-	private void NewQuitHandler(WebSocket webSocketSession)
+	private void NewQuitHandler(Client? client)
 	{
-		OnClose?.Invoke(webSocketSession, null);
+		if (client == null) return;
+		OnClose?.Invoke(client, null);
 		// Console.WriteLine("退出链接:" + webSocketSession.RemoteEndPoint);
 	}
 
@@ -184,7 +189,7 @@ public class Server
 	/// <param name="token"></param>
 	/// <param name="data"></param>
 	/// <returns></returns>
-	public void SendAsync(WebSocket token, string data)
+	public void SendAsync(Client token, string data)
 	{
 		SendAsync(token, Encoding.UTF8.GetBytes(data));
 	}
@@ -192,26 +197,28 @@ public class Server
 	/// <summary>
 	///     向客户端发送消息,可发送二进制数据
 	/// </summary>
-	/// <param name="token"></param>
+	/// <param name="client"></param>
 	/// <param name="data"></param>
 	/// <returns></returns>
-	public void SendAsync(WebSocket token, byte[] data)
+	public void SendAsync(Client client, byte[] data)
 	{
 		try
 		{
-			_sends.AddOrUpdate(token, new ConcurrentQueue<byte[]>(new List<byte[]> { data }), (_, v) =>
-			{
-				v.Enqueue(data);
-				return v;
-			});
+			_sends.AddOrUpdate(client.WebSocketConnection, new ConcurrentQueue<byte[]>(new List<byte[]> { data }),
+				(_, v) =>
+				{
+					v.Enqueue(data);
+					return v;
+				});
 			//发送消息
 			_ = Task.Run(async () =>
 			{
 				while (true)
 				{
-					if (!_sends.TryGetValue(token, out var queue)) return;
+					if (!_sends.TryGetValue(client.WebSocketConnection, out var queue)) return;
 					if (queue.TryDequeue(out var bytes))
-						await token.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true,
+						await client.WebSocketConnection.SendAsync(new ArraySegment<byte>(bytes),
+							WebSocketMessageType.Text, true,
 							CancellationToken.None);
 					else
 						break;
@@ -220,14 +227,20 @@ public class Server
 		}
 		catch (Exception)
 		{
-			OnOnError(token, null);
+			OnOnError(client, null);
 			Console.WriteLine("发送消息失败");
 		}
 	}
 
-	protected virtual void OnOnError(WebSocket websocket, Exception? e)
+	protected virtual void OnOnError(Client client, Exception? e)
 	{
-		OnError?.Invoke(websocket, e);
+		if (e == null)
+		{
+			Console.WriteLine("客户端:{0}发生错误", client.RemoteEndPoint);
+			return;
+		}
+
+		OnError?.Invoke(client, e);
 	}
 
 	public bool Stop()
