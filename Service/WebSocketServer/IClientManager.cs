@@ -1,3 +1,5 @@
+using System.Net.WebSockets;
+
 namespace CS2TS.Service.WebSocketServer;
 
 public interface IClientManager
@@ -5,14 +7,14 @@ public interface IClientManager
 	/// <summary>
 	///     WebSocket客户端连接回调函数
 	/// </summary>
-	/// <param name="client"></param>
+	/// <param name="webSocketContext"></param>
 	/// <returns></returns>
-	Task OnClientWebSocketConnected(Client? client);
+	Task OnClientWebSocketConnected(WebSocketContext webSocketContext);
 
 	/// <summary>
 	///     WebSocket客户端断开回调函数
 	/// </summary>
-	/// <param name="client"></param>
+	/// <param name="webSocketContext"></param>
 	/// <returns></returns>
-	Task OnClientWebSocketDisconnected(Client? client);
+	Task OnClientWebSocketDisconnected(WebSocketContext webSocketContext);
 }

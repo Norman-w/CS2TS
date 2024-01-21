@@ -10,6 +10,8 @@
 */
 
 
+using System.Net.WebSockets;
+
 namespace CS2TS.Service.WebSocketServer;
 
 /// <summary>
@@ -42,6 +44,16 @@ public enum ValveType
 	InTimeLowerThan,
 
 	/// <summary>
+	///     规定时间内超过多少次类型
+	/// </summary>
+	InTimeExceedTimes,
+
+	/// <summary>
+	///     规定时间内低于多少次类型
+	/// </summary>
+	InTimeLowerThanTimes,
+
+	/// <summary>
 	///     规定时间内上升幅度类型
 	/// </summary>
 	InTimeRise,
@@ -53,35 +65,47 @@ public enum ValveType
 }
 
 /// <summary>
-///     基础限流阀类
-/// </summary>
-public interface IValve
-{
-	/// <summary>
-	///     阀门Id
-	/// </summary>
-	public Guid Id => Guid.NewGuid();
-
-	/// <summary>
-	///     阀门类型
-	/// </summary>
-	public ValveType ValveType { get; }
-}
-
-/// <summary>
 ///     值阀
 /// </summary>
 public interface IValueValve : IValve
 {
+	/// <summary>
+	///     值,当前值
+	/// </summary>
 	public double Value { get; set; }
+
+	//阈值
+	public double Threshold { get; set; }
 }
 
 /// <summary>
-///     时间阀(包含值)
+///     次数阀
 /// </summary>
-public interface IValueTimeSpanValve : IValueValve
+public interface ITimesValve : IValve
 {
+	/// <summary>
+	///     次数阈值
+	/// </summary>
+	public int Threshold { get; set; }
+}
+
+/// <summary>
+///     时间阀
+/// </summary>
+public interface ITimeSpanValve : IValve
+{
+	/// <summary>
+	///     时间间隔
+	/// </summary>
 	public TimeSpan TimeSpan { get; set; }
+}
+
+public class NoticeValveResult
+{
+	public string? ErrorMessage { get; set; }
+	public bool IsError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+	public OverloadHandleType? OverloadHandleType { get; set; }
 }
 
 /// <summary>
@@ -89,65 +113,173 @@ public interface IValueTimeSpanValve : IValueValve
 /// </summary>
 public class TotalValueExceedValve : IValueValve
 {
-	public ValveType ValveType => ValveType.TotalValueExceed;
+	public Guid Id => Guid.NewGuid();
+	public string Name => "总值超过多少阀";
+	public DateTime? LastTriggerTime { get; set; }
+	public int TriggerCount { get; set; }
+	public OverloadHandleType OverloadHandleType { get; set; }
+	public TimeSpan? SelfResetTimeSpan { get; set; }
+	public int SelfResetCount { get; set; }
+
+	public void Reset()
+	{
+		TriggerCount = 0;
+		LastTriggerTime = DateTime.MinValue;
+	}
+
 	public double Value { get; set; }
+	public double Threshold { get; set; }
+
+	public NoticeValveResult TryToTrigger<T>(Func<T, T>? recordValueCallback)
+	{
+		var result = new NoticeValveResult();
+		try
+		{
+			if (recordValueCallback != null) Value = (double)(object)recordValueCallback((T)(object)Value);
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine("SafetyValve:TotalValueExceedValve.Record()发生错误");
+			result.ErrorMessage = e.Message;
+			return result;
+		}
+
+		if (Value <= Threshold) return result;
+		//触发了
+		TriggerCount++;
+		LastTriggerTime = DateTime.Now;
+		result.OverloadHandleType = OverloadHandleType;
+		return result;
+	}
 }
 
 /// <summary>
-///     总值低于多少阀
+///     规定时间内超过多少值阀
 /// </summary>
-public class TotalValueLowerThanValve : IValueValve
+public class InTimeExceedValve : ITimeSpanValve, IValueValve
 {
-	public ValveType ValveType => ValveType.TotalValueLowerThan;
-	public double Value { get; set; }
-}
+	public Guid Id => Guid.NewGuid();
+	public string Name => "规定时间内超过多少值阀";
+	public DateTime? LastTriggerTime { get; set; }
+	public int TriggerCount { get; set; }
+	public OverloadHandleType OverloadHandleType { get; set; }
+	public TimeSpan? SelfResetTimeSpan { get; set; }
+	public int SelfResetCount { get; set; }
 
-/// <summary>
-///     规定时间内超过多少阀
-/// </summary>
-public class InTimeExceedValve : IValueTimeSpanValve
-{
-	public ValveType ValveType => ValveType.InTimeExceed;
-	public double Value { get; set; }
+	public NoticeValveResult TryToTrigger<T>(Func<T, T>? recordValueCallback)
+	{
+		var result = new NoticeValveResult();
+		try
+		{
+			Value = (double)(object)recordValueCallback((T)(object)Value);
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine("SafetyValve:InTimeExceedValve.Record()发生错误");
+			result.ErrorMessage = e.Message;
+			return result;
+		}
+
+		if (Value <= Threshold) return result;
+		//触发了
+		TriggerCount++;
+		LastTriggerTime = DateTime.Now;
+		result.OverloadHandleType = OverloadHandleType;
+		return result;
+	}
+
+	public void Reset()
+	{
+		TriggerCount = 0;
+		LastTriggerTime = DateTime.MinValue;
+	}
+
 	public TimeSpan TimeSpan { get; set; }
+	public double Value { get; set; }
+	public double Threshold { get; set; }
 }
 
 /// <summary>
-///     规定时间内低于多少阀
+///     规定时间超过多少次阀
 /// </summary>
-public class InTimeLowerThanValve : IValueTimeSpanValve
+public class InTimeExceedTimesValve : ITimeSpanValve, ITimesValve
 {
-	public ValveType ValveType => ValveType.InTimeLowerThan;
-	public double Value { get; set; }
-	public TimeSpan TimeSpan { get; set; }
-}
+	public Guid Id => Guid.NewGuid();
+	public string Name => "规定时间超过多少次阀";
+	public DateTime? LastTriggerTime { get; set; }
+	public int TriggerCount { get; set; }
+	public OverloadHandleType OverloadHandleType { get; set; }
+	public TimeSpan? SelfResetTimeSpan { get; set; }
+	public int SelfResetCount { get; set; }
 
-/// <summary>
-///     规定时间内上升幅度阀
-/// </summary>
-public class InTimeRiseValve : IValueTimeSpanValve
-{
-	public ValveType ValveType => ValveType.InTimeRise;
-	public double Value { get; set; }
-	public TimeSpan TimeSpan { get; set; }
-}
+	public void Reset()
+	{
+		TriggerCount = 0;
+		LastTriggerTime = DateTime.MinValue;
+	}
 
-/// <summary>
-///     规定时间内下降幅度阀
-/// </summary>
-public class InTimeFallValve : IValueTimeSpanValve
-{
-	public ValveType ValveType => ValveType.InTimeFall;
-	public double Value { get; set; }
 	public TimeSpan TimeSpan { get; set; }
+
+	public NoticeValveResult TryToTrigger<T>(Func<T, T>? recordValueCallback)
+	{
+		var result = new NoticeValveResult();
+		try
+		{
+			if (recordValueCallback != null)
+				throw new Exception("InTimeExceedTimesValve不支持记录值");
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine("SafetyValve:InTimeExceedTimesValve.Record()发生错误");
+			result.ErrorMessage = e.Message;
+			return result;
+		}
+
+		//触发了
+		TriggerCount++;
+		LastTriggerTime = DateTime.Now;
+		if (TriggerCount <= Threshold) return result;
+		//如果触发了,则赋值OverloadHandleType,表示为触发了
+		result.OverloadHandleType = OverloadHandleType;
+		return result;
+	}
+
+	public int Threshold { get; set; }
 }
 
 public class SafetyValveConfig
 {
 	/// <summary>
-	///     阀门列表
+	///     api对应的阀门
 	/// </summary>
-	private List<IValve> Valves { get; set; } = new();
+	public Dictionary<string, List<IValve>> ApiValves { get; set; } = new();
+
+	/// <summary>
+	///     在SafetyValveManager中的方法对应的阀门
+	/// </summary>
+	public Dictionary<string, List<IValve>> FunctionValves { get; set; } = new();
+}
+
+/// <summary>
+///     过载后的处理方式(用flag来表示,可以组合) 包含限流(等待),拒绝连接,提出连接等
+/// </summary>
+[Flags]
+public enum OverloadHandleType
+{
+	/// <summary>
+	///     限流(等待)
+	/// </summary>
+	Overload = 0x1,
+
+	/// <summary>
+	///     拒绝连接
+	/// </summary>
+	Refuse = 0x2,
+
+	/// <summary>
+	///     提出连接
+	/// </summary>
+	KickOut = 0x4
 }
 
 /// <summary>
@@ -155,20 +287,114 @@ public class SafetyValveConfig
 /// </summary>
 public static class SafetyValveManager
 {
+	private static SafetyValveConfig? _config;
+
+	public static SafetyValveConfig Config => _config ??= LoadConfig();
+
+	private static SafetyValveConfig LoadConfig()
+	{
+		if (_config != null)
+			return _config;
+		//TODO:实现,当前是测试用的
+		_config = new SafetyValveConfig
+		{
+			ApiValves = new Dictionary<string, List<IValve>>
+			{
+				{
+					"ShowCsCodeString", new List<IValve>
+					{
+						new TotalValueExceedValve { Threshold = 100 },
+						new InTimeExceedValve { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
+					}
+				},
+				{
+					"ShowSegments", new List<IValve>
+					{
+						new TotalValueExceedValve { Threshold = 100 },
+						new InTimeExceedValve { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
+					}
+				},
+				{
+					"AddSegments", new List<IValve>
+					{
+						new TotalValueExceedValve { Threshold = 100 },
+						new InTimeExceedValve { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
+					}
+				}
+			},
+			FunctionValves = new Dictionary<string, List<IValve>>
+			{
+				{
+					"NoticeInvalidRequest", new List<IValve>
+					{
+						new InTimeExceedTimesValve
+						{
+							TimeSpan = TimeSpan.FromSeconds(60), Threshold = 2,
+							OverloadHandleType = OverloadHandleType.Refuse | OverloadHandleType.KickOut
+						}
+					}
+				}
+			}
+		};
+		return _config;
+	}
+
 	/// <summary>
 	///     报告给安全阀,某个客户端的某个api请求是无效的
 	///     发生错误时(没有正确处理),则返回false,并且返回错误信息
 	/// </summary>
-	/// <param name="client"></param>
+	/// <param name="webSocketContext"></param>
 	/// <param name="apiName"></param>
-	/// <param name="errorMessage"></param>
+	/// <param name="systemErrorMessage">当发生系统错误的时候的系统错误消息.</param>
+	/// <param name="noticeMessage">当触发了阀门的时候给用户的通知消息</param>
 	/// <returns>代表该方法调用是否成功</returns>
-	public static bool NoticeInvalidRequest(Client client, string? apiName, out string errorMessage)
+	public static bool NoticeInvalidRequest(WebSocketContext webSocketContext, string? apiName,
+		out string systemErrorMessage,
+		out string noticeMessage)
 	{
-		// client.WebSocketConnection.CloseOutputAsync(WebSocketCloseStatus.ProtocolError, "无效的请求,没有匹配到apiName",
-		// 	CancellationToken.None).Wait();
-		//TODO:实现
-		errorMessage = "";
+		// var msg = "安全阀消息NoticeInvalidRequest,apiName:" + (apiName ?? "空");
+		apiName ??= "未知的api";
+		//找到方法对应的阀门集合
+		var matchedValves = Config.FunctionValves.TryGetValue(nameof(NoticeInvalidRequest), out var valves)
+			? valves
+			: new List<IValve>();
+		//依次报告给阀门,并且判断是否应该触发
+		foreach (var matchedValve in matchedValves)
+			if (matchedValve is InTimeExceedTimesValve inTimeExceedTimesValve)
+			{
+				var result = inTimeExceedTimesValve.TryToTrigger<int>(null);
+				if (result.IsError)
+				{
+					systemErrorMessage = result.ErrorMessage!;
+					noticeMessage = "发生系统错误,请联系管理员,错误信息:" + systemErrorMessage;
+					return false;
+				}
+
+				if (result.OverloadHandleType == null) continue;
+				if (result.OverloadHandleType.Value.HasFlag(OverloadHandleType.Refuse))
+				{
+					systemErrorMessage = "";
+					noticeMessage = "请求过于频繁,已拒绝连接";
+					matchedValve.Reset();
+					return false;
+				}
+
+				if (result.OverloadHandleType.Value.HasFlag(OverloadHandleType.KickOut))
+				{
+					systemErrorMessage = "";
+					noticeMessage = "请求过于频繁,已踢出连接";
+					matchedValve.Reset();
+					return false;
+				}
+			}
+			else
+			{
+				//这个阀门不需要在这里处理
+				Console.WriteLine("SafetyValve:NoticeInvalidRequest()发现不支持的阀门类型:" + matchedValve.GetType().Name);
+			}
+
+		systemErrorMessage = "";
+		noticeMessage = "";
 		return true;
 	}
 }
