@@ -44,7 +44,7 @@ public interface IValve
 	///     尝试触发阀门,也就是报告消息给阀门,接收一个回调函数的参数,当需要记录值的时候调用这个回调函数
 	/// </summary>
 	/// <returns></returns>
-	public NoticeValveResult TryToTrigger<T>(Func<T, T>? recordValueCallback);
+	// public NoticeValveResult TryToTrigger<T>(Func<T, T>? recordValueCallback);
 
 	/// <summary>
 	///     重置阀门,是重置value不是TriggerCount

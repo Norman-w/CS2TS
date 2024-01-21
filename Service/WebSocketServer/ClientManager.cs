@@ -285,7 +285,7 @@ public class ClientManager : IClientManager
 			//没有匹配到
 			// webSocket.Abort();//这里暂时不做处理,如果需要处理液是需要在NoticeInvalidRequest里面处理
 			Console.ForegroundColor = ConsoleColor.Red;
-			if (!valveManager.NoticeInvalidRequest(webSocketContext, null, out _, out var noticeMessage))
+			if (!valveManager.NoticeInvalidRequest(webSocketContext, out _, out var noticeMessage))
 				Console.WriteLine($"{nameof(ClientManager)}{noticeMessage}");
 			Console.ResetColor();
 			return task;
@@ -302,7 +302,7 @@ public class ClientManager : IClientManager
 			Console.ForegroundColor = ConsoleColor.Red;
 			Console.WriteLine($"{nameof(ClientManager)}{noticeMessage}");
 			Console.ResetColor();
-			if (!valveManager.NoticeInvalidRequest(webSocketContext, null, out _, out noticeMessage))
+			if (!valveManager.NoticeInvalidRequest(webSocketContext, out _, out noticeMessage))
 				Console.WriteLine($"{nameof(ClientManager)}{noticeMessage}");
 		}
 

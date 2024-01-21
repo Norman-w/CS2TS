@@ -67,15 +67,23 @@ public enum ValveType
 /// <summary>
 ///     值阀
 /// </summary>
-public interface IValueValve : IValve
+public interface IValueValve<T> : IValve
 {
 	/// <summary>
 	///     值,当前值
 	/// </summary>
-	public double Value { get; set; }
+	public T Value { get; set; }
 
 	//阈值
-	public double Threshold { get; set; }
+	public T Threshold { get; set; }
+
+	/// <summary>
+	///     回调函数
+	/// </summary>
+	/// <param name="changeValueCallback"></param>
+	/// <param name="compareCallback"></param>
+	/// <returns></returns>
+	public TryToTriggerResult TryToTrigger(Func<T, T>? changeValueCallback, Func<T, T, bool>? compareCallback);
 }
 
 /// <summary>
@@ -100,7 +108,7 @@ public interface ITimeSpanValve : IValve
 	public TimeSpan TimeSpan { get; set; }
 }
 
-public class NoticeValveResult
+public class TryToTriggerResult
 {
 	public string? ErrorMessage { get; set; }
 	public bool IsError => !string.IsNullOrWhiteSpace(ErrorMessage);
@@ -111,8 +119,20 @@ public class NoticeValveResult
 /// <summary>
 ///     总值超过多少阀
 /// </summary>
-public class TotalValueExceedValve : IValueValve
+public class TotalValueExceedValve<T> : IValueValve<T>
 {
+	public TotalValueExceedValve()
+	{
+		Value = default(T) ?? throw new InvalidOperationException();
+		Threshold = default(T) ?? throw new InvalidOperationException();
+	}
+
+	public TotalValueExceedValve(T threshold)
+	{
+		Value = default(T) ?? throw new InvalidOperationException();
+		Threshold = threshold;
+	}
+
 	public Guid Id => Guid.NewGuid();
 	public string Name => "总值超过多少阀";
 	public DateTime? LastTriggerTime { get; set; }
@@ -127,28 +147,29 @@ public class TotalValueExceedValve : IValueValve
 		LastTriggerTime = DateTime.MinValue;
 	}
 
-	public double Value { get; set; }
-	public double Threshold { get; set; }
+	public T Value { get; set; }
+	public T Threshold { get; set; }
 
-	public NoticeValveResult TryToTrigger<T>(Func<T, T>? recordValueCallback)
+	public TryToTriggerResult TryToTrigger(Func<T, T>? changeValueCallback, Func<T, T, bool>? compareCallback)
 	{
-		var result = new NoticeValveResult();
-		try
+		var result = new TryToTriggerResult();
+		if (changeValueCallback != null)
 		{
-			if (recordValueCallback != null) Value = (double)(object)recordValueCallback((T)(object)Value);
-		}
-		catch (Exception e)
-		{
-			Console.WriteLine("SafetyValve:TotalValueExceedValve.Record()发生错误");
-			result.ErrorMessage = e.Message;
-			return result;
+			var newValue = changeValueCallback(Value);
+			Value = newValue;
 		}
 
-		if (Value <= Threshold) return result;
-		//触发了
-		TriggerCount++;
-		LastTriggerTime = DateTime.Now;
-		result.OverloadHandleType = OverloadHandleType;
+		if (compareCallback != null)
+		{
+			var triggered = compareCallback(Value, Threshold);
+			if (triggered)
+			{
+				TriggerCount++;
+				LastTriggerTime = DateTime.Now;
+				result.OverloadHandleType = OverloadHandleType;
+			}
+		}
+
 		return result;
 	}
 }
@@ -156,8 +177,20 @@ public class TotalValueExceedValve : IValueValve
 /// <summary>
 ///     规定时间内超过多少值阀
 /// </summary>
-public class InTimeExceedValve : ITimeSpanValve, IValueValve
+public class InTimeExceedValve<T> : ITimeSpanValve, IValueValve<T>
 {
+	public InTimeExceedValve()
+	{
+		Value = default(T) ?? throw new InvalidOperationException();
+		Threshold = default(T) ?? throw new InvalidOperationException();
+	}
+
+	public InTimeExceedValve(T threshold)
+	{
+		Value = default(T) ?? throw new InvalidOperationException();
+		Threshold = threshold;
+	}
+
 	public Guid Id => Guid.NewGuid();
 	public string Name => "规定时间内超过多少值阀";
 	public DateTime? LastTriggerTime { get; set; }
@@ -166,28 +199,6 @@ public class InTimeExceedValve : ITimeSpanValve, IValueValve
 	public TimeSpan? SelfResetTimeSpan { get; set; }
 	public int SelfResetCount { get; set; }
 
-	public NoticeValveResult TryToTrigger<T>(Func<T, T>? recordValueCallback)
-	{
-		var result = new NoticeValveResult();
-		try
-		{
-			Value = (double)(object)recordValueCallback((T)(object)Value);
-		}
-		catch (Exception e)
-		{
-			Console.WriteLine("SafetyValve:InTimeExceedValve.Record()发生错误");
-			result.ErrorMessage = e.Message;
-			return result;
-		}
-
-		if (Value <= Threshold) return result;
-		//触发了
-		TriggerCount++;
-		LastTriggerTime = DateTime.Now;
-		result.OverloadHandleType = OverloadHandleType;
-		return result;
-	}
-
 	public void Reset()
 	{
 		TriggerCount = 0;
@@ -195,8 +206,31 @@ public class InTimeExceedValve : ITimeSpanValve, IValueValve
 	}
 
 	public TimeSpan TimeSpan { get; set; }
-	public double Value { get; set; }
-	public double Threshold { get; set; }
+	public T Value { get; set; }
+	public T Threshold { get; set; }
+
+	public TryToTriggerResult TryToTrigger(Func<T, T>? changeValueCallback, Func<T, T, bool>? compareCallback)
+	{
+		var result = new TryToTriggerResult();
+		if (changeValueCallback != null)
+		{
+			var newValue = changeValueCallback(Value);
+			Value = newValue;
+		}
+
+		if (compareCallback != null)
+		{
+			var triggered = compareCallback(Value, Threshold);
+			if (triggered)
+			{
+				TriggerCount++;
+				LastTriggerTime = DateTime.Now;
+				result.OverloadHandleType = OverloadHandleType;
+			}
+		}
+
+		return result;
+	}
 }
 
 /// <summary>
@@ -220,20 +254,11 @@ public class InTimeExceedTimesValve : ITimeSpanValve, ITimesValve
 
 	public TimeSpan TimeSpan { get; set; }
 
-	public NoticeValveResult TryToTrigger<T>(Func<T, T>? recordValueCallback)
+	public int Threshold { get; set; }
+
+	public TryToTriggerResult TryToTrigger()
 	{
-		var result = new NoticeValveResult();
-		try
-		{
-			if (recordValueCallback != null)
-				throw new Exception("InTimeExceedTimesValve不支持记录值");
-		}
-		catch (Exception e)
-		{
-			Console.WriteLine("SafetyValve:InTimeExceedTimesValve.Record()发生错误");
-			result.ErrorMessage = e.Message;
-			return result;
-		}
+		var result = new TryToTriggerResult();
 
 		//触发了
 		TriggerCount++;
@@ -247,8 +272,6 @@ public class InTimeExceedTimesValve : ITimeSpanValve, ITimesValve
 		result.OverloadHandleType = OverloadHandleType;
 		return result;
 	}
-
-	public int Threshold { get; set; }
 }
 
 public class SafetyValveConfig
@@ -307,22 +330,22 @@ public class SafetyValveManager
 				{
 					"ShowCsCodeString", new List<IValve>
 					{
-						new TotalValueExceedValve { Threshold = 100 },
-						new InTimeExceedValve { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
+						new TotalValueExceedValve<double> { Threshold = 100 },
+						new InTimeExceedValve<double> { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
 					}
 				},
 				{
 					"ShowSegments", new List<IValve>
 					{
-						new TotalValueExceedValve { Threshold = 100 },
-						new InTimeExceedValve { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
+						new TotalValueExceedValve<double> { Threshold = 100 },
+						new InTimeExceedValve<double> { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
 					}
 				},
 				{
 					"AddSegments", new List<IValve>
 					{
-						new TotalValueExceedValve { Threshold = 100 },
-						new InTimeExceedValve { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
+						new TotalValueExceedValve<double> { Threshold = 100 },
+						new InTimeExceedValve<double> { TimeSpan = TimeSpan.FromSeconds(1), Threshold = 100 }
 					}
 				}
 			},
@@ -352,12 +375,10 @@ public class SafetyValveManager
 	/// <param name="systemErrorMessage">当发生系统错误的时候的系统错误消息.</param>
 	/// <param name="noticeMessage">当触发了阀门的时候给用户的通知消息</param>
 	/// <returns>代表该方法调用是否成功</returns>
-	public bool NoticeInvalidRequest(WebSocketContext webSocketContext, string? apiName,
-		out string systemErrorMessage,
+	public bool NoticeInvalidRequest(WebSocketContext webSocketContext, out string systemErrorMessage,
 		out string noticeMessage)
 	{
 		// var msg = "安全阀消息NoticeInvalidRequest,apiName:" + (apiName ?? "空");
-		apiName ??= "未知的api";
 		//找到方法对应的阀门集合
 		var matchedValves = Config.FunctionValves.TryGetValue(nameof(NoticeInvalidRequest), out var valves)
 			? valves
@@ -366,7 +387,7 @@ public class SafetyValveManager
 		foreach (var matchedValve in matchedValves)
 			if (matchedValve is InTimeExceedTimesValve inTimeExceedTimesValve)
 			{
-				var result = inTimeExceedTimesValve.TryToTrigger<int>(null);
+				var result = inTimeExceedTimesValve.TryToTrigger();
 				if (result.IsError)
 				{
 					systemErrorMessage = result.ErrorMessage!;
