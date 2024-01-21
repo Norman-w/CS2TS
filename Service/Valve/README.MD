@@ -1,0 +1,30 @@
+这个文件夹内的文件都是关于阀门的.
+阀门就像一类类,一个个电子元器件,都是用来处理各种检测和通断等操作的.
+
+目前只支持3种阀且只有一种在使用(2024年01月22日07:43:11)
+
+当前使用的一种是 InTimeExceedTimesValve, 用来检测一个时间段内的请求次数是否超过了限制.
+
+关于阀的主入口文件是SafetyValve,通过Config来读取配置文件,然后在外界发生事件需要通报给阀门的时候
+调用NoticeInvalidRequest等SafetyValveManager中的方法.
+然后SafetyValveManager通过Config来找到针对NoticeInvalidRequest这个function的阀门集合,然后
+调用
+阀门的TryToTrigger处理.
+如果触发,则通过OverloadHandleType来判断要执行的操作.
+OverloadHandleType是flag枚举,可以设置多个值,使用HasFlag来判断是否包含某个值,以执行对应的操作.
+
+### 流程模拟
+
+初始化,一个WebSocketClient 对应一个 SafetyValveManager(
+当然也可以给Server加一个NoticeInvalidRequest,以处理服务器相关的阈值)
+
+从用户那有一个错误的请求到来,执行NoticeInvalidRequest
+
+NoticeInvalidRequest会根据Config中的配置来找到对应的阀门集合,然后调用TryToTrigger
+
+如果是包含值和阈值的阀(不是光考虑触发次数的)TryToTrigger的时候可能会有回调函数,一个是用来计算新值的回调函数,一个是用来判断是否触发的回调函数.
+TryToTrigger的内部会调用拉姆达表达式(或者是其他形式的回调函数,但是不建议,因为拉姆达在上下文中更之观)
+
+如果回调函数表明,或者是次数阀根据次数判断需要触发,则调用相关的触发代码
+
+根据OverloadHandleType来判断要执行的操作.
