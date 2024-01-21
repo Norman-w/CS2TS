@@ -289,13 +289,13 @@ public enum OverloadHandleType
 /// <summary>
 ///     安全阀,用于限流,防止恶意攻击等
 /// </summary>
-public static class SafetyValveManager
+public class SafetyValveManager
 {
-	private static SafetyValveConfig? _config;
+	private SafetyValveConfig? _config;
 
-	public static SafetyValveConfig Config => _config ??= LoadConfig();
+	public SafetyValveConfig Config => _config ??= LoadConfig();
 
-	private static SafetyValveConfig LoadConfig()
+	private SafetyValveConfig LoadConfig()
 	{
 		if (_config != null)
 			return _config;
@@ -352,7 +352,7 @@ public static class SafetyValveManager
 	/// <param name="systemErrorMessage">当发生系统错误的时候的系统错误消息.</param>
 	/// <param name="noticeMessage">当触发了阀门的时候给用户的通知消息</param>
 	/// <returns>代表该方法调用是否成功</returns>
-	public static bool NoticeInvalidRequest(WebSocketContext webSocketContext, string? apiName,
+	public bool NoticeInvalidRequest(WebSocketContext webSocketContext, string? apiName,
 		out string systemErrorMessage,
 		out string noticeMessage)
 	{

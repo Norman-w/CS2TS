@@ -9,6 +9,17 @@ namespace CS2TS.Service.WebSocketServer;
 /// </summary>
 public class ClientManager : IClientManager
 {
+	#region 单例模式
+
+	private static ClientManager? _instance;
+
+	/// <summary>
+	///     单例模式
+	/// </summary>
+	public static ClientManager Instance => _instance ??= new ClientManager();
+
+	#endregion
+
 	#region 字段
 
 	private Server? _server;
@@ -39,7 +50,9 @@ public class ClientManager : IClientManager
 
 
 	//单例模式
-	public static ClientManager Instance { get; } = new();
+	// public static ClientManager Instance { get; } = new();
+
+	private readonly Dictionary<string, SafetyValveManager> _safetyValveManagerList = new();
 
 	//WebSocket cs代码查看器客户端列表
 	private readonly Dictionary<string, WebSocketContext> _csCodeViewerClientList = new();
@@ -126,6 +139,7 @@ public class ClientManager : IClientManager
 				lock (_csCodeViewerClientListLock)
 				{
 					AddCsCodeViewerClient(webSocketContext);
+					_safetyValveManagerList.Add(webSocketContext.SecWebSocketKey, new SafetyValveManager());
 				}
 
 				break;
@@ -136,6 +150,7 @@ public class ClientManager : IClientManager
 				lock (_loggerClientListLock)
 				{
 					AddLoggerClient(webSocketContext);
+					_safetyValveManagerList.Add(webSocketContext.SecWebSocketKey, new SafetyValveManager());
 				}
 
 				break;
@@ -175,6 +190,7 @@ public class ClientManager : IClientManager
 				lock (_csCodeViewerClientListLock)
 				{
 					RemoveCsCodeViewerClient(clientId);
+					_safetyValveManagerList.Remove(clientId);
 				}
 
 				break;
@@ -185,6 +201,7 @@ public class ClientManager : IClientManager
 				lock (_loggerClientListLock)
 				{
 					RemoveLoggerClient(clientId);
+					_safetyValveManagerList.Remove(clientId);
 				}
 
 				break;
@@ -218,7 +235,7 @@ public class ClientManager : IClientManager
 	/// <param name="webSocketContext"></param>
 	/// <param name="msgContent"></param>
 	/// <returns></returns>
-	private static Task OnMessageReceived(WebSocketContext webSocketContext, byte[] msgContent)
+	private Task OnMessageReceived(WebSocketContext webSocketContext, byte[] msgContent)
 	{
 		var message = Encoding.UTF8.GetString(msgContent);
 		var webSocket = webSocketContext.WebSocket;
@@ -249,9 +266,10 @@ public class ClientManager : IClientManager
 	/// <param name="webSocketContext"></param>
 	/// <param name="message"></param>
 	/// <returns></returns>
-	private static Task OnCsCodeViewerClientMessageReceived(WebSocketContext webSocketContext, string message)
+	private Task OnCsCodeViewerClientMessageReceived(WebSocketContext webSocketContext, string message)
 	{
 		var task = Task.CompletedTask;
+		var valveManager = _safetyValveManagerList[webSocketContext.SecWebSocketKey];
 		// var webSocket = webSocketContext.WebSocket;
 
 		//message发过来应该是一个json,可以获取到里面的内容解析到对应的request,然后根据request的类型进行处理
@@ -267,7 +285,7 @@ public class ClientManager : IClientManager
 			//没有匹配到
 			// webSocket.Abort();//这里暂时不做处理,如果需要处理液是需要在NoticeInvalidRequest里面处理
 			Console.ForegroundColor = ConsoleColor.Red;
-			if (!SafetyValveManager.NoticeInvalidRequest(webSocketContext, null, out _, out var noticeMessage))
+			if (!valveManager.NoticeInvalidRequest(webSocketContext, null, out _, out var noticeMessage))
 				Console.WriteLine($"{nameof(ClientManager)}{noticeMessage}");
 			Console.ResetColor();
 			return task;
@@ -284,16 +302,20 @@ public class ClientManager : IClientManager
 			Console.ForegroundColor = ConsoleColor.Red;
 			Console.WriteLine($"{nameof(ClientManager)}{noticeMessage}");
 			Console.ResetColor();
-			if (!SafetyValveManager.NoticeInvalidRequest(webSocketContext, null, out _, out noticeMessage))
+			if (!valveManager.NoticeInvalidRequest(webSocketContext, null, out _, out noticeMessage))
 				Console.WriteLine($"{nameof(ClientManager)}{noticeMessage}");
 		}
 
 		return task;
 	}
 
-	private static async Task OnLoggerClientMessageReceived(WebSocketContext webSocketContext, string message)
+	private async Task OnLoggerClientMessageReceived(WebSocketContext webSocketContext, string message)
 	{
-		Console.WriteLine("ClientManager:日志输出器数量:" + Instance._loggerClientList.Count);
+		lock (_loggerClientListLock)
+		{
+			Console.WriteLine("ClientManager:日志输出器数量:" + _loggerClientList.Count);
+		}
+
 		Console.WriteLine("ClientManager:日志查看器客户端消息:" + message);
 		Console.WriteLine("ClientManager:Context:" + webSocketContext.SecWebSocketKey);
 		await Task.CompletedTask;
