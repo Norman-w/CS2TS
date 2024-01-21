@@ -4,36 +4,130 @@
 // using CS2TS.Model;
 // using Newtonsoft.Json;
 
-namespace CS2TS
+
+using CS2TS.Model;
+using CS2TS.Service;
+
+namespace CS2TS;
+
+public static class Program
 {
-  static class Program
-  {
-    /// <summary>
-    /// 应用程序的主入口点。
-    /// </summary>
-    // [STAThread]
-    static void Main(string[]? args)
-    {
-      CSharpCodeParser ps = new CSharpCodeParser();
-      // var testFile = @"/Users/coolking/Downloads/TestCsFiles23/Domain/Bag/BagItemsAlias.cs";
-      // var testFile = @"/Volumes/NormanData/Visual Studio 2008/Projects/速配项目/QP/Domain/Account/AccountGroup.cs";
-      // var testFile = @"../../../TestCSFiles/Test.cs";
-      var testFile = @"../../../TestCSFiles/TestCalc.cs";
-      if (args != null && args.Length>0)
-      {
-        testFile = args[0];
-      }
-      var codeFile = ps.ParseCsFile(testFile);
-      // var json = JsonConvert.SerializeObject(codeFile, Formatting.Indented);
-      // Console.WriteLine(json);
+	public static void Main(string[] args)
+	{
+		var needClose = false;
 
-      // CodeNodeHelper hp = new CodeNodeHelper(codeFile);
-      // hp.FindClass(codeFile, "aSubSub");
+		#region 开启服务端
 
-      return;
-      var generator = new TypeScriptCodeGenerator(codeFile);
-      var tsCode = generator.CreateTsFile();
-      Console.WriteLine(tsCode);
-    }
-  }
+		var server = new Server();
+		//已经解析的缓存的segments
+		var segments = new List<Segment>();
+		//文件
+		var csCodeString = "";
+		//当前游标位置
+		var cursorPosition = 0;
+		//循环监听用户的输入
+		while (!needClose)
+		{
+			var input = Console.ReadLine();
+			input = input?.ToLower() ?? "";
+			input = input.Trim();
+			//针对不同的输入进行不同的处理
+
+
+			switch (input)
+			{
+				#region 输入l,load并显示csCodeString
+
+				case "l":
+					server.MockShowCsCode(ref cursorPosition, ref csCodeString);
+					break;
+
+				#endregion
+
+				#region 输入s,将csCodeString解析一个最小语义单元(segment),然后进行显示
+
+				case "s":
+					server.MockParseOutASegment(ref cursorPosition, ref csCodeString);
+					break;
+
+				#endregion
+
+				#region 输入ss,将csCodeString解析成一个最小语义单元(segment),并尝试和前一个segment粘连 然后进行显示
+
+				case "ss":
+					server.MockParseOutASegmentAndMergeBackward(ref cursorPosition, ref csCodeString, ref segments);
+					break;
+
+				#endregion
+
+				#region 输入sa将csCodeString全部解析,也就是segment all,并且会尝试和前一个或多个segment粘连 然后进行显示
+
+				case "sa":
+					server.MockParseOutAllSegmentsAndMergeBackward(ref cursorPosition, ref csCodeString, ref segments);
+					break;
+
+				#endregion
+
+				#region 输入pa, print all 将所有的segment打印出来
+
+				case "pa":
+					server.MockPrintAllVisibleSegments(segments);
+					break;
+
+				#endregion
+
+				#region 输入rai, remove all invisible 删除所有的不可见字符
+
+				case "rai":
+					server.MockRemoveAllInvisibleSegments(segments);
+					break;
+
+				#endregion
+
+				#region 输入 tma, test merge all 测试合并所有的segment(能合并的都合并,用于在移除了不可见的以后,测试能不能把{}这样的合并到一起
+
+				case "tma":
+					//调用顺序:l, sa, rai, tma
+					server.MockTryMergeAllBackward(segments);
+					break;
+
+				#endregion
+
+				#region 退出
+
+				case "exit":
+					Console.WriteLine("退出");
+					needClose = true;
+					break;
+
+				#endregion
+
+				default:
+					Console.WriteLine("输入l,load并显示csCodeString");
+					break;
+			}
+		}
+
+		#endregion
+
+		/*
+		var ps = new CSharpCodeParser();
+		// var testFile = @"/Users/coolking/Downloads/TestCsFiles23/Domain/Bag/BagItemsAlias.cs";
+		// var testFile = @"/Volumes/NormanData/Visual Studio 2008/Projects/速配项目/QP/Domain/Account/AccountGroup.cs";
+		// var testFile = @"../../../TestCSFiles/Test.cs";
+		var testFile = @"../../../TestCSFiles/TestCalc.cs";
+		if (args != null && args.Length > 0) testFile = args[0];
+		var codeFile = ps.ParseCsFile(testFile);
+		// var json = JsonConvert.SerializeObject(codeFile, Formatting.Indented);
+		// Console.WriteLine(json);
+
+		// CodeNodeHelper hp = new CodeNodeHelper(codeFile);
+		// hp.FindClass(codeFile, "aSubSub");
+
+		return;
+		var generator = new TypeScriptCodeGenerator(codeFile);
+		var tsCode = generator.CreateTsFile();
+		Console.WriteLine(tsCode);
+		*/
+	}
 }

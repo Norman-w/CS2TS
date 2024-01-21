@@ -18,8 +18,11 @@ public class ParameterBuilder
     if (!string.IsNullOrEmpty(name))
     {
       ret.Append(name);
-      //如果可以不设置的 就是在后面有?的
-      if (param.Nullable)
+      //如果可以不设置的 就是在后面有?的 并且没有默认值的 直接加问号
+      //比如说 cs中的 int? a = null; 这种情况
+      //应当转换为 ts的 a:number | null = null;
+      //而不是 a?:number = null; 因为a?表示 可以不指定a,而不是a可以为null
+      if (param.Nullable && param.DefaultValue == null)
       {
         ret.Append('?');
       }
@@ -76,14 +79,15 @@ public class ParameterBuilder
     {
       //作为入参时,Nullable<long>转换成 number?
       //作为返回参数时, Nullable<long>转换成 number|undefined
-      var innerParameter = type.GenericParamTypeList[0];
-      var innerParameterType = innerParameter.Type;
-      var innerParameterTypeName = TypeMapDefine.GetTypeScriptTypeName(innerParameterType);
+      var innerParameter = type.GenericParamTypeList?[0];
+      var innerParameterType = innerParameter?.Type;
+      var innerParameterTypeName = innerParameterType == null? string.Empty : TypeMapDefine.GetTypeScriptTypeName(innerParameterType);
 
       //如果 还是一个泛型的话 下钻
-      if (innerParameterType.IsGeneric)
+      if (innerParameterType is {IsGeneric: true})
       {
-        ret.Append(ProcessParameter(innerParameter,false));
+        if (innerParameter != null)
+          ret.Append(ProcessParameter(innerParameter, false));
       }
       //如果不是,直接就指定成转换出来的ts中的类型.
       else
@@ -100,6 +104,19 @@ public class ParameterBuilder
     }
 
     #endregion
+
+    #region 如果是可为空的带默认值的参数
+
+    else if (param.Nullable && param.DefaultValue != null)
+    {
+      //比如 string? id 翻译为 id: string | null
+      ret.Append($"{param.Type.Name} | null");
+      //默认值
+      ret.Append($" = {param.DefaultValue}");
+    }
+
+    #endregion
+
     //如果只是一般的,添加参数的类型即可,如果参数有名字的话前面已经添加了.
     else
     {

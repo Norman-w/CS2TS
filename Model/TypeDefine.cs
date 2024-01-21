@@ -17,6 +17,7 @@ public class TypeDefine
   public bool IsGeneric { get; set; }
   /// <summary>
   /// 作为泛型时的泛型内参数的个数,比如 List<T> 就是只有一个T Dictioary<string,object> 就是两个.
+  /// 如果不是泛型的时候这个属性就是null
   /// </summary>
-  public List<Parameter> GenericParamTypeList { get; set; }
+  public List<Parameter>? GenericParamTypeList { get; set; }
 }

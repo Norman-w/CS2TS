@@ -1,4 +1,4 @@
-namespace CS2TS;
+namespace CS2TS.CSCodeParser;
 /*
  * 语义的猜测器.根据当前的位置和当前的词汇,猜测是正在输入什么内容
  * 
