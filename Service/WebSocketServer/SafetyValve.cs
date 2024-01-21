@@ -237,8 +237,12 @@ public class InTimeExceedTimesValve : ITimeSpanValve, ITimesValve
 
 		//触发了
 		TriggerCount++;
+		Console.WriteLine("SafetyValve:InTimeExceedTimesValve触发了,当前次数:" + TriggerCount + ",阈值:" + Threshold);
 		LastTriggerTime = DateTime.Now;
 		if (TriggerCount <= Threshold) return result;
+		Console.ForegroundColor = ConsoleColor.Magenta;
+		Console.WriteLine("SafetyValve:InTimeExceedTimesValve达到阈值,当前次数:" + TriggerCount + ",阈值:" + Threshold);
+		Console.ResetColor();
 		//如果触发了,则赋值OverloadHandleType,表示为触发了
 		result.OverloadHandleType = OverloadHandleType;
 		return result;
@@ -329,7 +333,7 @@ public static class SafetyValveManager
 					{
 						new InTimeExceedTimesValve
 						{
-							TimeSpan = TimeSpan.FromSeconds(60), Threshold = 2,
+							TimeSpan = TimeSpan.FromSeconds(60), Threshold = 5,
 							OverloadHandleType = OverloadHandleType.Refuse | OverloadHandleType.KickOut
 						}
 					}
@@ -376,7 +380,6 @@ public static class SafetyValveManager
 					systemErrorMessage = "";
 					noticeMessage = "请求过于频繁,已拒绝连接";
 					matchedValve.Reset();
-					return false;
 				}
 
 				if (result.OverloadHandleType.Value.HasFlag(OverloadHandleType.KickOut))
@@ -384,7 +387,15 @@ public static class SafetyValveManager
 					systemErrorMessage = "";
 					noticeMessage = "请求过于频繁,已踢出连接";
 					matchedValve.Reset();
-					return false;
+					try
+					{
+						webSocketContext.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "请求过于频繁,已踢出连接",
+							CancellationToken.None).Wait();
+					}
+					catch (Exception e)
+					{
+						Console.WriteLine("SafetyValve:NoticeInvalidRequest()发生错误:" + e.Message);
+					}
 				}
 			}
 			else

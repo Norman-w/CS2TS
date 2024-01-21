@@ -12,18 +12,28 @@ namespace CS2TS.Service.WebSocketServer;
 public class Server
 {
 	/// <summary>
+	///     客户端连接事件
+	/// </summary>
+	public delegate Task ClientWebSocketOnConnectedEventHandler(WebSocketContext webSocketContext);
+
+	/// <summary>
+	///     客户端断开连接事件
+	/// </summary>
+	public delegate Task ClientWebSocketOnDisconnectedEventHandler(WebSocketContext webSocketContext);
+
+	/// <summary>
+	///     客户端收到消息事件
+	/// </summary>
+	public delegate Task ClientWebSocketOnMessageEventHandler(WebSocketContext webSocketContext, byte[] data);
+
+	public delegate Task ErrorEventHandler(WebSocketContext? webSocketContext, Exception e);
+
+	/// <summary>
 	///     服务器启动事件
 	/// </summary>
 	public delegate void ServerStartedEventHandler(Server server);
 
 	public delegate void ServerStoppedEventHandler(Server server);
-
-	public delegate void WebSocketErrorHandler(WebSocketContext webSocketContext, Exception e);
-
-	/// <summary>
-	///     WebSocket事件
-	/// </summary>
-	public delegate void WebSocketHandler(WebSocketContext webSocketContext, byte[]? data);
 
 	/// <summary>
 	///     服务器监听的端口
@@ -48,19 +58,19 @@ public class Server
 	/// <summary>
 	///     新用户已连接到服务器事件
 	/// </summary>
-	public event WebSocketHandler? OnOpen;
+	public event ClientWebSocketOnConnectedEventHandler? OnClientConnected;
 
 	/// <summary>
 	///     用户已退出事件
 	/// </summary>
-	public event WebSocketHandler? OnClose;
+	public event ClientWebSocketOnDisconnectedEventHandler? OnClientDisconnected;
 
 	/// <summary>
 	///     收到用户消息事件
 	/// </summary>
-	public event WebSocketHandler? OnMessage;
+	public event ClientWebSocketOnMessageEventHandler? OnClientMessage;
 
-	public event WebSocketErrorHandler? OnError;
+	public event ErrorEventHandler? OnError;
 
 	public event ServerStartedEventHandler? OnServerStarted;
 
@@ -117,14 +127,12 @@ public class Server
 	/// </summary>
 	private async Task Accept(HttpListenerContext httpListenerContext)
 	{
-		object context = null;
+		WebSocketContext? webSocketContext = null;
 		try
 		{
-			var webSocketContext = await httpListenerContext.AcceptWebSocketAsync("csCodeViewer");
-			context = webSocketContext;
-			var user = httpListenerContext.User;
+			webSocketContext = await httpListenerContext.AcceptWebSocketAsync("csCodeViewer");
 			Console.WriteLine("新的链接:{0}", webSocketContext.SecWebSocketKey);
-			NewAcceptHandler(webSocketContext);
+			OnClientConnected?.Invoke(webSocketContext);
 			var buffer = ArrayPool<byte>.Shared.Rent(1024 * 1024 * 1);
 			try
 			{
@@ -139,9 +147,13 @@ public class Server
 					bufferData.AddRange(buffer.Take(result.Count).ToArray());
 					if (!result.EndOfMessage) continue;
 					var data = bufferData.ToArray();
-					_ = Task.Run(() => { OnMessage?.Invoke(webSocketContext, data); });
+					_ = Task.Run(() => { OnClientMessage?.Invoke(webSocketContext, data); });
 					bufferData.Clear();
 				}
+			}
+			catch (Exception e)
+			{
+				OnOnError(webSocketContext, e);
 			}
 			finally
 			{
@@ -151,32 +163,21 @@ public class Server
 		}
 		catch (Exception e)
 		{
-			Console.WriteLine(e.Message);
-			// OnOnError(webSocketContext, null);
+			OnOnError(webSocketContext, e);
 		}
 		finally
 		{
-			NewQuitHandler(context as WebSocketContext ?? throw new InvalidOperationException());
+			try
+			{
+				if (webSocketContext != null) OnClientDisconnected?.Invoke(webSocketContext);
+				else //并没有成功建立连接所以没有webSocketContext
+					Console.WriteLine("webSocketContext为空,无法触发OnClientDisconnected事件");
+			}
+			catch (Exception e)
+			{
+				OnOnError(webSocketContext, e);
+			}
 		}
-	}
-
-	/// <summary>
-	///     新用户连接
-	/// </summary>
-	private void NewAcceptHandler(WebSocketContext webSocketContext)
-	{
-		OnOpen?.Invoke(webSocketContext, null);
-		// //发送消息告诉他你上来了
-		// SendAsync(webSocketSession, "你已作为客户端连接到服务器,来源:" + webSocketSession.RemoteEndPoint);
-	}
-
-	/// <summary>
-	///     用户退出
-	/// </summary>
-	private void NewQuitHandler(WebSocketContext webSocketContext)
-	{
-		OnClose?.Invoke(webSocketContext, null);
-		// Console.WriteLine("退出链接:" + webSocketSession.RemoteEndPoint);
 	}
 
 	/// <summary>
@@ -228,11 +229,11 @@ public class Server
 		}
 	}
 
-	protected virtual void OnOnError(WebSocketContext webSocketContext, Exception? e)
+	protected virtual void OnOnError(WebSocketContext? webSocketContext, Exception? e)
 	{
 		if (e == null)
 		{
-			Console.WriteLine("客户端:{0}发生错误", webSocketContext.SecWebSocketKey);
+			Console.WriteLine("客户端:{0}发生错误", webSocketContext?.SecWebSocketKey);
 			return;
 		}
 
