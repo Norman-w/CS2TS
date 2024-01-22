@@ -36,7 +36,14 @@ public static class Segments
 			.ToList();
 		//抛出异常
 		if (duplicateItems.Count > 0)
-			throw new Exception($"重复的项:{string.Join(",", duplicateItems)}");
+			throw new Exception($"Segments:重复的项:{string.Join(",", duplicateItems)}");
+
+		//如果当前是=,前一个是?,再前一个也是?
+		if (segment.Content == "=" && index >= 1 && previousSegments[index].Content == "?"
+		    && previousSegments[index - 1].Content == "?")
+			//TODO
+			throw new Exception("Segments:??=还不会处理@!!!");
+
 		while (mergeSucceed && index >= 0)
 		{
 			var currentWaitMergeSegment = previousSegments[index];
@@ -105,6 +112,9 @@ public static class Segments
 
 	/// <summary> 冒号 </summary>
 	public static Segment ColonSymbol = new() { Content = ":" };
+
+	/// <summary> 问号,用于三目运算符,可组成??甚至??= </summary>
+	public static Segment QuestionMarkSymbol = new() { Content = "?" };
 
 	/// <summary> 除法符号 </summary>
 	public static Segment DivisionSymbol = new() { Content = "/" };

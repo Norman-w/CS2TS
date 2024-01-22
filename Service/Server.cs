@@ -100,10 +100,11 @@ public static class ServerMockExtensions
 	/// <param name="csCodeString"></param>
 	public static void MockParseOutASegment(this Server server, ref int cursorPosition, ref string csCodeString)
 	{
-		var nextSegment = Segment.PickFromCodeString(csCodeString[cursorPosition..]);
-		cursorPosition += nextSegment.Length;
-		// server.AddSegments(new List<Segment> { nextSegment });
-		Console.WriteLine($"已经发送了代码内容:{nextSegment.Content},当前游标位置:{cursorPosition}");
+		Console.WriteLine("暂时屏蔽");
+		// var nextSegment = Segment.PickFromCodeString(csCodeString[cursorPosition..]);
+		// cursorPosition += nextSegment.Length;
+		// // server.AddSegments(new List<Segment> { nextSegment });
+		// Console.WriteLine($"已经发送了代码内容:{nextSegment.Content},当前游标位置:{cursorPosition}");
 	}
 
 	/// <summary>
@@ -116,34 +117,43 @@ public static class ServerMockExtensions
 	public static void MockParseOutASegmentAndMergeBackward(this Server server, ref int cursorPosition,
 		ref string csCodeString, ref List<Segment> segments)
 	{
-		var nextSegment = Segment.PickFromCodeString(csCodeString[cursorPosition..]);
-		// server.AddSegments(new List<Segment> { nextSegment2 });
-		segments.Add(nextSegment);
-		var mergedSegment = Segments.MergeBackwards(nextSegment,
-			segments.Count > 1 ? segments.GetRange(0, segments.Count - 1) : new List<Segment>(),
-			out var mergeSegmentCount,
-			out var mergedTotalSegmentCharCount);
-		cursorPosition += mergeSegmentCount > 0 ? (int)mergedTotalSegmentCharCount : nextSegment.Length;
-		//移除掉吃掉的segment
-		var currentIndex = segments.Count - 1;
-		segments.RemoveRange(currentIndex - (int)mergeSegmentCount, (int)mergeSegmentCount);
-		//替换成合并完的segment
-		segments[^1] = mergedSegment;
-		// Console.WriteLine($"已经发送了代码内容:{mergedSegment.Content},当前游标位置:{cursorPosition}");
-		Console.Write(mergedSegment.Content);
+		Console.WriteLine("暂时屏蔽");
+		// // var nextSegment = Segment.PickFromCodeString(csCodeString[cursorPosition..]);
+		// var nextSegment = Segment.PickFromCodeString(csCodeString, ref cursorPosition);
+		// // server.AddSegments(new List<Segment> { nextSegment2 });
+		// segments.Add(nextSegment);
+		// var mergedSegment = Segments.MergeBackwards(nextSegment,
+		// 	segments.Count > 1 ? segments.GetRange(0, segments.Count - 1) : new List<Segment>(),
+		// 	out var mergeSegmentCount,
+		// 	out var mergedTotalSegmentCharCount);
+		// cursorPosition += mergeSegmentCount > 0 ? (int)mergedTotalSegmentCharCount : nextSegment.Length;
+		// //移除掉吃掉的segment
+		// var currentIndex = segments.Count - 1;
+		// segments.RemoveRange(currentIndex - (int)mergeSegmentCount, (int)mergeSegmentCount);
+		// //替换成合并完的segment
+		// segments[^1] = mergedSegment;
+		// // Console.WriteLine($"已经发送了代码内容:{mergedSegment.Content},当前游标位置:{cursorPosition}");
+		// Console.Write(mergedSegment.Content);
 	}
 
 	public static void MockParseOutAllSegmentsAndMergeBackward(this Server server, ref int cursorPosition,
 		ref string csCodeString, ref List<Segment> segments)
 	{
-		//持续解析直到cursorPosition到达末尾
-		while (cursorPosition < csCodeString.Length)
-			//调用MockParseOutASegmentAndMergeBackward,不用单独在这里写一遍了
-			server.MockParseOutASegmentAndMergeBackward(ref cursorPosition, ref csCodeString, ref segments);
+		segments.Clear();
+		var cursorX = 0;
+		var cursorY = 0;
+		var segmentIndexOfWholeCodeString = 0;
+		var allSegments = Segment.PickAllSegmentsFromWholeCodeString(csCodeString, ref cursorY, ref cursorX,
+			ref segmentIndexOfWholeCodeString);
+		segments.AddRange(allSegments);
+		//粘连
+		server.MockTryMergeAllBackward(segments);
 		Console.WriteLine("");
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("解析完毕");
 		Console.ResetColor();
+
+		server.MockPrintAllVisibleSegments(segments);
 	}
 
 	/// <summary>
@@ -216,7 +226,7 @@ public static class ServerMockExtensions
 			.ToList();
 		//抛出异常
 		if (duplicateItems.Count > 0)
-			throw new Exception($"重复的项:{string.Join(",", duplicateItems)}");
+			throw new Exception($"Server:重复的项:{string.Join(",", duplicateItems)}");
 		//2个字符的segment
 		var twoCharSegments = staticSegments.Where(s => s.Length == 2).ToList();
 		//3个字符的segment
