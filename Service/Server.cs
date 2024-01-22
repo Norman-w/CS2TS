@@ -165,6 +165,10 @@ public static class ServerMockExtensions
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("打印完毕");
 		Console.ResetColor();
+
+		Console.WriteLine("正在发送到客户端");
+		server.ShowSegments(segments);
+		Console.WriteLine("发送完毕");
 	}
 
 	public static void MockRemoveAllInvisibleSegments(this Server server, List<Segment> segments)
