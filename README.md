@@ -101,3 +101,7 @@ tma , test/try merge all.
 这样就能把该粘连到一块的都粘连上了而且不会有多余的空格(不可见字符和换行符等.)
 再次重复一次测试顺序.
 (ctrl+d)/(F5),l, sa, rai, tma试试看效果吧.
+
+
+2024-01-22 17:11:28 已经可以通过CS2TS的命令 l, sa, pa,
+把segments发送到CsCodeViewer且CsCodeViewer正确接收了.
