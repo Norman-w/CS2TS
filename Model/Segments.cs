@@ -4,49 +4,6 @@ namespace CS2TS.Model;
 
 public static class Segments
 {
-	/// <summary>
-	///     检查是否可以向前合并,如果可以,返回合并的段数和合并吃掉的字符数
-	/// </summary>
-	/// <param name="currentContent"></param>
-	/// <param name="destContent"></param>
-	/// <param name="previousSegments"></param>
-	/// <param name="mergeSegmentCount"></param>
-	/// <param name="mergedTotalSegmentCharCount"></param>
-	/// <returns></returns>
-	public static bool CanMergeBackwards(
-		string currentContent,
-		string destContent,
-		List<Segment> previousSegments,
-		out uint mergeSegmentCount,
-		out uint mergedTotalSegmentCharCount)
-	{
-		if (previousSegments.Count < 1)
-		{
-			mergeSegmentCount = 0;
-			mergedTotalSegmentCharCount = 0;
-			return false;
-		}
-
-		var iterator = previousSegments.Count - 1;
-		do
-		{
-			var currentSegment = previousSegments[iterator];
-			var mergedContent = currentSegment.Content + currentContent;
-			if (mergedContent.EndsWith(destContent))
-			{
-				mergeSegmentCount = (uint)previousSegments.Count - (uint)iterator;
-				mergedTotalSegmentCharCount = (uint)mergedContent.Length - (uint)currentContent.Length;
-				return true;
-			}
-
-			iterator--;
-		} while (iterator >= 0);
-
-		mergeSegmentCount = 0;
-		mergedTotalSegmentCharCount = 0;
-		return false;
-	}
-
 	//向前合并
 	public static Segment MergeBackwards(
 		Segment segment,
@@ -332,8 +289,17 @@ public static class Segments
 
 	/// <summary>
 	///     一个测试符号,看看走到=号的时候,如果前面是3个!能不能被识别出来
+	///     假定他的名字叫做 3确认等于
 	/// </summary>
-	public static Segment TEST = new() { Content = "!!!=" };
+	public static Segment TrustTrustTrustEqual = new() { Content = "!!!=" };
+
+	/// <summary>
+	///     一个测试符号,看看走到=号的时候,如果前面是2个!能不能被识别出来
+	///     我们之前已经能识别!和=也能识别!=,也将要识别有意义的!!!=了.
+	///     假定这不具备意义,他的用途是用来给 !!!=搭桥以便能识别3个!的
+	///     我们可以给Segment 加个字段或者是弄一个新类型叫"无意义的Segment",然后在解析的时候,如果遇到这个无意义的Segment,就跳过他,不会把他放到语法树里面去
+	/// </summary>
+	public static Segment TrustTrustEqual = new() { Content = "!!=" };
 
 	#endregion
 }

@@ -327,8 +327,8 @@ public static class ServerMockExtensions
 			throw new Exception($"Server:重复的项:{string.Join(",", duplicateItems)}");
 		//2个字符的segment
 		var twoCharSegments = staticSegments.Where(s => s.Length == 2).ToList();
-		//3个字符的segment
-		var threeCharSegments = staticSegments.Where(s => s.Length == 3).ToList();
+		//3个以上字符的segment
+		var threeCharSegments = staticSegments.Where(s => s.Length >= 3).ToList();
 		foreach (var s in segments.Where(s => s is { IsWhitespace: false, IsLineBreak: false }))
 		{
 			//2个字符的用粉色
