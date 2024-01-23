@@ -4,6 +4,49 @@ namespace CS2TS.Model;
 
 public static class Segments
 {
+	/// <summary>
+	///     检查是否可以向前合并,如果可以,返回合并的段数和合并吃掉的字符数
+	/// </summary>
+	/// <param name="currentContent"></param>
+	/// <param name="destContent"></param>
+	/// <param name="previousSegments"></param>
+	/// <param name="mergeSegmentCount"></param>
+	/// <param name="mergedTotalSegmentCharCount"></param>
+	/// <returns></returns>
+	public static bool CanMergeBackwards(
+		string currentContent,
+		string destContent,
+		List<Segment> previousSegments,
+		out uint mergeSegmentCount,
+		out uint mergedTotalSegmentCharCount)
+	{
+		if (previousSegments.Count < 1)
+		{
+			mergeSegmentCount = 0;
+			mergedTotalSegmentCharCount = 0;
+			return false;
+		}
+
+		var iterator = previousSegments.Count - 1;
+		do
+		{
+			var currentSegment = previousSegments[iterator];
+			var mergedContent = currentSegment.Content + currentContent;
+			if (mergedContent.EndsWith(destContent))
+			{
+				mergeSegmentCount = (uint)previousSegments.Count - (uint)iterator;
+				mergedTotalSegmentCharCount = (uint)mergedContent.Length - (uint)currentContent.Length;
+				return true;
+			}
+
+			iterator--;
+		} while (iterator >= 0);
+
+		mergeSegmentCount = 0;
+		mergedTotalSegmentCharCount = 0;
+		return false;
+	}
+
 	//向前合并
 	public static Segment MergeBackwards(
 		Segment segment,
@@ -18,6 +61,8 @@ public static class Segments
 			return segment;
 		}
 
+		#region 初始变量定义
+
 		//如果当前是一个 / 前面是 // 那么第一次可以粘连成一个注释,后面的 / 不能粘连
 		//或者像 *= 这样的符号,也可以粘连, \r和\n也可以粘连, ++ 还有 ??=这种三个在一起的符号也可以粘连
 
@@ -27,7 +72,11 @@ public static class Segments
 		var mergeSucceed = true;
 		var index = previousSegments.Count - 1;
 		var currentAfterMergeSegment = segment;
-		//查找segments里面所有的static的字段
+
+		#endregion
+
+		#region 查找segments里面所有的static的字段
+
 		var staticFields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
 		var staticSegments = staticFields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
 		//找重复的
@@ -38,20 +87,52 @@ public static class Segments
 		if (duplicateItems.Count > 0)
 			throw new Exception($"Segments:重复的项:{string.Join(",", duplicateItems)}");
 
+		#endregion
+
+		#region 测试代码
+
+		//如果当前一个是?,前一个也是?
+		if (segment.Content == "?" && index >= 0 && previousSegments[index].Content == "?")
+		{
+			Console.WriteLine("Segments:?还不会处理@!!!");
+			//TODO
+
+			// throw new Exception("Segments:?还不会处理@!!!");
+			Console.WriteLine("Segments:?还不会处理@!!!");
+		}
+
 		//如果当前是=,前一个是?,再前一个也是?
 		if (segment.Content == "=" && index >= 1 && previousSegments[index].Content == "?"
 		    && previousSegments[index - 1].Content == "?")
+		{
+			Console.WriteLine("Segments:??=还不会处理@!!!");
 			//TODO
-			throw new Exception("Segments:??=还不会处理@!!!");
+
+			// throw new Exception("Segments:??=还不会处理@!!!");
+			Console.WriteLine("Segments:??=还不会处理@!!!");
+		}
+
+		#endregion
 
 		while (mergeSucceed && index >= 0)
 		{
 			var currentWaitMergeSegment = previousSegments[index];
+			//如果是不可见的segment,那么算做可以吃掉的segment,要增加mergeSegmentCount和mergedTotalSegmentCharCount
+			if (currentWaitMergeSegment.IsWhitespace || currentWaitMergeSegment.IsLineBreak)
+			{
+				_mergeSegmentCount++;
+				_mergedTotalSegmentCharCount += (uint)currentWaitMergeSegment.Length;
+				index--;
+				continue;
+			}
+
 			index--;
 			var mergedContent = currentWaitMergeSegment.Content + currentAfterMergeSegment.Content;
 			//匹配mergedContent是否是staticSegments中的一个
 			var matchedStaticSegment =
 				staticSegments.FirstOrDefault(staticSegment => staticSegment.Content == mergedContent);
+			// staticSegments.FirstOrDefault(staticSegment =>
+			// staticSegment.Content.EndsWith(mergedContent));
 			if (matchedStaticSegment != null)
 			{
 				mergeSucceed = true;
@@ -248,6 +329,11 @@ public static class Segments
 
 	/// <summary> 空合并等于符号 </summary>
 	public static Segment NullCoalescingEqualSymbol = new() { Content = "??=" };
+
+	/// <summary>
+	///     一个测试符号,看看走到=号的时候,如果前面是3个!能不能被识别出来
+	/// </summary>
+	public static Segment TEST = new() { Content = "!!!=" };
 
 	#endregion
 }
