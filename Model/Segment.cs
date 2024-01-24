@@ -100,7 +100,7 @@ public partial class Segment
 	{
 		if (_wordBreakWords != null && _wordBreakWords.Count != 0) return;
 		//获取所有的static字段
-		var staticSegments = Segments.StaticSegments;
+		var staticSegments = Segments.All;
 		var staticSegmentsContent = staticSegments.Select(staticSegment => staticSegment.Content).ToList();
 		_wordBreakWords = staticSegmentsContent;
 		//再添加所有不可见字符,因为他们也能拆散语义
@@ -316,7 +316,7 @@ public partial class Segment
 		#endregion
 
 		//如果segments中的static变量有这个segment,那么就直接返回static变量
-		var staticSegments = Segments.StaticSegments;
+		var staticSegments = Segments.All;
 		//对比Content
 		foreach (var staticSegment in staticSegments.Where(staticSegment =>
 			         staticSegment.Content == segmentContent.ToString()))

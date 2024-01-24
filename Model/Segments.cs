@@ -33,7 +33,7 @@ public static class Segments
 		#endregion
 
 		//已经预定义了的静态segment集合
-		var staticSegments = StaticSegments;
+		var staticSegments = All;
 
 		#region 测试代码
 
@@ -294,18 +294,18 @@ public static class Segments
 
 	#region 对外提供的对象 StaticSegments
 
-	private static List<Segment>? _staticSegments;
+	private static List<Segment>? _all;
 
 	/// <summary>
 	///     所有的静态字段,也就是所有的Segment
 	/// </summary>
 	/// <exception cref="Exception"></exception>
-	public static List<Segment> StaticSegments
+	public static List<Segment> All
 	{
 		get
 		{
 			//如果已经初始化过了,那么直接返回
-			if (_staticSegments != null) return _staticSegments;
+			if (_all != null) return _all;
 			//获取所有的静态字段
 			var staticFields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
 			//获取所有的静态字段的值,并且过滤掉不是Segment的
@@ -319,8 +319,8 @@ public static class Segments
 			if (duplicateItems.Count > 0)
 				throw new Exception($"Segments:重复的项:{string.Join(",", duplicateItems)}");
 			//赋值给静态字段
-			_staticSegments = staticSegments;
-			return _staticSegments;
+			_all = staticSegments;
+			return _all;
 		}
 	}
 

@@ -316,7 +316,7 @@ public static class ServerMockExtensions
 		#region 输出,高亮显示2个字符和3个字符的segment
 
 		//获取所有Segments静态类中的字段,里面是2个字符的segment
-		var staticSegments = Segments.StaticSegments;
+		var staticSegments = Segments.All;
 		//2个字符的segment
 		var twoCharSegments = staticSegments.Where(s => s.Length == 2).ToList();
 		//3个以上字符的segment
