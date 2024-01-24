@@ -23,8 +23,8 @@ public static class Segments
 		//如果当前是一个 / 前面是 // 那么第一次可以粘连成一个注释,后面的 / 不能粘连
 		//或者像 *= 这样的符号,也可以粘连, \r和\n也可以粘连, ++ 还有 ??=这种三个在一起的符号也可以粘连
 
-		var _mergeSegmentCount = 0u;
-		var _mergedTotalSegmentCharCount = 0u;
+		var alreadyMergeSegmentCount = 0u;
+		var alreadyMergedTotalSegmentCharCount = 0u;
 
 		var mergeSucceed = true;
 		var index = previousSegments.Count - 1;
@@ -32,19 +32,8 @@ public static class Segments
 
 		#endregion
 
-		#region 查找segments里面所有的static的字段
-
-		var staticFields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
-		var staticSegments = staticFields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
-		//找重复的
-		var duplicateItems = staticSegments.GroupBy(s => s.Content).Where(g => g.Count() > 1)
-			.Select(g => g.Key)
-			.ToList();
-		//抛出异常
-		if (duplicateItems.Count > 0)
-			throw new Exception($"Segments:重复的项:{string.Join(",", duplicateItems)}");
-
-		#endregion
+		//已经预定义了的静态segment集合
+		var staticSegments = StaticSegments;
 
 		#region 测试代码
 
@@ -77,8 +66,8 @@ public static class Segments
 			//如果是不可见的segment,那么算做可以吃掉的segment,要增加mergeSegmentCount和mergedTotalSegmentCharCount
 			if (currentWaitMergeSegment.IsWhitespace || currentWaitMergeSegment.IsLineBreak)
 			{
-				_mergeSegmentCount++;
-				_mergedTotalSegmentCharCount += (uint)currentWaitMergeSegment.Length;
+				alreadyMergeSegmentCount++;
+				alreadyMergedTotalSegmentCharCount += (uint)currentWaitMergeSegment.Length;
 				index--;
 				continue;
 			}
@@ -93,8 +82,8 @@ public static class Segments
 			if (matchedStaticSegment != null)
 			{
 				mergeSucceed = true;
-				_mergeSegmentCount++;
-				_mergedTotalSegmentCharCount +=
+				alreadyMergeSegmentCount++;
+				alreadyMergedTotalSegmentCharCount +=
 					(uint)matchedStaticSegment.Length - (uint)currentAfterMergeSegment.Content.Length;
 				currentAfterMergeSegment = matchedStaticSegment;
 				continue;
@@ -103,8 +92,8 @@ public static class Segments
 			break;
 		}
 
-		mergeSegmentCount = _mergeSegmentCount;
-		mergedTotalSegmentCharCount = _mergedTotalSegmentCharCount;
+		mergeSegmentCount = alreadyMergeSegmentCount;
+		mergedTotalSegmentCharCount = alreadyMergedTotalSegmentCharCount;
 		return currentAfterMergeSegment;
 	}
 
@@ -114,7 +103,7 @@ public static class Segments
 	///     换行符,用于终止注释行.空格不算,因为空格只是断语义符.换行比较特殊,是本项目中才会用到的.
 	///     正常的CS代码中的换行符是不具备什么用途的,都可以完全被替换掉不会影响逻辑.
 	/// </summary>
-	public static Segment LineBreakSymbol = new() { Content = "\n" };
+	public static readonly Segment LineBreakSymbol = new() { Content = "\n" };
 
 	/// <summary> 逗号,连接参数符号 </summary>
 	public static Segment JoinParameterSymbol = new() { Content = "," };
@@ -300,6 +289,40 @@ public static class Segments
 	///     我们可以给Segment 加个字段或者是弄一个新类型叫"无意义的Segment",然后在解析的时候,如果遇到这个无意义的Segment,就跳过他,不会把他放到语法树里面去
 	/// </summary>
 	public static Segment TrustTrustEqual = new() { Content = "!!=" };
+
+	#endregion
+
+	#region 对外提供的对象 StaticSegments
+
+	private static List<Segment>? _staticSegments;
+
+	/// <summary>
+	///     所有的静态字段,也就是所有的Segment
+	/// </summary>
+	/// <exception cref="Exception"></exception>
+	public static List<Segment> StaticSegments
+	{
+		get
+		{
+			//如果已经初始化过了,那么直接返回
+			if (_staticSegments != null) return _staticSegments;
+			//获取所有的静态字段
+			var staticFields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
+			//获取所有的静态字段的值,并且过滤掉不是Segment的
+			var staticSegments = staticFields.Select(field => field.GetValue(null)).Where(v => v is Segment)
+				.Cast<Segment>().ToList();
+			//安全检查,找重复的
+			var duplicateItems = staticSegments.GroupBy(s => s.Content).Where(g => g.Count() > 1)
+				.Select(g => g.Key)
+				.ToList();
+			//如果有重复的,那么抛出异常
+			if (duplicateItems.Count > 0)
+				throw new Exception($"Segments:重复的项:{string.Join(",", duplicateItems)}");
+			//赋值给静态字段
+			_staticSegments = staticSegments;
+			return _staticSegments;
+		}
+	}
 
 	#endregion
 }

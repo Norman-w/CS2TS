@@ -13,7 +13,6 @@
 */
 
 
-using System.Reflection;
 using CS2TS.Model;
 using CS2TS.Service.WebSocketServer;
 
@@ -317,14 +316,7 @@ public static class ServerMockExtensions
 		#region 输出,高亮显示2个字符和3个字符的segment
 
 		//获取所有Segments静态类中的字段,里面是2个字符的segment
-		var fields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
-		var staticSegments = fields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
-		var duplicateItems = staticSegments.GroupBy(s => s.Content).Where(g => g.Count() > 1)
-			.Select(g => g.Key)
-			.ToList();
-		//抛出异常
-		if (duplicateItems.Count > 0)
-			throw new Exception($"Server:重复的项:{string.Join(",", duplicateItems)}");
+		var staticSegments = Segments.StaticSegments;
 		//2个字符的segment
 		var twoCharSegments = staticSegments.Where(s => s.Length == 2).ToList();
 		//3个以上字符的segment

@@ -5,7 +5,6 @@
    对于备注类型的来说 // 是一个语义段, 剩下的注释内容是一段,然后\r\n或者\n就是一个语义段
 */
 
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -101,9 +100,7 @@ public partial class Segment
 	{
 		if (_wordBreakWords != null && _wordBreakWords.Count != 0) return;
 		//获取所有的static字段
-		var type = typeof(Segments);
-		var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static);
-		var staticSegments = fields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
+		var staticSegments = Segments.StaticSegments;
 		var staticSegmentsContent = staticSegments.Select(staticSegment => staticSegment.Content).ToList();
 		_wordBreakWords = staticSegmentsContent;
 		//再添加所有不可见字符,因为他们也能拆散语义
@@ -117,70 +114,6 @@ public partial class Segment
 		//去重
 		_wordBreakWords = _wordBreakWords.Distinct().ToList();
 	}
-
-	// //拓展方法集合
-	// /// <summary>
-	// ///     在给定的string中,找出头一个segment,
-	// ///     比如 namespace CS2TS.Model; 这样的,
-	// ///     会找出 namespace(之前的using已经被pick出去了),所以这里传入的csCodeString应该是subString之后的.具体游标在调用处处理
-	// /// </summary>
-	// /// <param name="csCodeString"></param>
-	// /// <returns></returns>
-	// public static Segment PickFromCodeString(string csCodeString)
-	// {
-	// 	var segmentContent = new StringBuilder();
-	// 	var index = 0;
-	// 	while (index < csCodeString.Length)
-	// 	{
-	// 		var currentChar = csCodeString[index];
-	// 		if (currentChar == '\n')
-	// 		{
-	// 		}
-	//
-	// 		segmentContent.Append(currentChar);
-	// 		if (WordBreakWords.Contains(currentChar.ToString()))
-	// 		{
-	// 			//但是如果segmentContent是空的,当前也是空的,那就继续往下走
-	// 			if (segmentContent.Length > 0 && string.IsNullOrWhiteSpace(segmentContent.ToString()) &&
-	// 			    Constant.NonOperatorWhitespaceChars.Contains(currentChar.ToString()))
-	// 			{
-	// 				index += 1;
-	// 				continue;
-	// 			}
-	//
-	// 			//如果segmentContent是空白的,但是当前的是可以break的非空字符,那就直接返回
-	// 			if (segmentContent.Length != 1) segmentContent.Remove(segmentContent.Length - 1, 1);
-	//
-	// 			break;
-	// 		}
-	//
-	// 		//如果前面是空的但是这个不是空的,那也要中断
-	// 		var previousCharsWithOutThisChar = csCodeString[..index];
-	// 		if (string.IsNullOrWhiteSpace(previousCharsWithOutThisChar) && previousCharsWithOutThisChar.Length > 0)
-	// 		{
-	// 			segmentContent.Remove(segmentContent.Length - 1, 1);
-	// 			break;
-	// 		}
-	//
-	// 		index += 1;
-	// 	}
-	//
-	// 	//如果segments中的static变量有这个segment,那么就直接返回static变量
-	// 	//反射获取static变量
-	// 	var type = typeof(Segments);
-	// 	var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static);
-	// 	var staticSegments = fields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
-	// 	//对比Content
-	// 	foreach (var staticSegment in staticSegments.Where(staticSegment =>
-	// 		         staticSegment.Content == segmentContent.ToString()))
-	// 		return staticSegment;
-	// 	//如果没有,那么就新建一个
-	//
-	// 	return new Segment
-	// 	{
-	// 		Content = segmentContent.ToString()
-	// 	};
-	// }
 
 	/// <summary>
 	///     在给定的多行文本中,根据行号和所在行中的游标位置,找出一个segment
@@ -383,10 +316,7 @@ public partial class Segment
 		#endregion
 
 		//如果segments中的static变量有这个segment,那么就直接返回static变量
-		//反射获取static变量
-		var type = typeof(Segments);
-		var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static);
-		var staticSegments = fields.Select(field => field.GetValue(null)).Cast<Segment>().ToList();
+		var staticSegments = Segments.StaticSegments;
 		//对比Content
 		foreach (var staticSegment in staticSegments.Where(staticSegment =>
 			         staticSegment.Content == segmentContent.ToString()))
