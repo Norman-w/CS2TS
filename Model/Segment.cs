@@ -27,34 +27,35 @@ public partial class Segment
 	// public bool Parsed { get; set; }
 
 	/// <summary>
-	///     所在行
+	///     所在行,在所有行中的第几行
 	/// </summary>
-	public int Line { get; set; }
+	public int LineIndexOfAllLines { get; set; }
+
+
+	/// <summary>
+	///     第一个字符是这一行中的第几个字符.
+	/// </summary>
+	public int StartCharIndexOfLine { get; set; }
+
+	/// <summary>
+	///     第一个字符是整个文本中的第几个字符
+	/// </summary>
+	public int StartCharIndexOfAllLines { get; set; }
 
 	/// <summary>
 	///     segment的index(相对于当前行)
 	/// </summary>
-	public int SegmentIndexOnLine { get; set; }
+	public int SegmentIndexOfLine { get; set; }
 
 	/// <summary>
 	///     segment的index(相对于整个文本)
 	/// </summary>
-	public int SegmentIndexOfWholeText { get; set; }
-
-	/// <summary>
-	///     所在行的第几个字符开始
-	/// </summary>
-	public int Start { get; set; }
+	public int SegmentIndexOfAllLines { get; set; }
 
 	/// <summary>
 	///     长度
 	/// </summary>
 	public int Length => Content.Length;
-
-	/// <summary>
-	///     所在行的第几个字符结束
-	/// </summary>
-	public int End => Start + Length;
 
 	/// <summary>
 	///     是否为换行符
@@ -224,12 +225,12 @@ public partial class Segment
 			//如果不是空的,那么就解析行
 			var lineSegments = PickAllSegmentsFromLine(line, ref cursorColumn);
 			//设置行号
-			foreach (var lineSegment in lineSegments) lineSegment.Line = i;
+			foreach (var lineSegment in lineSegments) lineSegment.LineIndexOfAllLines = i;
 			//设置segment在行中的index和在整个文本中的index
 			for (var j = 0; j < lineSegments.Count; j++)
 			{
-				lineSegments[j].SegmentIndexOnLine = j;
-				lineSegments[j].SegmentIndexOfWholeText = segmentIndexOnWholeText++;
+				lineSegments[j].SegmentIndexOfLine = j;
+				lineSegments[j].SegmentIndexOfAllLines = segmentIndexOnWholeText++;
 			}
 
 			//添加到结果中
@@ -264,37 +265,37 @@ public partial class Segment
 		return result;
 	}
 
-	/// <summary>
-	///     在给定的多行文本中,根据行号和所在行中的游标位置,找出一个segment
-	///     调用本方法前应该使用换行符分割整个文本,保证每一行都是单独的一行
-	/// </summary>
-	/// <param name="csCodeStringLines"></param>
-	/// <param name="cursorLine"></param>
-	/// <param name="cursorColumn"></param>
-	/// <returns></returns>
-	public static Segment PickFromCodeString(
-		List<string> csCodeStringLines, //整个文本,已经被分割成行了
-		ref int cursorLine, //在文本中的第几行
-		ref int cursorColumn //在当前行中的第多少个字符
-	)
-	{
-		//参数有效性检查
-		//如果是空的,那么就直接返回空的segment
-		if (csCodeStringLines.Count == 0)
-			return Empty;
-		if (cursorLine < 0 || cursorLine >= csCodeStringLines.Count)
-			throw new ArgumentOutOfRangeException(nameof(cursorLine));
-		var line = csCodeStringLines[cursorLine];
-		if (cursorColumn < 0 || cursorColumn >= line.Length)
-			throw new ArgumentOutOfRangeException(nameof(cursorColumn));
-		//如果是空的,那么就直接返回空的segment
-		if (string.IsNullOrWhiteSpace(line))
-			return Empty;
-		var result = PickFromCodeString(line, ref cursorColumn);
-		result.Line = cursorLine;
-		result.SegmentIndexOnLine = cursorColumn;
-		return result;
-	}
+	// /// <summary>
+	// ///     在给定的多行文本中,根据行号和所在行中的游标位置,找出一个segment
+	// ///     调用本方法前应该使用换行符分割整个文本,保证每一行都是单独的一行
+	// /// </summary>
+	// /// <param name="csCodeStringLines"></param>
+	// /// <param name="cursorLine"></param>
+	// /// <param name="cursorColumn"></param>
+	// /// <returns></returns>
+	// public static Segment PickFromCodeString(
+	// 	List<string> csCodeStringLines, //整个文本,已经被分割成行了
+	// 	ref int cursorLine, //在文本中的第几行
+	// 	ref int cursorColumn //在当前行中的第多少个字符
+	// )
+	// {
+	// 	//参数有效性检查
+	// 	//如果是空的,那么就直接返回空的segment
+	// 	if (csCodeStringLines.Count == 0)
+	// 		return Empty;
+	// 	if (cursorLine < 0 || cursorLine >= csCodeStringLines.Count)
+	// 		throw new ArgumentOutOfRangeException(nameof(cursorLine));
+	// 	var line = csCodeStringLines[cursorLine];
+	// 	if (cursorColumn < 0 || cursorColumn >= line.Length)
+	// 		throw new ArgumentOutOfRangeException(nameof(cursorColumn));
+	// 	//如果是空的,那么就直接返回空的segment
+	// 	if (string.IsNullOrWhiteSpace(line))
+	// 		return Empty;
+	// 	var result = PickFromCodeString(line, ref cursorColumn);
+	// 	result.LineIndexOfAllLines = cursorLine;
+	// 	result.SegmentIndexOfLine = cursorColumn;
+	// 	return result;
+	// }
 
 	/// <summary>
 	///     在给定的单行文本中,找出头一个segment
@@ -394,7 +395,7 @@ public partial class Segment
 
 		return new Segment
 		{
-			Content = segmentContent.ToString(), Start = cursorColumn - segmentContent.Length
+			Content = segmentContent.ToString(), StartCharIndexOfLine = cursorColumn - segmentContent.Length
 		};
 	}
 }
