@@ -215,6 +215,7 @@ public static class ServerMockExtensions
 			if (mergeSegmentCount == 0 || mergedTotalSegmentCharCount == 0)
 			{
 				//如果没有合并,那么就迭代器+1
+
 				index++;
 				continue;
 			}
@@ -251,7 +252,7 @@ public static class ServerMockExtensions
 		var twoCharSegments = staticSegments.Where(s => s.Length == 2).ToList();
 		//3个以上字符的segment
 		var threeCharSegments = staticSegments.Where(s => s.Length >= 3).ToList();
-		foreach (var s in segments.Where(s => s is { IsWhitespace: false, IsLineBreak: false }))
+		foreach (var s in segments.Where(s => true))
 		{
 			//2个字符的用粉色
 			if (twoCharSegments.Contains(s))
@@ -270,6 +271,10 @@ public static class ServerMockExtensions
 			{
 				Console.ForegroundColor = ConsoleColor.White;
 				Console.BackgroundColor = ConsoleColor.Black;
+			}
+
+			if (s.Content.Contains("\t"))
+			{
 			}
 
 			Console.Write(s.Content);

@@ -23,7 +23,7 @@ public static class Segments
 		//如果当前是一个 / 前面是 // 那么第一次可以粘连成一个注释,后面的 / 不能粘连
 		//或者像 *= 这样的符号,也可以粘连, \r和\n也可以粘连, ++ 还有 ??=这种三个在一起的符号也可以粘连
 
-		var alreadyMergeSegmentCount = 0u;
+		List<Segment> alreadyMergeSegment = new();
 		var alreadyMergedTotalSegmentCharCount = 0u;
 
 		var mergeSucceed = true;
@@ -39,10 +39,14 @@ public static class Segments
 		{
 			var currentWaitMergeSegment = previousSegments[index];
 			//如果是不可见的segment,那么算做可以吃掉的segment,要增加mergeSegmentCount和mergedTotalSegmentCharCount
-			if (currentWaitMergeSegment.IsWhitespace || currentWaitMergeSegment.IsLineBreak)
+			//新的改动是换行符不会吃掉
+			if (currentWaitMergeSegment.IsWhitespace
+			    //不能上来就吃掉前面的空白字符.如果第一个确实是可见字符,然后中间间隔了一些空白字符的话,那么就可以吃掉了
+			    && alreadyMergeSegment.Count > 0
+			    && alreadyMergeSegment[0].IsWhitespace == false)
 			{
-				alreadyMergeSegmentCount++;
-				alreadyMergedTotalSegmentCharCount += (uint)currentWaitMergeSegment.Length;
+				alreadyMergeSegment.Add(currentWaitMergeSegment);
+				alreadyMergedTotalSegmentCharCount++;
 				index--;
 				continue;
 			}
@@ -57,7 +61,7 @@ public static class Segments
 			if (matchedStaticSegment != null)
 			{
 				mergeSucceed = true;
-				alreadyMergeSegmentCount++;
+				alreadyMergeSegment.Add(currentWaitMergeSegment);
 				alreadyMergedTotalSegmentCharCount +=
 					(uint)matchedStaticSegment.Length - (uint)currentAfterMergeSegment.Content.Length;
 				currentAfterMergeSegment = matchedStaticSegment;
@@ -67,7 +71,7 @@ public static class Segments
 			break;
 		}
 
-		mergeSegmentCount = alreadyMergeSegmentCount;
+		mergeSegmentCount = (uint)alreadyMergeSegment.Count;
 		mergedTotalSegmentCharCount = alreadyMergedTotalSegmentCharCount;
 		return currentAfterMergeSegment;
 	}
