@@ -35,31 +35,6 @@ public static class Segments
 		//已经预定义了的静态segment集合
 		var staticSegments = All;
 
-		#region 测试代码
-
-		//如果当前一个是?,前一个也是?
-		if (segment.Content == "?" && index >= 0 && previousSegments[index].Content == "?")
-		{
-			Console.WriteLine("Segments:?还不会处理@!!!");
-			//TODO
-
-			// throw new Exception("Segments:?还不会处理@!!!");
-			Console.WriteLine("Segments:?还不会处理@!!!");
-		}
-
-		//如果当前是=,前一个是?,再前一个也是?
-		if (segment.Content == "=" && index >= 1 && previousSegments[index].Content == "?"
-		    && previousSegments[index - 1].Content == "?")
-		{
-			Console.WriteLine("Segments:??=还不会处理@!!!");
-			//TODO
-
-			// throw new Exception("Segments:??=还不会处理@!!!");
-			Console.WriteLine("Segments:??=还不会处理@!!!");
-		}
-
-		#endregion
-
 		while (mergeSucceed && index >= 0)
 		{
 			var currentWaitMergeSegment = previousSegments[index];
