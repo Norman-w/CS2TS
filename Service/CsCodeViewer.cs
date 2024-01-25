@@ -77,9 +77,9 @@ public class CsCodeViewerCommunicator
 
 		var lastClient = _clientManager.CsCodeViewerClientList.Last().Value;
 		var stringContent = package.ToJson();
-		Console.WriteLine($"发送给客户端:{lastClient.SecWebSocketKey}的数据:{stringContent}");
+		// Console.WriteLine($"发送给客户端:{lastClient.SecWebSocketKey}的数据:{stringContent}");
 		_clientManager.Server?.SendAsync(lastClient, stringContent);
-		Console.WriteLine("发送成功");
+		Console.WriteLine("ShowSegments发送成功");
 		return true;
 	}
 

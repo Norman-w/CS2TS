@@ -153,6 +153,7 @@ public static class ServerMockExtensions
 		Console.ResetColor();
 		//
 		// server.MockPrintAllVisibleSegments(segments);
+		server.ShowSegments(segments);
 	}
 
 	/// <summary>
