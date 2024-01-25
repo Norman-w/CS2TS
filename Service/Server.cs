@@ -191,93 +191,23 @@ public static class ServerMockExtensions
 
 	public static void MockTryMergeAllBackward(this Server server, List<Segment> segments)
 	{
-		//TODO
-		// 都完事儿了以后向前这样的不中,比如 现在是 = , 之前是?? 那么虽然有 ??= 但是没有 ? = 所以不能合并
-		// 应该解析完了一个segment以后就直接向前尝试合并
-		//
-		// 或者就算是统一合并的话 是不是需要向后合并方法, 根据当前字符找出以这个开头的然后 所有的都试一下往后
-		// 比如 ? 找到 ?? 和 ??= 然后看后面的连起来的话能不能匹配,能匹配则往后走
-		// var mergedSegments = new List<Segment>();
-		/*
-
-
-		 2024年01月23日19:50:14 通过预演向后合并的方式,发现有问题,比如 ?出现了,后面可以有 ?? 和 ??= 那怎么确定合并到哪个上面去
-		 还是说我这个方法就只能匹配具备一种可能性的时候,用来确定可以和后面的合并与否?
-		 一段示意代码,准备向后合并的方法
-
-		 /// <summary>
-		   ///     向后合并
-		   /// </summary>
-		   /// <returns></returns>
-		   public static List<Segment> MergeForward(Segment segment,
-		   List<Segment> nextSegments,
-		   out uint mergeSegmentCount,
-		   out uint mergedTotalSegmentCharCount)
-		   {
-		   /*
-		   大概步骤:
-		   先检查参数有效性,然后看能否直接最短路线返回.
-		   再找以当前这个segment开头的Segments里面的static的集合(比当前的segment长的)
-		   * /
-		   }
-
-		   那么我们是不是有多个可以返回的,如果是多个的话,这样确认的意义是什么尚不清楚,也许以后用的到.但是目前来看:
-		   我应该专注于在处理完了任何一个语义以后尝试向前合并.
-
-
-        */
-
-		#region 之前的反向合并,从最后一个开始
-
-		// var index = segments.Count - 1;
-		// while (index >= 0)
-		// {
-		// 	var currentSegment = segments[index];
-		//
-		// 	//提取segments的index之前的所有segment
-		// 	var previousSegments = segments.GetRange(0, index);
-		//
-		// 	index--;
-		// 	var mergedSegment = Segments.MergeBackwards(currentSegment, previousSegments, out var mergeSegmentCount,
-		// 		out var mergedTotalSegmentCharCount);
-		// 	// mergedSegments.Add(mergedSegment);
-		// 	//移除掉吃掉的segment
-		// 	segments.RemoveRange(index + 1 - (int)mergeSegmentCount, (int)mergeSegmentCount);
-		// 	//替换成合并完的segment
-		// 	segments[^1] = mergedSegment;
-		// }
-
-		#endregion
-
 		#region 新版本正向合并,从第一个开始,但是也是往前合并
 
 		var segmentsCopy = new List<Segment>(segments);
 		var index = 0;
 		do
 		{
-			var currentSegment = segmentsCopy[index];
-
-
-			//提取segments的index之前的所有segment
-			var previousSegments = segmentsCopy.GetRange(0, index);
-
-			#region MyRegion
-
-			var thisSeg = currentSegment;
 			if (index < 1)
 			{
 				index++;
 				continue;
 			}
 
-			var previousSeg = previousSegments[^1];
+			var currentSegment = segmentsCopy[index];
 
-			//??
-			if (thisSeg.Content == "?" && previousSeg.Content == "?")
-			{
-			}
 
-			#endregion
+			//提取segments的index之前的所有segment
+			var previousSegments = segmentsCopy.GetRange(0, index);
 
 			var mergedSegment = Segments.MergeBackwards(currentSegment, previousSegments, out var mergeSegmentCount,
 				out var mergedTotalSegmentCharCount);
@@ -313,7 +243,7 @@ public static class ServerMockExtensions
 		Console.WriteLine("合并完毕");
 		Console.ResetColor();
 
-		#region 输出,高亮显示2个字符和3个字符的segment
+		#region 输出,高亮显示2个字符和3+个字符的segment
 
 		//获取所有Segments静态类中的字段,里面是2个字符的segment
 		var staticSegments = Segments.All;
