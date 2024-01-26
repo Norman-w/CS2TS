@@ -147,13 +147,68 @@ public static class ServerMockExtensions
 		segments.AddRange(allSegments);
 		//粘连
 		server.MockTryMergeAllBackward(segments);
+
+		#region 修正每一个segment的index数据
+
+		//在当前行中,当前segment的序号,当遇到换行符,这个序号就会重置为0
+		var currentSegmentIndexOfLine = 0;
+		//在所有行中,当前segment的序号,一直递增
+		var currentSegmentIndexOfAllLines = 0;
+		//当前行的序号,一直递增,遇到一个换行符,这个序号就会递增1
+		var currentLineIndexOfAllLines = 0;
+		//第一个字符在当前行中的位置,在遇到换行符的时候,这个值会重置为0
+		var currentSegmentFirstCharIndexOfLine = 0;
+		//第一个字符在所有行中的位置,一直递增
+		var currentSegmentFirstCharIndexOfAllLines = 0;
+		//因为很多是从static中获取来的对象引用,所以这里要重新new一下,不然会影响到static中的数据
+		var newSegmentsList = new List<Segment>();
+		while (currentSegmentIndexOfAllLines < segments.Count)
+		{
+			var currentSegment = segments[currentSegmentIndexOfAllLines];
+			// currentSegment.SegmentIndexOfLine = currentSegmentIndexOfLine;
+			// currentSegment.SegmentIndexOfAllLines = currentSegmentIndexOfAllLines;
+			// currentSegment.LineIndexOfAllLines = currentLineIndexOfAllLines;
+			// currentSegment.StartCharIndexOfLine = currentSegmentFirstCharIndexOfLine;
+			// currentSegment.StartCharIndexOfAllLines = currentSegmentFirstCharIndexOfAllLines;
+			//
+			newSegmentsList.Add(new Segment
+			{
+				Content = currentSegment.Content,
+				SegmentIndexOfLine = currentSegmentIndexOfLine,
+				SegmentIndexOfAllLines = currentSegmentIndexOfAllLines,
+				LineIndexOfAllLines = currentLineIndexOfAllLines,
+				StartCharIndexOfLine = currentSegmentFirstCharIndexOfLine,
+				StartCharIndexOfAllLines = currentSegmentFirstCharIndexOfAllLines
+			});
+
+			Console.WriteLine(
+				$"第{currentSegmentIndexOfAllLines}个segment,内容:{currentSegment.Content},在行中位置:{currentSegment.SegmentIndexOfLine},在所有行中位置:{currentSegment.SegmentIndexOfAllLines},在所有行中的行号:{currentSegment.LineIndexOfAllLines},在行中的第一个字符位置:{currentSegment.StartCharIndexOfLine},在所有行中的第一个字符位置:{currentSegment.StartCharIndexOfAllLines}");
+
+			currentSegmentIndexOfAllLines++;
+			currentSegmentIndexOfLine++;
+
+			if (currentSegment.IsLineBreak)
+			{
+				currentLineIndexOfAllLines++;
+				currentSegmentFirstCharIndexOfLine = 0;
+				currentSegmentIndexOfLine = 0;
+			}
+			else
+			{
+				currentSegmentFirstCharIndexOfLine += currentSegment.Length;
+				currentSegmentFirstCharIndexOfAllLines += currentSegment.Length;
+			}
+		}
+
+		#endregion
+
 		Console.WriteLine("");
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("解析完毕");
 		Console.ResetColor();
 		//
 		// server.MockPrintAllVisibleSegments(segments);
-		server.ShowSegments(segments);
+		server.ShowSegments(newSegmentsList);
 	}
 
 	/// <summary>
