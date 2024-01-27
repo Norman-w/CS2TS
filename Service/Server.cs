@@ -86,7 +86,7 @@ public static class ServerMockExtensions
 		testCodeFilePath = Path.Combine(exePath, testCodeFilePath);
 		var fileContent = File.ReadAllText(testCodeFilePath);
 		server.ShowCsCodeString(fileContent);
-		Console.WriteLine("已经发送了代码");
+		Console.WriteLine($"已经发送了代码,总长度{fileContent.Length}");
 		cursorPosition = 0;
 		csCodeString = fileContent;
 	}
@@ -165,12 +165,6 @@ public static class ServerMockExtensions
 		while (currentSegmentIndexOfAllLines < segments.Count)
 		{
 			var currentSegment = segments[currentSegmentIndexOfAllLines];
-			// currentSegment.SegmentIndexOfLine = currentSegmentIndexOfLine;
-			// currentSegment.SegmentIndexOfAllLines = currentSegmentIndexOfAllLines;
-			// currentSegment.LineIndexOfAllLines = currentLineIndexOfAllLines;
-			// currentSegment.StartCharIndexOfLine = currentSegmentFirstCharIndexOfLine;
-			// currentSegment.StartCharIndexOfAllLines = currentSegmentFirstCharIndexOfAllLines;
-			//
 			newSegmentsList.Add(new Segment
 			{
 				Content = currentSegment.Content,
@@ -190,6 +184,7 @@ public static class ServerMockExtensions
 			if (currentSegment.IsLineBreak)
 			{
 				currentLineIndexOfAllLines++;
+				currentSegmentFirstCharIndexOfAllLines++;
 				currentSegmentFirstCharIndexOfLine = 0;
 				currentSegmentIndexOfLine = 0;
 			}
@@ -205,6 +200,8 @@ public static class ServerMockExtensions
 		Console.WriteLine("");
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("解析完毕");
+		Console.WriteLine("最后一个Segment的最后一个字符的位置:" +
+		                  (newSegmentsList[^1].StartCharIndexOfAllLines + newSegmentsList[^1].Length));
 		Console.ResetColor();
 		//
 		// server.MockPrintAllVisibleSegments(segments);

@@ -149,7 +149,7 @@ public partial class Segment
 		{
 			var line = csCodeStringLines[i];
 			//如果是空的,那么就直接返回空的segment
-			if (string.IsNullOrWhiteSpace(line))
+			if (line.Length == 0)
 			{
 				segments.Add(Empty);
 				continue;
@@ -182,13 +182,14 @@ public partial class Segment
 	{
 		//参数有效性检查
 		//如果是空的,那么就直接返回空的segment
-		if (string.IsNullOrWhiteSpace(csCodeStringLine))
+		if (csCodeStringLine.Length == 0)
 			return new List<Segment> { Empty };
 		var result = new List<Segment>();
 		while (cursorColumn < csCodeStringLine.Length)
 		{
 			var segment = PickFromCodeString(csCodeStringLine, ref cursorColumn);
 			result.Add(segment);
+			if (segment == Segments.LineBreakSymbol) break;
 		}
 
 
@@ -197,38 +198,6 @@ public partial class Segment
 
 		return result;
 	}
-
-	// /// <summary>
-	// ///     在给定的多行文本中,根据行号和所在行中的游标位置,找出一个segment
-	// ///     调用本方法前应该使用换行符分割整个文本,保证每一行都是单独的一行
-	// /// </summary>
-	// /// <param name="csCodeStringLines"></param>
-	// /// <param name="cursorLine"></param>
-	// /// <param name="cursorColumn"></param>
-	// /// <returns></returns>
-	// public static Segment PickFromCodeString(
-	// 	List<string> csCodeStringLines, //整个文本,已经被分割成行了
-	// 	ref int cursorLine, //在文本中的第几行
-	// 	ref int cursorColumn //在当前行中的第多少个字符
-	// )
-	// {
-	// 	//参数有效性检查
-	// 	//如果是空的,那么就直接返回空的segment
-	// 	if (csCodeStringLines.Count == 0)
-	// 		return Empty;
-	// 	if (cursorLine < 0 || cursorLine >= csCodeStringLines.Count)
-	// 		throw new ArgumentOutOfRangeException(nameof(cursorLine));
-	// 	var line = csCodeStringLines[cursorLine];
-	// 	if (cursorColumn < 0 || cursorColumn >= line.Length)
-	// 		throw new ArgumentOutOfRangeException(nameof(cursorColumn));
-	// 	//如果是空的,那么就直接返回空的segment
-	// 	if (string.IsNullOrWhiteSpace(line))
-	// 		return Empty;
-	// 	var result = PickFromCodeString(line, ref cursorColumn);
-	// 	result.LineIndexOfAllLines = cursorLine;
-	// 	result.SegmentIndexOfLine = cursorColumn;
-	// 	return result;
-	// }
 
 	/// <summary>
 	///     在给定的单行文本中,找出头一个segment
@@ -253,7 +222,7 @@ public partial class Segment
 		                  (breakSymbolCount == 1 && csCodeStringLine.EndsWith(Segments.LineBreakSymbol.Content));
 		if (!isValidLine)
 			throw new Exception($"传入的行不是单行:{csCodeStringLine}.要么没有换行符,要么只有一个换行符,并且在最后");
-		if (string.IsNullOrWhiteSpace(csCodeStringLine))
+		if (csCodeStringLine.Length == 0)
 			return Empty;
 		//如果这个行直接就是一个换行符就返回一个换行符
 		if (Segments.LineBreakSymbol.Content == csCodeStringLine)
@@ -282,7 +251,7 @@ public partial class Segment
 			if (WordBreakWords.Contains(currentChar.ToString()))
 			{
 				//但是如果segmentContent是空的,当前也是空的,那就继续往下走,就是那种多个空格之类的连到一起的或者是空格+\t之类的
-				if (segmentContent.Length > 0 && string.IsNullOrWhiteSpace(segmentContent.ToString()) &&
+				if (string.IsNullOrWhiteSpace(segmentContent.ToString()) &&
 				    Constant.NonOperatorWhitespaceChars.Contains(currentChar.ToString()))
 				{
 					cursorColumn++;
