@@ -4,7 +4,15 @@ namespace CS2TS.Model;
 
 public static class Segments
 {
-	//向前合并
+	/// <summary>
+	///     向前合并方法,通过传入当前的Segment以及他之前的Segments,尝试进行向前合并,比如 当前是=,前面是!,那么就可以合并成!=
+	///     可向外传出合并的Segment数量,以及合并的总字符数量
+	/// </summary>
+	/// <param name="segment"></param>
+	/// <param name="previousSegments"></param>
+	/// <param name="mergeSegmentCount"></param>
+	/// <param name="mergedTotalSegmentCharCount"></param>
+	/// <returns></returns>
 	public static Segment MergeBackwards(
 		Segment segment,
 		List<Segment> previousSegments,
