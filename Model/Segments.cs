@@ -86,6 +86,7 @@ public static class Segments
 		return currentAfterMergeSegment;
 	}
 
+	//TODO:这个方法还没有测试过
 	/// <summary>
 	///     尝试将成对出现的符号,也就是像{},()等这样的符号中间的不可见字符去掉,比如\t呀,空格呀,换行符呀之类的.
 	/// </summary>
