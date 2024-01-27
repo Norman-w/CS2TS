@@ -40,16 +40,18 @@ public static class Segments
 			var currentWaitMergeSegment = previousSegments[index];
 			//如果是不可见的segment,那么算做可以吃掉的segment,要增加mergeSegmentCount和mergedTotalSegmentCharCount
 			//新的改动是换行符不会吃掉
-			if (currentWaitMergeSegment.IsWhitespace
-			    //不能上来就吃掉前面的空白字符.如果第一个确实是可见字符,然后中间间隔了一些空白字符的话,那么就可以吃掉了
-			    && alreadyMergeSegment.Count > 0
-			    && alreadyMergeSegment[0].IsWhitespace == false)
-			{
-				alreadyMergeSegment.Add(currentWaitMergeSegment);
-				alreadyMergedTotalSegmentCharCount++;
-				index--;
-				continue;
-			}
+			//2024年01月27日09:34:09新改动,为了保证文件的一致性,不能随便吃掉任何空白符.吃掉空白符的做法应该在以后定义
+			//那样的方法应该是用来格式化代码用的,发现类似于括号的右半边的时候,然后往前检查是不是能遇到他的左半边,能遇到的话,把中间隔档的地方都吃掉
+			// if (currentWaitMergeSegment.IsWhitespace
+			//     //不能上来就吃掉前面的空白字符.如果第一个确实是可见字符,然后中间间隔了一些空白字符的话,那么就可以吃掉了
+			//     && alreadyMergeSegment.Count > 0
+			//     && alreadyMergeSegment[0].IsWhitespace == false)
+			// {
+			// 	alreadyMergeSegment.Add(currentWaitMergeSegment);
+			// 	alreadyMergedTotalSegmentCharCount++;
+			// 	index--;
+			// 	continue;
+			// }
 
 			index--;
 			var mergedContent = currentWaitMergeSegment.Content + currentAfterMergeSegment.Content;
@@ -229,16 +231,16 @@ public static class Segments
 	#region 闭合的空参数各种括号.这种括号里面可以容纳多个不可见字符,不像 += 中间不能有空格
 
 	/// <summary> 闭合空参数的括号 </summary>
-	public static Segment CloseParenthesesSymbol = new() { Content = "()" };
+	public static Segment CloseParenthesesSymbol = new() { Content = "()", CanInsertContentInMiddle = true };
 
 	/// <summary> 闭合空参数的尖括号 </summary>
-	public static Segment CloseAngleBracketsSymbol = new() { Content = "<>" };
+	public static Segment CloseAngleBracketsSymbol = new() { Content = "<>", CanInsertContentInMiddle = true };
 
 	/// <summary> 闭合空参数的方括号 </summary>
-	public static Segment CloseSquareBracketsSymbol = new() { Content = "[]" };
+	public static Segment CloseSquareBracketsSymbol = new() { Content = "[]", CanInsertContentInMiddle = true };
 
 	/// <summary> 闭合空参数的大括号 </summary>
-	public static Segment CloseBracesSymbol = new() { Content = "{}" };
+	public static Segment CloseBracesSymbol = new() { Content = "{}", CanInsertContentInMiddle = true };
 
 	#endregion
 

@@ -68,6 +68,14 @@ public partial class Segment
 		// Constant.NonOperatorWhitespaceChars.Contains(Content);
 		//要每一个都是不可见字符才行
 		Content.ToCharArray().All(c => Constant.NonOperatorWhitespaceChars.Contains(c.ToString()));
+
+	/// <summary>
+	///     中间是否可以插入内容,也就是:是否为括号那种的,中间可以插入空格呀,或者其他的东西.
+	///     中间不可以插入内容的比如 != 这样的就是不能断开成为 ! = 这样 但是 {} 这种的可以中间加任何空格,其次还可以有别的语句,参数等.
+	///     现阶段已知的是所有的括号类的都可以中间插入空格,比如() [] {} 尖括号等等
+	/// </summary>
+	/// <returns></returns>
+	public bool CanInsertContentInMiddle { get; set; }
 }
 
 public partial class Segment
