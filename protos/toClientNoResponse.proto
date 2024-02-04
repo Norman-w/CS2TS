@@ -1,0 +1,10 @@
+syntax = "proto3";
+package CS2TS.Service.gRPCServer;
+import "google/protobuf/empty.proto";
+
+message ToClientSeverNameNotice {
+   string ServerName = 1;
+}
+service ToClientNoResponse {
+   rpc ToClientServerNameNotice (ToClientSeverNameNotice) returns (.google.protobuf.Empty);
+}

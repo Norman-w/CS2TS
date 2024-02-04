@@ -7,6 +7,7 @@
 
 using CS2TS.Model;
 using CS2TS.Service;
+using Server = CS2TS.Service.gRPCServer.Server;
 
 namespace CS2TS;
 
@@ -16,9 +17,15 @@ public static class Program
 	{
 		var needClose = false;
 
+		#region 开启grpc服务端
+
+		_ = new Server();
+
+		#endregion
+
 		#region 开启服务端
 
-		var server = new Server();
+		var server = new Service.Server();
 		//已经解析的缓存的segments
 		var segments = new List<Segment>();
 		//文件

@@ -1,0 +1,13 @@
+syntax = "proto3";
+package CS2TS.Service.gRPCServer;
+
+message ToServerGetServerNameRequest {
+   string ClientName = 1;
+}
+message ToServerGetServerNameResponse {
+   string ServerName = 1;
+   int64 ServerTime = 2;
+}
+service ToServerNeedResponse {
+   rpc GetServerName (ToServerGetServerNameRequest) returns (ToServerGetServerNameResponse);
+}
