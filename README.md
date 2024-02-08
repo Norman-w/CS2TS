@@ -124,3 +124,15 @@ C#中的那种三个字符串的组成,一定不会是由1个直接跳到3个而
 ### 2024年01月27日10:06:52现在已经可以正确的解析每一个语义的长度,起始位等信息了,对成对出现的括号也有了一些改进
 
 服务端发送的csCodeString和SegmentsList都能正确的在前端显示,不会有多余的csCodeString未解析部分在前端显示出来了.
+
+### 2024年02月05日13:49:54 准备开始分析最小语义单元如何组成代码结构树的了
+
+首先一个idea是,通过当前语义 比如 "public" 以及当前所在的领空,判断这个public可能是什么意思,比如可能是一个类的修饰符,可能是一个函数的修饰符,可能是一个变量的修饰符等等.
+
+另外一个idea是,像public这种语义单元,可以修饰哪些东西,比如public可以修饰类,函数,变量等等.
+
+那么不管是哪个idea,都需要把这些关键词都实例化,有固定的类来保存他们.所以这个时候我们就需要明确Segment不再是之前的那些符号之类的了.也可以是一个关键词.
+所以我决定把Segment定义为基类,在此基础上会有符号Segment,关键词Segment,修饰符Segment等等.
+符号Segment命名为SymbolSegment,关键词Segment命名为KeywordSegment,修饰符Segment命名为ModifierSegment.
+把原来的Segment修改成为基类,原来那些符号加减乘除之类的都改成继承自Segment的SymbolSegment.
+然后新增KeywordSegment,ModifierSegment等等.
