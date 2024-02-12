@@ -13,7 +13,7 @@ namespace CS2TS.Model;
 /// <summary>
 ///     语义最小单元
 /// </summary>
-public partial class Segment
+public abstract partial class Segment
 {
 	/// <summary>
 	///     代码内容
@@ -78,15 +78,12 @@ public partial class Segment
 	public bool CanInsertContentInMiddle { get; set; }
 }
 
-public partial class Segment
+public abstract partial class Segment
 {
 	/// <summary>
 	///     空的segment,不包含任何内容
 	/// </summary>
-	public static readonly Segment Empty = new()
-	{
-		Content = string.Empty
-	};
+	public static Segment Empty => new EmptySegment();
 
 	private static List<string>? _wordBreakWords;
 
@@ -141,10 +138,10 @@ public partial class Segment
 	{
 		//分割行,保留空行,因为分割以后,会移除换行符,所以在分割之后,后面补全一个换行符保持原来的整行内容
 		//也就是换行符属于这一行的结尾.所以分割后每行后面头添加一个分隔符(除了最后一行)
-		var csCodeStringLines = csCodeString.Split(Segments.LineBreakSymbol.Content).ToList();
+		var csCodeStringLines = csCodeString.Split(SymbolSegments.LineBreakSymbol.Content).ToList();
 		//补全换行符
 		for (var i = 0; i < csCodeStringLines.Count - 1; i++)
-			csCodeStringLines[i] += Segments.LineBreakSymbol.Content;
+			csCodeStringLines[i] += SymbolSegments.LineBreakSymbol.Content;
 		// var result = PickFromCodeString(csCodeStringLines, ref cursorLine, ref cursorColumn);
 		// for (var i = 0; i < cursorLine; i++)
 		// 	segmentIndexOnWholeText += csCodeStringLines[i].Length;
@@ -197,7 +194,7 @@ public partial class Segment
 		{
 			var segment = PickFromCodeString(csCodeStringLine, ref cursorColumn);
 			result.Add(segment);
-			if (segment == Segments.LineBreakSymbol) break;
+			if (segment == SymbolSegments.LineBreakSymbol) break;
 		}
 
 
@@ -224,17 +221,17 @@ public partial class Segment
 		#region 值有效性检查
 
 		//检查行是否多行(换行符的数量大于1个或者换行符的数量虽然是1但是不是最后一个),使用正则能忽略char和string的格式问题
-		var breakSymbolCount = Regex.Matches(csCodeStringLine, Segments.LineBreakSymbol.Content).Count;
+		var breakSymbolCount = Regex.Matches(csCodeStringLine, SymbolSegments.LineBreakSymbol.Content).Count;
 		//要是有\n,只能有一个,而且必须要在最后,要么就没有
 		var isValidLine = breakSymbolCount == 0 ||
-		                  (breakSymbolCount == 1 && csCodeStringLine.EndsWith(Segments.LineBreakSymbol.Content));
+		                  (breakSymbolCount == 1 && csCodeStringLine.EndsWith(SymbolSegments.LineBreakSymbol.Content));
 		if (!isValidLine)
 			throw new Exception($"传入的行不是单行:{csCodeStringLine}.要么没有换行符,要么只有一个换行符,并且在最后");
 		if (csCodeStringLine.Length == 0)
 			return Empty;
 		//如果这个行直接就是一个换行符就返回一个换行符
-		if (Segments.LineBreakSymbol.Content == csCodeStringLine)
-			return Segments.LineBreakSymbol;
+		if (SymbolSegments.LineBreakSymbol.Content == csCodeStringLine)
+			return SymbolSegments.LineBreakSymbol;
 
 		#endregion
 
@@ -299,10 +296,21 @@ public partial class Segment
 			         staticSegment.Content == segmentContent.ToString()))
 			return staticSegment;
 		//如果没有,那么就新建一个
-
-		return new Segment
+		
+		//除了已经定义的以外,其他的都视为是单词来处理.就算是特殊符号,也用作单词.
+		//因为看了一下键盘上能显示出来的符号基本都用做语法符号了,其他的像✔这种的,也不会出现在代码中作为符号,就作为单词处理(因为不是操作符)
+		
+		return new WordSegment
 		{
 			Content = segmentContent.ToString(), StartCharIndexOfLine = cursorColumn - segmentContent.Length
 		};
+	}
+}
+
+public class EmptySegment : Segment
+{
+	public EmptySegment()
+	{
+		Content = string.Empty;
 	}
 }

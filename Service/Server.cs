@@ -165,7 +165,7 @@ public static class ServerMockExtensions
 		while (currentSegmentIndexOfAllLines < segments.Count)
 		{
 			var currentSegment = segments[currentSegmentIndexOfAllLines];
-			newSegmentsList.Add(new Segment
+			newSegmentsList.Add(new SymbolSegment
 			{
 				Content = currentSegment.Content,
 				SegmentIndexOfLine = currentSegmentIndexOfLine,

@@ -136,3 +136,24 @@ C#中的那种三个字符串的组成,一定不会是由1个直接跳到3个而
 符号Segment命名为SymbolSegment,关键词Segment命名为KeywordSegment,修饰符Segment命名为ModifierSegment.
 把原来的Segment修改成为基类,原来那些符号加减乘除之类的都改成继承自Segment的SymbolSegment.
 然后新增KeywordSegment,ModifierSegment等等.
+2024年02月10日13:56:32,对KeywordSegment,ModifierSegment的定义比较模糊
+但是有了TypeSegments和PropertySegments的定义,TypeSegments是用来定义类型的,PropertySegments是用来定义属性的.
+比如namespace, class, interface, enum, struct, delegate, event, var, record这都是TypeSegments
+而public, private, protected, internal, static, readonly, const, virtual, override, sealed, abstract, extern,
+partial这些都是PropertySegments
+
+另外,还有一个明确的概念是:
+
+### 任何Thing都有定义和使用.比如 public class A{} 这里的class A就是一个定义,而A a = new A(); 这里的A就是一个使用.
+
+所以对于一些Segment,我们需要明确他们是定义还是使用,比如TypeSegments是定义,PropertySegments是定义的修饰符,而VariableSegments是使用的.
+还可以定义UsingSegments为使用的,具体的还需要整理一下.
+
+### 关于定义,使用
+
+定义:
+定义分为两部分,一部分是头部定义,一部分是体部定义.
+比如一个class,他的头部定义是class A,体部定义是{}中的内容.
+所以Segment增加属性CanFinishCodeNodeTypes,用于标识这个Segment是否可以结束一个CodeNode的定义,可以结束哪种类型的CodeNode的定义.
+同时还可以标识是否可以开始一个新的CodeNode的定义,可以开始哪种类型的CodeNode的定义.
+可以开始和结束body的segment都是符号,比如{,},;等等,整个的英文单词不具备这个能力.
