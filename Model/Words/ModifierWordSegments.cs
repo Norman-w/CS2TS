@@ -23,7 +23,7 @@ public class ModifierWordSegments
 		Content = "static",
 		UseForCodeNodeTypes = new List<Type>
 		{
-			typeof(Class),
+			typeof(Class)
 		}
 	};
 
@@ -59,13 +59,12 @@ public class ModifierWordSegments
 		Content = "sealed",
 		UseForCodeNodeTypes = new List<Type>
 		{
+			//应用于某个类时，sealed修饰符可阻止其他类继承自该类。
 			typeof(Class),
-			typeof(Struct),
-			typeof(Enum),
-			typeof(Interface),
-			typeof(Delegate),
-			typeof(Record),
-			typeof(Event)
+			//属性可以为sealed,但是需要是override的
+			// 应用于方法或属性时，sealed修饰符必须始终与 override 结合使用。
+			typeof(Property),
+			typeof(Method)
 		}
 	};
 
@@ -94,6 +93,38 @@ public class ModifierWordSegments
 
 	public static readonly ModifierWordSegment New = new()
 	{
+		/*
+
+		 new修饰符用于方法,属性,事件,字段的示意:
+
+
+		   public class A
+		   {
+		   public string C { get; set; }
+
+		   public void B()
+		   {
+		   }
+
+		   public string E;
+
+		   public event Action F;
+		   }
+
+		   public class D : A
+		   {
+		   public new string C { get; set; }
+
+		   public new void B()
+		   {
+		   }
+
+		   public new string E;
+
+		   public new event Action F;
+		   }
+
+        */
 		Content = "new",
 		UseForCodeNodeTypes = new List<Type>
 		{
@@ -106,10 +137,3 @@ public class ModifierWordSegments
 
 	#endregion
 }
-//
-// public abstract record a
-// {
-// 	public delegate void b();
-//
-// 	public abstract void c();
-// }
