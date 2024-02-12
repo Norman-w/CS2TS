@@ -14,6 +14,7 @@
 
 
 using CS2TS.Model;
+using CS2TS.Model.Words;
 using CS2TS.Service.WebSocketServer;
 
 namespace CS2TS.Service;
@@ -335,6 +336,29 @@ public static class ServerMockExtensions
 			if (s.Content.Contains("\t"))
 			{
 			}
+
+			#region 判断Segment类型
+
+			switch (s)
+			{
+				//TypeWordSegment类型的用绿色
+				//AccessModifierWordSegment类型的用蓝色
+				//ModifierWordSegment类型的用青色
+				case TypeWordSegment:
+					Console.ForegroundColor = ConsoleColor.Green;
+					Console.BackgroundColor = ConsoleColor.Red;
+					break;
+				case AccessModifierWordSegment:
+					Console.ForegroundColor = ConsoleColor.Blue;
+					Console.BackgroundColor = ConsoleColor.Red;
+					break;
+				case ModifierWordSegment:
+					Console.ForegroundColor = ConsoleColor.Cyan;
+					Console.BackgroundColor = ConsoleColor.Red;
+					break;
+			}
+
+			#endregion
 
 			Console.Write(s.Content);
 			Console.BackgroundColor = ConsoleColor.Gray;
