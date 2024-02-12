@@ -16,6 +16,7 @@ public static class Segments
 			_all.AddRange(SymbolSegments.All);
 			_all.AddRange(ModifierWordSegments.All);
 			_all.AddRange(AccessModifierWordSegments.All);
+			_all.AddRange(TypeWordSegments.All);
 			return _all;
 		}
 	}
