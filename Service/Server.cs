@@ -348,11 +348,11 @@ public static class ServerMockExtensions
 					Console.ForegroundColor = ConsoleColor.Green;
 					Console.BackgroundColor = ConsoleColor.Red;
 					break;
-				case AccessModifierWordSegment:
+				case AccessModifierSegment:
 					Console.ForegroundColor = ConsoleColor.Blue;
 					Console.BackgroundColor = ConsoleColor.Red;
 					break;
-				case ModifierWordSegment:
+				case ModifierSegment:
 					Console.ForegroundColor = ConsoleColor.Cyan;
 					Console.BackgroundColor = ConsoleColor.Red;
 					break;

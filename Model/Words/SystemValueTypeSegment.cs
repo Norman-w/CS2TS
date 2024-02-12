@@ -9,6 +9,6 @@
 
 namespace CS2TS.Model.Words;
 
-public class SystemValueTypeWordSegment : WordSegment
+public class SystemValueTypeSegment : WordSegment
 {
 }

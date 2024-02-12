@@ -9,23 +9,23 @@
 
 namespace CS2TS.Model.Words;
 
-public class ModifierWordSegments
+public class ModifierSegments
 {
 	#region 对外提供的对象 StaticSegments
 
-	private static List<ModifierWordSegment>? _all;
+	private static List<ModifierSegment>? _all;
 
 	/// <summary>
 	///     所有的静态字段,也就是所有的Segment
 	/// </summary>
 	/// <exception cref="Exception"></exception>
-	public static List<ModifierWordSegment> All
+	public static List<ModifierSegment> All
 	{
 		get
 		{
 			//如果已经初始化过了,那么直接返回
 			if (_all != null) return _all;
-			_all = Segments.GetAllStaticSegments<ModifierWordSegment, ModifierWordSegments>();
+			_all = Segments.GetAllStaticSegments<ModifierSegment, ModifierSegments>();
 			return _all;
 		}
 	}
@@ -36,7 +36,7 @@ public class ModifierWordSegments
 
 	//每个修饰符都有自己的特点,所以要单独列出来
 
-	public static readonly ModifierWordSegment Static = new()
+	public static readonly ModifierSegment Static = new()
 	{
 		Content = "static",
 		UseForCodeNodeTypes = new List<Type>
@@ -45,7 +45,7 @@ public class ModifierWordSegments
 		}
 	};
 
-	public static readonly ModifierWordSegment Readonly = new()
+	public static readonly ModifierSegment Readonly = new()
 	{
 		Content = "readonly",
 		UseForCodeNodeTypes = new List<Type>
@@ -54,7 +54,7 @@ public class ModifierWordSegments
 		}
 	};
 
-	public static readonly ModifierWordSegment Virtual = new()
+	public static readonly ModifierSegment Virtual = new()
 	{
 		Content = "virtual",
 		UseForCodeNodeTypes = new List<Type>
@@ -63,7 +63,7 @@ public class ModifierWordSegments
 		}
 	};
 
-	public static readonly ModifierWordSegment Override = new()
+	public static readonly ModifierSegment Override = new()
 	{
 		Content = "override",
 		UseForCodeNodeTypes = new List<Type>
@@ -72,7 +72,7 @@ public class ModifierWordSegments
 		}
 	};
 
-	public static readonly ModifierWordSegment Sealed = new()
+	public static readonly ModifierSegment Sealed = new()
 	{
 		Content = "sealed",
 		UseForCodeNodeTypes = new List<Type>
@@ -86,7 +86,7 @@ public class ModifierWordSegments
 		}
 	};
 
-	public static readonly ModifierWordSegment Abstract = new()
+	public static readonly ModifierSegment Abstract = new()
 	{
 		Content = "abstract",
 		UseForCodeNodeTypes = new List<Type>
@@ -100,7 +100,7 @@ public class ModifierWordSegments
 		}
 	};
 
-	public static readonly ModifierWordSegment Async = new()
+	public static readonly ModifierSegment Async = new()
 	{
 		Content = "async",
 		UseForCodeNodeTypes = new List<Type>
@@ -109,7 +109,7 @@ public class ModifierWordSegments
 		}
 	};
 
-	public static readonly ModifierWordSegment New = new()
+	public static readonly ModifierSegment New = new()
 	{
 		/*
 

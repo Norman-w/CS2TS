@@ -1,22 +1,22 @@
 namespace CS2TS.Model.Words;
 
-public class AccessModifierWordSegments
+public class AccessModifierSegments
 {
 	#region 对外提供的对象 StaticSegments
 
-	private static List<AccessModifierWordSegment>? _all;
+	private static List<AccessModifierSegment>? _all;
 
 	/// <summary>
 	///     所有的静态字段,也就是所有的Segment
 	/// </summary>
 	/// <exception cref="Exception"></exception>
-	public static List<AccessModifierWordSegment> All
+	public static List<AccessModifierSegment> All
 	{
 		get
 		{
 			//如果已经初始化过了,那么直接返回
 			if (_all != null) return _all;
-			_all = Segments.GetAllStaticSegments<AccessModifierWordSegment, AccessModifierWordSegments>();
+			_all = Segments.GetAllStaticSegments<AccessModifierSegment, AccessModifierSegments>();
 			return _all;
 		}
 	}
@@ -34,19 +34,19 @@ public class AccessModifierWordSegments
 		typeof(Event), typeof(Property), typeof(Field), typeof(Method), typeof(Constructor), typeof(Operator)
 	};
 
-	public static readonly AccessModifierWordSegment Public = new()
+	public static readonly AccessModifierSegment Public = new()
 	{
 		Content = "public",
 		UseForCodeNodeTypes = AccessModifierUseForCodeNodeTypes
 	};
 
-	public static readonly AccessModifierWordSegment Private = new()
+	public static readonly AccessModifierSegment Private = new()
 		{ Content = "private", UseForCodeNodeTypes = AccessModifierUseForCodeNodeTypes };
 
-	public static readonly AccessModifierWordSegment Protected = new()
+	public static readonly AccessModifierSegment Protected = new()
 		{ Content = "protected", UseForCodeNodeTypes = AccessModifierUseForCodeNodeTypes };
 
-	public static readonly AccessModifierWordSegment Internal = new()
+	public static readonly AccessModifierSegment Internal = new()
 		{ Content = "internal", UseForCodeNodeTypes = AccessModifierUseForCodeNodeTypes };
 
 	#endregion

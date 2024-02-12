@@ -14,6 +14,6 @@ class/struct/enum/interface/delegate/record/event
 
 namespace CS2TS.Model.Words;
 
-public class AccessModifierWordSegment : ModifierWordSegment
+public class AccessModifierSegment : ModifierSegment
 {
 }

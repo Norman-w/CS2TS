@@ -14,8 +14,8 @@ public static class Segments
 			if (_all != null) return _all;
 			_all = new List<Segment>();
 			_all.AddRange(SymbolSegments.All);
-			_all.AddRange(ModifierWordSegments.All);
-			_all.AddRange(AccessModifierWordSegments.All);
+			_all.AddRange(ModifierSegments.All);
+			_all.AddRange(AccessModifierSegments.All);
 			_all.AddRange(CodeNodeTypeSegments.All);
 			return _all;
 		}
