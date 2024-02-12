@@ -13,22 +13,8 @@
 
 */
 
-using CS2TS.Model;
-
 namespace CS2TS;
 
 public static class WordSegments
 {
-	#region 类似于 static, readonly, virtual, override, sealed, abstract, async, new 这样的关键字,都叫做"修饰符"
-
-	public static readonly WordSegment Static = new() { Content = "static" };
-	public static readonly WordSegment Readonly = new() { Content = "readonly" };
-	public static readonly WordSegment Virtual = new() { Content = "virtual" };
-	public static readonly WordSegment Override = new() { Content = "override" };
-	public static readonly WordSegment Sealed = new() { Content = "sealed" };
-	public static readonly WordSegment Abstract = new() { Content = "abstract" };
-	public static readonly WordSegment Async = new() { Content = "async" };
-	public static readonly WordSegment New = new() { Content = "new" };
-
-	#endregion
 }

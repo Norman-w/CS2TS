@@ -14,11 +14,6 @@ class/struct/enum/interface/delegate/record/event
 
 namespace CS2TS.Model.Words;
 
-public class AccessModifierWordSegment : WordSegment
+public class AccessModifierWordSegment : ModifierWordSegment
 {
-	/// <summary>
-	///     可以用于哪种类型的CodeNode,比如public等可用于
-	///     public: class/struct/enum/interface/delegate/record/event
-	/// </summary>
-	public List<Type> UseForCodeNodeTypes { get; set; } = new();
 }
