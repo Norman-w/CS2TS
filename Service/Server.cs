@@ -344,7 +344,7 @@ public static class ServerMockExtensions
 				//TypeWordSegment类型的用绿色
 				//AccessModifierWordSegment类型的用蓝色
 				//ModifierWordSegment类型的用青色
-				case TypeWordSegment:
+				case CodeNodeTypeSegment:
 					Console.ForegroundColor = ConsoleColor.Green;
 					Console.BackgroundColor = ConsoleColor.Red;
 					break;
