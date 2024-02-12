@@ -1,3 +1,6 @@
+using System.Reflection;
+using CS2TS.Model.Words;
+
 namespace CS2TS.Model;
 
 public static class Segments
@@ -11,9 +14,38 @@ public static class Segments
 			if (_all != null) return _all;
 			_all = new List<Segment>();
 			_all.AddRange(SymbolSegments.All);
+			_all.AddRange(ModifierWordSegments.All);
+			_all.AddRange(AccessModifierWordSegments.All);
 			return _all;
 		}
 	}
+
+	#region 对外提供的对象 StaticSegments
+
+	/// <summary>
+	///     获取类似于SymbolSegments里面的SymbolSegment的列表.(所有静态字段)
+	/// </summary>
+	/// <typeparam name="T">类似于SymbolSegment这样的类型</typeparam>
+	/// <typeparam name="TContainer">类似于SymbolSegments这样包含SymbolSegment的类</typeparam>
+	/// <returns></returns>
+	/// <exception cref="Exception"></exception>
+	public static List<T> GetAllStaticSegments<T, TContainer>() where T : Segment where TContainer : class
+	{
+		var staticFields = typeof(TContainer).GetFields(BindingFlags.Static | BindingFlags.Public);
+		//获取所有的静态字段的值,并且过滤掉不是Segment的
+		var staticSegments = staticFields.Select(field => field.GetValue(null)).Where(v => v is T)
+			.Cast<T>().ToList();
+		//安全检查,找重复的
+		var duplicateItems = staticSegments.GroupBy(s => s.Content).Where(g => g.Count() > 1)
+			.Select(g => g.Key)
+			.ToList();
+		//如果有重复的,那么抛出异常
+		if (duplicateItems.Count > 0)
+			throw new Exception($"Segments:重复的项:{string.Join(",", duplicateItems)}");
+		return staticSegments;
+	}
+
+	#endregion
 
 	/// <summary>
 	///     向前合并方法,通过传入当前的Segment以及他之前的Segments,尝试进行向前合并,比如 当前是=,前面是!,那么就可以合并成!=

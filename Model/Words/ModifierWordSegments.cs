@@ -11,6 +11,27 @@ namespace CS2TS.Model.Words;
 
 public class ModifierWordSegments
 {
+	#region 对外提供的对象 StaticSegments
+
+	private static List<ModifierWordSegment>? _all;
+
+	/// <summary>
+	///     所有的静态字段,也就是所有的Segment
+	/// </summary>
+	/// <exception cref="Exception"></exception>
+	public static List<ModifierWordSegment> All
+	{
+		get
+		{
+			//如果已经初始化过了,那么直接返回
+			if (_all != null) return _all;
+			_all = Segments.GetAllStaticSegments<ModifierWordSegment, ModifierWordSegments>();
+			return _all;
+		}
+	}
+
+	#endregion
+
 	#region 类似于 static, readonly, virtual, override, sealed, abstract, async, new 这样的关键字,都叫做"修饰符"
 
 	//每个修饰符都有自己的特点,所以要单独列出来

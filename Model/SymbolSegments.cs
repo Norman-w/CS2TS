@@ -1,8 +1,6 @@
-using System.Reflection;
-
 namespace CS2TS.Model;
 
-public static class SymbolSegments
+public class SymbolSegments
 {
 	#region 一个字符的
 
@@ -201,32 +199,19 @@ public static class SymbolSegments
 
 	#region 对外提供的对象 StaticSegments
 
-	private static List<Segment>? _all;
+	private static List<SymbolSegment>? _all;
 
 	/// <summary>
 	///     所有的静态字段,也就是所有的Segment
 	/// </summary>
 	/// <exception cref="Exception"></exception>
-	public static List<Segment> All
+	public static List<SymbolSegment> All
 	{
 		get
 		{
 			//如果已经初始化过了,那么直接返回
 			if (_all != null) return _all;
-			//获取所有的静态字段
-			var staticFields = typeof(Segments).GetFields(BindingFlags.Static | BindingFlags.Public);
-			//获取所有的静态字段的值,并且过滤掉不是Segment的
-			var staticSegments = staticFields.Select(field => field.GetValue(null)).Where(v => v is Segment)
-				.Cast<Segment>().ToList();
-			//安全检查,找重复的
-			var duplicateItems = staticSegments.GroupBy(s => s.Content).Where(g => g.Count() > 1)
-				.Select(g => g.Key)
-				.ToList();
-			//如果有重复的,那么抛出异常
-			if (duplicateItems.Count > 0)
-				throw new Exception($"Segments:重复的项:{string.Join(",", duplicateItems)}");
-			//赋值给静态字段
-			_all = staticSegments;
+			_all = Segments.GetAllStaticSegments<SymbolSegment, SymbolSegments>();
 			return _all;
 		}
 	}

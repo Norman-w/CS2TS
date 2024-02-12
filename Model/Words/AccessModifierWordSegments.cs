@@ -2,6 +2,27 @@ namespace CS2TS.Model.Words;
 
 public class AccessModifierWordSegments
 {
+	#region 对外提供的对象 StaticSegments
+
+	private static List<AccessModifierWordSegment>? _all;
+
+	/// <summary>
+	///     所有的静态字段,也就是所有的Segment
+	/// </summary>
+	/// <exception cref="Exception"></exception>
+	public static List<AccessModifierWordSegment> All
+	{
+		get
+		{
+			//如果已经初始化过了,那么直接返回
+			if (_all != null) return _all;
+			_all = Segments.GetAllStaticSegments<AccessModifierWordSegment, AccessModifierWordSegments>();
+			return _all;
+		}
+	}
+
+	#endregion
+
 	#region 类似于public, private, protected这样的关键字,这几种都叫做"访问修饰符"
 
 	/// <summary>
