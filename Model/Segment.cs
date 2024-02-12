@@ -80,12 +80,12 @@ public abstract partial class Segment
 
 public abstract partial class Segment
 {
+	private static List<string>? _wordBreakWords;
+
 	/// <summary>
 	///     空的segment,不包含任何内容
 	/// </summary>
 	public static Segment Empty => new EmptySegment();
-
-	private static List<string>? _wordBreakWords;
 
 	public static List<string> WordBreakWords
 	{
@@ -296,14 +296,45 @@ public abstract partial class Segment
 			         staticSegment.Content == segmentContent.ToString()))
 			return staticSegment;
 		//如果没有,那么就新建一个
-		
+
 		//除了已经定义的以外,其他的都视为是单词来处理.就算是特殊符号,也用作单词.
 		//因为看了一下键盘上能显示出来的符号基本都用做语法符号了,其他的像✔这种的,也不会出现在代码中作为符号,就作为单词处理(因为不是操作符)
-		
+
 		return new WordSegment
 		{
 			Content = segmentContent.ToString(), StartCharIndexOfLine = cursorColumn - segmentContent.Length
 		};
+	}
+
+	/// <summary>
+	///     以另一个segment的内容为模板,复制到当前segment中
+	/// </summary>
+	/// <param name="src"></param>
+	/// <typeparam name="T"></typeparam>
+	public void CopyFrom<T>(T src)
+	{
+		var type = src?.GetType();
+		var props = type?.GetProperties();
+		var fields = type?.GetFields();
+		if (props == null) return;
+		foreach (var prop in props)
+		{
+			var value = prop.GetValue(src);
+			//如果没有找到这个属性,越过
+			if (GetType().GetProperty(prop.Name) == null) continue;
+			var setter = GetType().GetProperty(prop.Name)?.GetSetMethod();
+			if (setter != null) setter.Invoke(this, new[] { value });
+		}
+
+		if (fields == null) return;
+		{
+			foreach (var field in fields)
+			{
+				var value = field.GetValue(src);
+				if (GetType().GetField(field.Name) != null)
+					GetType().GetField(field.Name)?.SetValue(this, value);
+			}
+		}
 	}
 }
 

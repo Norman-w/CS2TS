@@ -165,15 +165,21 @@ public static class ServerMockExtensions
 		while (currentSegmentIndexOfAllLines < segments.Count)
 		{
 			var currentSegment = segments[currentSegmentIndexOfAllLines];
-			newSegmentsList.Add(new SymbolSegment
-			{
-				Content = currentSegment.Content,
-				SegmentIndexOfLine = currentSegmentIndexOfLine,
-				SegmentIndexOfAllLines = currentSegmentIndexOfAllLines,
-				LineIndexOfAllLines = currentLineIndexOfAllLines,
-				StartCharIndexOfLine = currentSegmentFirstCharIndexOfLine,
-				StartCharIndexOfAllLines = currentSegmentFirstCharIndexOfAllLines
-			});
+
+			var segmentType = currentSegment.GetType();
+			var copySegment = (Segment)Activator.CreateInstance(segmentType)!;
+			copySegment.CopyFrom(currentSegment);
+			newSegmentsList.Add(copySegment);
+			//
+			// newSegmentsList.Add(new SymbolSegment
+			// {
+			// 	Content = currentSegment.Content,
+			// 	SegmentIndexOfLine = currentSegmentIndexOfLine,
+			// 	SegmentIndexOfAllLines = currentSegmentIndexOfAllLines,
+			// 	LineIndexOfAllLines = currentLineIndexOfAllLines,
+			// 	StartCharIndexOfLine = currentSegmentFirstCharIndexOfLine,
+			// 	StartCharIndexOfAllLines = currentSegmentFirstCharIndexOfAllLines
+			// });
 
 			// Console.WriteLine(
 			// 	$"第{currentSegmentIndexOfAllLines}个segment,内容:{currentSegment.Content},在行中位置:{currentSegment.SegmentIndexOfLine},在所有行中位置:{currentSegment.SegmentIndexOfAllLines},在所有行中的行号:{currentSegment.LineIndexOfAllLines},在行中的第一个字符位置:{currentSegment.StartCharIndexOfLine},在所有行中的第一个字符位置:{currentSegment.StartCharIndexOfAllLines}");
