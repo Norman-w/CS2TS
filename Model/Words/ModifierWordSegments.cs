@@ -24,12 +24,6 @@ public class ModifierWordSegments
 		UseForCodeNodeTypes = new List<Type>
 		{
 			typeof(Class),
-			typeof(Struct),
-			typeof(Enum),
-			typeof(Interface),
-			typeof(Delegate),
-			typeof(Record),
-			typeof(Event)
 		}
 	};
 
