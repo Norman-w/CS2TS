@@ -157,3 +157,11 @@ partial这些都是PropertySegments
 所以Segment增加属性CanFinishCodeNodeTypes,用于标识这个Segment是否可以结束一个CodeNode的定义,可以结束哪种类型的CodeNode的定义.
 同时还可以标识是否可以开始一个新的CodeNode的定义,可以开始哪种类型的CodeNode的定义.
 可以开始和结束body的segment都是符号,比如{,},;等等,整个的英文单词不具备这个能力.
+
+#### 2024年02月12日23:07:28
+
+对输出做了一些修改,现在可以通过Segment的类型来决定控制台输出的颜色,让其看起来更直观.
+下一步准备定义系统值变量类型的Segment
+
+比如系统值变量类型的可以定义为 SystemValueTypeWordSegment,
+string,int,uint,double等的Segment的static属性都定义在SystemValueTypeWordSegments中.
