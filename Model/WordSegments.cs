@@ -43,7 +43,12 @@ public static class WordSegments
 
 	public static SystemValueTypeSegment This = new()
 	{
-		Content = "this"
+		Content = "this" //TODO 这个可能有不同的意义?
+	};
+
+	public static SystemValueTypeSegment NameOf = new()
+	{
+		Content = "nameof"
 	};
 
 	public static SystemValueTypeSegment Base = new()
@@ -90,6 +95,48 @@ public static class WordSegments
 	{
 		Content = "in"
 	};
+
+	#endregion
+
+	#region 循环关键词 foreach/for/while/do
+
+	//TODO 实现
+
+	#endregion
+
+	#region 循环逻辑/条件 关键词 continue/break/goto
+
+	//TODO 实现
+
+	#endregion
+
+	#region 领空关键字 using/return/try/catch/finally/this/throw/when/fixed/checked/unchecked/unsafe
+
+	//TODO 实现
+
+	#endregion
+
+	#region 逻辑关系关键词 if/else/switch/case/default 等的
+
+	//TODO 实现
+
+	#endregion
+
+	#region 异步操作关键词 await/yield/lock等,其中async是用于函数限定中,所以放在了函数相关的地方了
+
+	//TODO,async是不是要找到合适的地方和合适的定义?
+
+	#endregion
+
+	#region 访问器关键词 get/set/add/remove
+
+	//TODO, 实现,另外 get/set是不是已经在别的地方定义了?
+
+	#endregion
+
+	#region implicit/explicit
+
+	//TODO, 实现,这是啥?
 
 	#endregion
 }
