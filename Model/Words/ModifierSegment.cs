@@ -16,7 +16,7 @@ public class ModifierSegment : WordSegment
 			//检查type是否是CodeNode的子类
 			foreach (var type in value.Where(type => !type.IsSubclassOf(typeof(CodeNode))))
 				throw new Exception(
-					$"类型{type}不是CodeNode的子类,所以不能用于访问修饰符{Content}的CodeNode类型");
+					$"类型{type}不是CodeNode的子类,所以不能被修饰符{Content}修饰");
 		}
 	}
 }
