@@ -136,7 +136,7 @@ public static class WordSegments
 
 	#region implicit/explicit
 
-	//TODO, 实现,这是啥?
+	//TODO, 实现隐式转换和显式转换的操作符
 
 	#endregion
 }
