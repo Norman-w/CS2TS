@@ -71,4 +71,25 @@ public class Operator : CodeNode
 	///     public static Dollar operator +(Dollar dollar, Rmb rmb)中的rmb
 	/// </summary>
 	public string? SecondParameterName { get; set; }
+
+	/// <summary>
+	///     中间内容的起始符号,结构类似于
+	///     public static Dollar operator +(Dollar dollar, int rmb)
+	///     {
+	///     return new Dollar { Value = dollar.Value + rmb / Constant.DollarToRmb };
+	///     }
+	///     中的{
+	/// </summary>
+	/// <returns></returns>
+	public SymbolSegment BodyStartSegment => SymbolSegments.BracesStartSymbol;
+
+	/// <summary>
+	///     中间内容的结束符号,结构类似于
+	///     public static Dollar operator +(Dollar dollar, int rmb)
+	///     {
+	///     return new Dollar { Value = dollar.Value + rmb / Constant.DollarToRmb };
+	///     }
+	///     中的}
+	/// </summary>
+	public SymbolSegment BodyEndSegment => SymbolSegments.BracesEndSymbol;
 }
