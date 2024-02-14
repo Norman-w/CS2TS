@@ -1,82 +1,31 @@
-namespace CS2TS;
+namespace CS2TS.Model.Node;
 
+public class Operator : CodeNode
+{
+	/// <summary>
+	///     是否是隐式转换
+	///     固定搭配: public static implicit operator 目标类型(源类型 变量名)
+	/// </summary>
+	public bool IsImplicit { get; set; }
 
-public enum OperatorType
-{
-  UNKNOW,
-  /// <summary>
-  /// +加
-  /// </summary>
-  PLUS,
-  PLUS_EQUAL,
-  /// <summary>
-  /// -减
-  /// </summary>
-  REDUCE,
-  REDUCE_EQUAL,
-  /// <summary>
-  /// *乘
-  /// </summary>
-  MULTIPLY,
-  MULTIPLY_EQUAL,
-  /// <summary>
-  /// ÷除
-  /// </summary>
-  DEVIDE,
-  REVIDE_EQUAL,
-  /// <summary>
-  /// %取模运算
-  /// </summary>
-  MODULO,
-  /// <summary>
-  /// =等于
-  /// </summary>
-  EUQAL,
-  LOGICAL_EQUAL,
-  /// <summary>
-  /// ||逻辑或
-  /// </summary>
-  LOGICAL_OR,
-  /// <summary>
-  /// &&逻辑与
-  /// </summary>
-  LOGICAL_AND,
-  /// <summary>
-  /// !逻辑非
-  /// </summary>
-  LOGICAL_NON,
-  /// <summary>
-  /// is 判断什么是什么
-  /// </summary>
-  IS,
-  /// <summary>
-  /// |或运算
-  /// </summary>
-  OR,
-  /// <summary>
-  /// &与运算
-  /// </summary>
-  AND,
-  /// <summary>
-  /// ^异或运算
-  /// </summary>
-  XOR,
-  /// <summary>
-  /// ~按位取反
-  /// </summary>
-  BITWISE_COMPLEMENT,
-}
-/// <summary>
-/// 操作符
-/// </summary>
-public class Operator
-{
-  public Operator(Nullable<OperatorType> type)
-  {
-    Type = type == null ? OperatorType.UNKNOW : type.Value;
-  }
-  /// <summary>
-  /// 符号的类型
-  /// </summary>
-  public OperatorType Type { get; set; }
+	/// <summary>
+	///     是否是显式转换
+	///     固定搭配: public static explicit operator 目标类型(源类型 变量名)
+	/// </summary>
+	public bool IsExplicit { get; set; }
+
+	/// <summary>
+	///     是否是一元操作符 //TODO, 这个属性的意义是什么?
+	/// </summary>
+	public bool IsUnary { get; set; }
+
+	/// <summary>
+	///     是否是重载
+	/// </summary>
+	public bool IsOverride { get; set; }
+
+	/// <summary>
+	///     是否是静态的,如果是implicit或者explicit,那么这个属性就一定是true
+	/// </summary>
+	public bool IsStatic { get; set; }
 }

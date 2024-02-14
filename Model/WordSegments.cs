@@ -13,12 +13,26 @@
 
 */
 
+using CS2TS.Model.Node;
 using CS2TS.Model.Words;
 
 namespace CS2TS;
 
 public static class WordSegments
 {
+	#region implicit/explicit
+
+	//TODO, 实现隐式转换和显式转换的操作符
+	public static OperatorModifierSegment Implicit = new()
+	{
+		Content = "implicit", UseForCodeNodeTypes = new List<Type>
+		{
+			typeof(Operator)
+		}
+	};
+
+	#endregion
+
 	#region 引用值
 
 	public static SystemValueTypeSegment Null = new()
@@ -131,12 +145,6 @@ public static class WordSegments
 	#region 访问器关键词 get/set/add/remove
 
 	//TODO, 实现,另外 get/set是不是已经在别的地方定义了?
-
-	#endregion
-
-	#region implicit/explicit
-
-	//TODO, 实现隐式转换和显式转换的操作符
 
 	#endregion
 }
