@@ -28,4 +28,19 @@ public class Operator : CodeNode
 	///     是否是静态的,如果是implicit或者explicit,那么这个属性就一定是true
 	/// </summary>
 	public bool IsStatic { get; set; }
+
+	/// <summary>
+	///     返回类型,如果是implicit或者explicit,那么这个属性就是目标类型,也就是()前面的类型如:
+	///     public static implicit operator Dollar(Rmb rmb)中的Dollar
+	///     否则就是返回类型,也就是 operator前面的类型如:
+	///     public static Dollar operator +(Dollar dollar, Rmb rmb)中的Dollar
+	/// </summary>
+	public string ReturnType { get; set; } = string.Empty;
+
+	/// <summary>
+	///     操作符名称,如果是implicit或者explicit,那么这个属性就是null
+	///     因为implicit和explicit的操作符可以理解为目标类型的构造函数
+	///     如不是implicit或者explicit,那么这个属性就是操作符的名称比如"+"
+	/// </summary>
+	public string? OperatorName { get; set; }
 }
