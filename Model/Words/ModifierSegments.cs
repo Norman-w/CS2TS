@@ -7,6 +7,8 @@
 */
 
 
+using CS2TS.Model.Node;
+
 namespace CS2TS.Model.Words;
 
 public class ModifierSegments
@@ -41,7 +43,9 @@ public class ModifierSegments
 		Content = "static",
 		UseForCodeNodeTypes = new List<Type>
 		{
-			typeof(Class)
+			typeof(Class),
+			//用于Operator的时候,是属于类似public static implicit operator 目标类型(源类型 变量名)这样的固定搭配
+			typeof(Operator)
 		}
 	};
 
