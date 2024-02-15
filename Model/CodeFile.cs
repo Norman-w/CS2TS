@@ -17,12 +17,12 @@ public class CodeFile : CodeNode,
 	IContainer4DefineFunction,
 	IContainer4DefineUsing
 {
-	public List<Class> Classes => Chirldren.OfType<Class>().ToList();
-	public List<EnumDefine> Enums => Chirldren.OfType<EnumDefine>().ToList();
-	public List<Function> Functions => Chirldren.OfType<Function>().ToList();
+	public List<Class> Classes => Children.OfType<Class>().ToList();
+	public List<EnumDefine> Enums => Children.OfType<EnumDefine>().ToList();
+	public List<Function> Functions => Children.OfType<Function>().ToList();
 
 	public string Name { get; set; }
 
-	public List<Namespace> Namespaces => Chirldren.OfType<Namespace>().ToList();
-	public List<Using> Usings => Chirldren.OfType<Using>().ToList();
+	public List<Namespace> Namespaces => Children.OfType<Namespace>().ToList();
+	public List<Using> Usings => Children.OfType<Using>().ToList();
 }

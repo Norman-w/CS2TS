@@ -99,7 +99,7 @@ public partial class CSharpCodeParser
 
 		// if (parent is Class)
 		// {
-		parent.Chirldren.Add(fn);
+		parent.Children.Add(fn);
 		// }
 
 		//但是如果在分号结尾的时候，就是直接定义这个函数而没有结构，hasStructure如果是true，_unProcessWords就是用{结尾，如果是false就是_unProcessWords最后一个为;

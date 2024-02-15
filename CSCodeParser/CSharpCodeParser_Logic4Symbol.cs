@@ -53,7 +53,7 @@ public partial class CSharpCodeParser
 		{
 			var code = _spaces[0] as CodeFile;
 			var u = new Using(_unProcessWords[1]);
-			code?.Chirldren.Add(u);
+			code?.Children.Add(u);
 			// code.GetUsings().Add(_unProcessWords[1]);
 			_tempWord = new StringBuilder();
 			_unProcessWords.Clear();
@@ -65,7 +65,7 @@ public partial class CSharpCodeParser
 		{
 			var code = _spaces[0] as CodeFile;
 			var u = new Namespace(_unProcessWords[1]);
-			code?.Chirldren.Add(u);
+			code?.Children.Add(u);
 			_tempWord = new StringBuilder();
 			_unProcessWords.Clear();
 			return true;
@@ -95,7 +95,7 @@ public partial class CSharpCodeParser
 						null, null, null, null);
 					ParseVariableInfo(v);
 					// cls.Variables.Add(v);
-					cls.Chirldren.Add(v);
+					cls.Children.Add(v);
 					_tempWord = new StringBuilder();
 					_unProcessWords.Clear();
 					return true;
@@ -124,7 +124,7 @@ public partial class CSharpCodeParser
 						if (parent is Class)
 						{
 							var clsParent = parent as Class;
-							clsParent.Chirldren.Add(vn);
+							clsParent.Children.Add(vn);
 							_tempWord = new StringBuilder();
 							_unProcessWords.Clear();
 							return true;
@@ -197,7 +197,7 @@ public partial class CSharpCodeParser
 					var cls = parent as Class;
 					var v = new VariableNoStructure(null, null, null, null, null, null, null, null, null);
 					ParseVariableInfo(v);
-					cls.Chirldren.Add(v);
+					cls.Children.Add(v);
 					_tempWord = new StringBuilder();
 					_unProcessWords.Clear();
 					return true;
@@ -299,7 +299,7 @@ public partial class CSharpCodeParser
 			var parent = _spaces[^1];
 			var name = _unProcessWords[1].Replace("\r", "").Replace("\n", "").Trim();
 			var nm = new Namespace(name);
-			parent.Chirldren.Add(nm);
+			parent.Children.Add(nm);
 			_spaces.Add(nm);
 			_tempWord = new StringBuilder();
 			_unProcessWords.Clear();
@@ -429,7 +429,7 @@ public partial class CSharpCodeParser
 
 			else if (vbOrInterface is Class)
 			{
-				parent.Chirldren.Add(vbOrInterface as Class);
+				parent.Children.Add(vbOrInterface as Class);
 				_spaces.Add(vbOrInterface);
 			}
 
@@ -445,7 +445,7 @@ public partial class CSharpCodeParser
 				// }
 
 
-				parent.Chirldren.Add(vbOrInterface as Interface);
+				parent.Children.Add(vbOrInterface as Interface);
 				_spaces.Add(vbOrInterface);
 			}
 
@@ -464,7 +464,7 @@ public partial class CSharpCodeParser
 					? PermissionEnum.Private
 					: vbOrInterface.Permission.Value;
 
-				parent.Chirldren.Add(ed);
+				parent.Children.Add(ed);
 				_spaces.Add(ed);
 			}
 
@@ -486,7 +486,7 @@ public partial class CSharpCodeParser
 			{
 				if (parent is CodeFile || parent is Namespace) throw new NotImplementedException("在文件外部或者命名空间中不能定义变量");
 
-				if (parent is Class) parent.Chirldren.Add(vbOrInterface);
+				if (parent is Class) parent.Children.Add(vbOrInterface);
 
 				//这是在往哪里加入带结构的变量呢?
 				_spaces.Add(vbOrInterface);

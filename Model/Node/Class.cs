@@ -16,7 +16,7 @@ public class Class : Interface,
 
 	public List<string> Extends { get; set; }
 
-	public List<Class> Classes => Chirldren.OfType<Class>().ToList();
+	public List<Class> Classes => Children.OfType<Class>().ToList();
 	public string Name { get; set; }
-	public List<Variable> Variables => Chirldren.OfType<Variable>().ToList();
+	public List<Variable> Variables => Children.OfType<Variable>().ToList();
 }

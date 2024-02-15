@@ -41,7 +41,7 @@ public partial class CSharpCodeParser
     }
 
     var variable = new VariableNoStructure(name,type,null,null,null,null,null,value,null);
-    enumDefine.Chirldren.Add(variable);
+    enumDefine.Children.Add(variable);
   }
 
   #endregion

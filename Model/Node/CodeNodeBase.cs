@@ -2,6 +2,11 @@ namespace CS2TS.Model.Node;
 
 public interface ICodeNode
 {
+	/// <summary>
+	///     可以在这个CodeNode下面直接写的儿子CodeNode的类型,下一层的不算
+	///     比如namespace下可以写class enum interface等但是不能写function等
+	/// </summary>
+	public List<Type> SonCodeNodeValidTypes { get; }
 }
 
 /// <summary>
@@ -12,21 +17,23 @@ public class CodeNode : ICodeNode
 	// public string Name { get; set; }
 	protected CodeNode()
 	{
-		Chirldren = new List<CodeNode>();
+		Children = new List<CodeNode>();
 	}
 
-  /// <summary>
-  ///     相对于父元素的位置
-  /// </summary>
-  public int Index { get; set; }
+	/// <summary>
+	///     相对于父元素的位置
+	/// </summary>
+	public int Index { get; set; }
 
 
-  /// <summary>
-  ///     代码内容
-  /// </summary>
-  public string CodeBody { get; set; } = "";
+	/// <summary>
+	///     代码内容
+	/// </summary>
+	public string CodeBody { get; set; } = "";
 
-	public List<CodeNode> Chirldren { get; }
+	public List<CodeNode> Children { get; }
+
+	public virtual List<Type> SonCodeNodeValidTypes { get; } = new();
 
 	// /// <summary>
 	// /// 所有的标记信息
@@ -54,7 +61,7 @@ public class CodeNode : ICodeNode
 	{
 		var notes = new List<T>();
 		var type = typeof(T);
-		foreach (var codeNode in Chirldren)
+		foreach (var codeNode in Children)
 		{
 			var currentCodeNodeType = codeNode.GetType();
 			if (currentCodeNodeType == type || currentCodeNodeType.GetInterface(type.Name) != null ||
@@ -67,10 +74,10 @@ public class CodeNode : ICodeNode
 	public static void GetNodesAllInside<T>(ref List<CodeNode> retList, CodeNode parent,
 		bool removeGotFromParent = false) where T : CodeNode
 	{
-		if (parent.Chirldren.Count == 0) return;
+		if (parent.Children.Count == 0) return;
 
 		var copy = new List<CodeNode>();
-		copy.AddRange(parent.Chirldren);
+		copy.AddRange(parent.Children);
 		var type = typeof(T);
 		for (var i = 0; i < copy.Count; i++)
 		{
@@ -79,7 +86,7 @@ public class CodeNode : ICodeNode
 			if (currentCodeNodeType == type || currentCodeNodeType.GetInterface(type.Name) != null ||
 			    currentCodeNodeType.IsSubclassOf(type))
 			{
-				if (removeGotFromParent) parent.Chirldren.Remove(current);
+				if (removeGotFromParent) parent.Children.Remove(current);
 
 				retList.Add(current);
 			}
@@ -88,14 +95,14 @@ public class CodeNode : ICodeNode
 		}
 	}
 
-  /// <summary>
-  ///     获取类的祖先列表.最年迈的祖宗排在第0位置
-  /// </summary>
-  /// <param name="parent"></param>
-  /// <param name="childType"></param>
-  /// <param name="childName"></param>
-  /// <returns></returns>
-  public static List<T> FindAncestors<T>(CodeNode parent, Type childType, string childName) where T : IExtendAble
+	/// <summary>
+	///     获取类的祖先列表.最年迈的祖宗排在第0位置
+	/// </summary>
+	/// <param name="parent"></param>
+	/// <param name="childType"></param>
+	/// <param name="childName"></param>
+	/// <returns></returns>
+	public static List<T> FindAncestors<T>(CodeNode parent, Type childType, string childName) where T : IExtendAble
 	{
 		var found = false;
 		var refPath = new List<T>();
@@ -108,7 +115,7 @@ public class CodeNode : ICodeNode
 		string childName) where T : IExtendAble
 	{
 		if (found) return;
-		foreach (var codeNode in parent.Chirldren)
+		foreach (var codeNode in parent.Children)
 		{
 			if (codeNode is IExtendAble == false) continue;
 			var type = codeNode.GetType();

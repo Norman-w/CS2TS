@@ -16,7 +16,7 @@ public class EnumDefine : VariableWithStructure,
 	{
 	}
 
-	public List<Variable> Variables => Chirldren.OfType<Variable>().ToList();
+	public List<Variable> Variables => Children.OfType<Variable>().ToList();
 
 	public List<Variable> GetVariables()
 	{

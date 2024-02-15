@@ -14,11 +14,11 @@ public class Namespace : CodeNode,
 		Name = name;
 	}
 
-	public List<Class> Classes => Chirldren.OfType<Class>().ToList();
-	public List<EnumDefine> Enums => Chirldren.OfType<EnumDefine>().ToList();
-	public List<Interface> Interfaces => Chirldren.OfType<Interface>().ToList();
+	public List<Class> Classes => Children.OfType<Class>().ToList();
+	public List<EnumDefine> Enums => Children.OfType<EnumDefine>().ToList();
+	public List<Interface> Interfaces => Children.OfType<Interface>().ToList();
 
 	public string Name { get; set; }
 
-	public List<Namespace> Namespaces => Chirldren.OfType<Namespace>().ToList();
+	public List<Namespace> Namespaces => Children.OfType<Namespace>().ToList();
 }

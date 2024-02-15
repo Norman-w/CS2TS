@@ -21,9 +21,9 @@ public class Interface : VariableWithStructure,
 	{
 	}
 
-	public List<Function> Functions => Chirldren.OfType<Function>().ToList();
-	public List<Interface> Interfaces => Chirldren.OfType<Interface>().ToList();
-	public List<Variable> Variables => Chirldren.OfType<Variable>().ToList();
+	public List<Function> Functions => Children.OfType<Function>().ToList();
+	public List<Interface> Interfaces => Children.OfType<Interface>().ToList();
+	public List<Variable> Variables => Children.OfType<Variable>().ToList();
 
 	public List<Interface> GetInterfaces()
 	{

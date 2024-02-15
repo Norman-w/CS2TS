@@ -11,7 +11,7 @@ public class SemicolonParser
     // List<Statement> ret = new List<Statement>();
     if (IsReturnStatement(words,parent))
     {
-      parent.Chirldren.Add(Parse2ReturnStatement(words,parent));
+      parent.Children.Add(Parse2ReturnStatement(words,parent));
       return true;
     }
     //如果前一个是return,当前这个应该是变量的调用(函数也是变量),然后继续往下走
@@ -99,7 +99,7 @@ public class SemicolonParser
     }
     else if (leader == ".")
     {
-      ret.Chirldren.Add(Parse2VariableUseStatement(words,ret));
+      ret.Children.Add(Parse2VariableUseStatement(words,ret));
       //仍然是函数调用.
     }
     return ret;

@@ -117,10 +117,10 @@ public class TypeScriptCodeGenerator
 
 	private void processChildren(CodeNode parent)
 	{
-		if ((parent.Chirldren == null) | (parent.Chirldren.Count == 0)) return;
+		if ((parent.Children == null) | (parent.Children.Count == 0)) return;
 		_currentSpaces.Add(parent);
 		// var em = parent.Chirldren.GetEnumerator();
-		foreach (var chirld in parent.Chirldren)
+		foreach (var chirld in parent.Children)
 		{
 			var childType = chirld.GetType();
 			if (childType == typeof(Using))
@@ -214,7 +214,7 @@ public class TypeScriptCodeGenerator
 		var needUpgradeInterfaces = @interface.Interfaces;
 
 		//从原来的地方删除掉.
-		foreach (var iInterface in needUpgradeInterfaces) @interface.Chirldren.Remove(iInterface);
+		foreach (var iInterface in needUpgradeInterfaces) @interface.Children.Remove(iInterface);
 
 		#endregion
 
@@ -262,7 +262,7 @@ public class TypeScriptCodeGenerator
 		var needUpgradeClasses = cls.Classes;
 
 		//从原来的地方删除掉.
-		foreach (var needUpgradeClass in needUpgradeClasses) cls.Chirldren.Remove(needUpgradeClass);
+		foreach (var needUpgradeClass in needUpgradeClasses) cls.Children.Remove(needUpgradeClass);
 
 		#endregion
 

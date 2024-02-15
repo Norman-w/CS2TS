@@ -11,9 +11,9 @@ public class FunctionBuilder
 	public static List<Function> GetSameNameFunctions(string functionName, CodeNode parent)
 	{
 		var fs = new List<Function>();
-		for (var i = 0; i < parent.Chirldren.Count; i++)
+		for (var i = 0; i < parent.Children.Count; i++)
 		{
-			var current = parent.Chirldren[i];
+			var current = parent.Children[i];
 			if (current is Function && (current as Function).Name == functionName) fs.Add(current as Function);
 		}
 
@@ -422,7 +422,7 @@ public class FunctionBuilder
 			// {
 			//   functionCode.Append("return ").Append(defaultReturnValue).AppendLine(";");
 			// }
-			foreach (var child in function.Chirldren)
+			foreach (var child in function.Children)
 				functionCode.Append(StatementBuilder.BuildStatement(child as Statement, function, tab));
 
 			#endregion

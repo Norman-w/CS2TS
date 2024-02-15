@@ -58,7 +58,7 @@ public partial class CSharpCodeParser
         currentNote.Append(_tempWord.ToString());
         if (IsValidEndWordForCurrent())
         {
-          _spaces[^2].Chirldren.Add(currentNote);
+          _spaces[^2].Children.Add(currentNote);
           // _noOwnerNotes.Add(currentNote);
           _spaces.RemoveAt(_spaces.Count - 1);
         }
@@ -79,7 +79,7 @@ public partial class CSharpCodeParser
         currentNode.Lines.Add(_tempWord.ToString());
         if (IsValidEndWordForCurrent())
         {
-          _spaces[^2].Chirldren.Add(currentNode);
+          _spaces[^2].Children.Add(currentNode);
           // _noOwnerNotes.Add(currentNode);
           _spaces.RemoveAt(_spaces.Count - 1);
         }
@@ -95,7 +95,7 @@ public partial class CSharpCodeParser
         currentNote.Append(_tempWord.ToString());
         if (IsValidEndWordForCurrent())
         {
-          _spaces[^2].Chirldren.Add(currentNote);
+          _spaces[^2].Children.Add(currentNote);
           // _noOwnerNotes.Add(currentNote);
           _spaces.RemoveAt(_spaces.Count - 1);
         }
