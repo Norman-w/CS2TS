@@ -165,3 +165,8 @@ partial这些都是PropertySegments
 
 比如系统值变量类型的可以定义为 SystemValueTypeWordSegment,
 string,int,uint,double等的Segment的static属性都定义在SystemValueTypeWordSegments中.
+
+### 2024年02月15日09:32:17 摸石头过河行为,找个文件当做示例,解析完了Segment以后,尝试在V2版本的Parse方法中测试
+
+具体看一下怎么开辟领空,什么时机开辟,一个CodeNode的头和体怎么确立.在此之前先改造一下CodeNode,让它有一个属性表示有无体(
+都有头),或者用类型来表示

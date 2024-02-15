@@ -1,3 +1,5 @@
+using CS2TS.Model.Node;
+
 namespace CS2TS.Model.Words;
 
 public class ModifierSegment : WordSegment

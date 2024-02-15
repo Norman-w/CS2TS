@@ -1,5 +1,6 @@
 using CS2TS;
 using CS2TS.Model;
+using CS2TS.Model.Node;
 
 public static class Define
 {

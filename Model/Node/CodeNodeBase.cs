@@ -1,6 +1,4 @@
-using CS2TS.Model;
-
-namespace CS2TS;
+namespace CS2TS.Model.Node;
 
 public interface ICodeNode
 {
@@ -12,7 +10,7 @@ public interface ICodeNode
 public class CodeNode : ICodeNode
 {
 	// public string Name { get; set; }
-	public CodeNode()
+	protected CodeNode()
 	{
 		Chirldren = new List<CodeNode>();
 	}
@@ -26,7 +24,7 @@ public class CodeNode : ICodeNode
   /// <summary>
   ///     代码内容
   /// </summary>
-  public string CodeBody { get; set; }
+  public string CodeBody { get; set; } = "";
 
 	public List<CodeNode> Chirldren { get; }
 
@@ -69,7 +67,7 @@ public class CodeNode : ICodeNode
 	public static void GetNodesAllInside<T>(ref List<CodeNode> retList, CodeNode parent,
 		bool removeGotFromParent = false) where T : CodeNode
 	{
-		if (parent.Chirldren == null || parent.Chirldren.Count == 0) return;
+		if (parent.Chirldren.Count == 0) return;
 
 		var copy = new List<CodeNode>();
 		copy.AddRange(parent.Chirldren);
@@ -101,12 +99,12 @@ public class CodeNode : ICodeNode
 	{
 		var found = false;
 		var refPath = new List<T>();
-		findAncestorsOfClass(parent, ref found, ref refPath, childType, childName);
+		FindAncestorsOfClass(parent, ref found, ref refPath, childType, childName);
 
 		return refPath;
 	}
 
-	private static void findAncestorsOfClass<T>(CodeNode parent, ref bool found, ref List<T> refPath, Type childType,
+	private static void FindAncestorsOfClass<T>(CodeNode parent, ref bool found, ref List<T> refPath, Type childType,
 		string childName) where T : IExtendAble
 	{
 		if (found) return;
@@ -116,7 +114,7 @@ public class CodeNode : ICodeNode
 			var type = codeNode.GetType();
 			if (type == childType)
 			{
-				var clsName = (codeNode as IExtendAble).Name;
+				var clsName = (codeNode as IExtendAble)?.Name;
 				if (clsName == childName)
 				{
 					found = true;
@@ -127,7 +125,7 @@ public class CodeNode : ICodeNode
 			if (codeNode is T)
 			{
 				refPath.Add((T)(IExtendAble)codeNode);
-				findAncestorsOfClass(codeNode, ref found, ref refPath, childType, childName);
+				FindAncestorsOfClass(codeNode, ref found, ref refPath, childType, childName);
 				if (found) return;
 				refPath.RemoveAt(refPath.Count - 1);
 			}
