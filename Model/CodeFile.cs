@@ -24,5 +24,6 @@ public class CodeFile : CodeNode,
 	public string Name { get; set; }
 
 	public List<Namespace> Namespaces => Children.OfType<Namespace>().ToList();
+
 	public List<Using> Usings => Children.OfType<Using>().ToList();
 }

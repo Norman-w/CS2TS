@@ -2,24 +2,13 @@ namespace CS2TS.Model.Node;
 
 public interface ICodeNode
 {
-	/// <summary>
-	///     可以在这个CodeNode下面直接写的儿子CodeNode的类型,下一层的不算
-	///     比如namespace下可以写class enum interface等但是不能写function等
-	/// </summary>
-	public List<Type> SonCodeNodeValidTypes { get; }
 }
 
 /// <summary>
 ///     代码结构中的节点信息.每一个节点下面都会包含子节点的信息表.以及注释信息.
 /// </summary>
-public class CodeNode : ICodeNode
+public abstract class CodeNode : ICodeNode
 {
-	// public string Name { get; set; }
-	protected CodeNode()
-	{
-		Children = new List<CodeNode>();
-	}
-
 	/// <summary>
 	///     相对于父元素的位置
 	/// </summary>
@@ -31,9 +20,7 @@ public class CodeNode : ICodeNode
 	/// </summary>
 	public string CodeBody { get; set; } = "";
 
-	public List<CodeNode> Children { get; }
-
-	public virtual List<Type> SonCodeNodeValidTypes { get; } = new();
+	public List<CodeNode> Children { get; } = new();
 
 	// /// <summary>
 	// /// 所有的标记信息
@@ -138,4 +125,16 @@ public class CodeNode : ICodeNode
 			}
 		}
 	}
+}
+
+/// <summary>
+///     具备承载能力里面可以容下子CodeNode的CodeNode
+/// </summary>
+public abstract class ContainerCodeNode : CodeNode
+{
+	/// <summary>
+	///     可以在这个CodeNode下面直接写的儿子CodeNode的类型,下一层的不算
+	///     比如namespace下可以写class enum interface等但是不能写function等
+	/// </summary>
+	public abstract List<Type> SonCodeNodeValidTypes { get; }
 }

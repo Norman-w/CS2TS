@@ -336,6 +336,25 @@ public abstract partial class Segment
 			}
 		}
 	}
+
+	/// <summary>
+	///     确认两个segment是否相等,通过比较Content
+	/// </summary>
+	/// <param name="left"></param>
+	/// <param name="right"></param>
+	/// <returns></returns>
+	public static bool operator ==(Segment? left, Segment? right)
+	{
+		if (ReferenceEquals(left, right)) return true;
+		if (ReferenceEquals(left, null)) return false;
+		if (ReferenceEquals(right, null)) return false;
+		return left.Content == right.Content;
+	}
+
+	public static bool operator !=(Segment? left, Segment? right)
+	{
+		return !(left == right);
+	}
 }
 
 public class EmptySegment : Segment
