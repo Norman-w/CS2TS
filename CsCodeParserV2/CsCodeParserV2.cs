@@ -11,6 +11,7 @@
 using System.Text;
 using CS2TS.Model;
 using CS2TS.Model.Node;
+using CS2TS.Model.Words;
 
 namespace CS2TS.CsCodeParserV2;
 
@@ -27,7 +28,7 @@ public class CsCodeParserV2
 	/// <summary>
 	///     领空链.
 	/// </summary>
-	public List<ICodeNode> Spaces { get; set; } = new();
+	public List<CodeNode> Spaces { get; set; } = new();
 
 	/// <summary>
 	///     解析Cs代码文件到一个CodeFile对象.
@@ -77,6 +78,15 @@ public class CsCodeParserV2
         */
 		//TODO: 实现这个方法
 
+		/*
+
+		 尚未处理,待定,没有被认领的Segment集合.比如
+		 public class A{}
+		 在处理到public的时候,public就是待认领的AccessModifierSegment,然后在处理到class的时候,就认领了public.
+
+        */
+		List<Segment> unclaimedSegments = new();
+
 		foreach (var currentSegment in segments)
 		{
 			//获取当前领空
@@ -88,17 +98,70 @@ public class CsCodeParserV2
 				: null;
 			//获取当前Segment是否可以结束当前的CodeNode
 			if (currentSegment is SymbolSegment symbolSegment)
-			{
-				if(symbolSegment.CanFinishCodeNodeTypes.Contains(currentSpaceNodeType))
+				if (symbolSegment.CanFinishCodeNodeTypes.Contains(currentSpaceNodeType))
 				{
 					//结束当前领空
 					Spaces.RemoveAt(Spaces.Count - 1);
+					//上一层一定是一个ContainerCodeNode,所以可以直接转换,然后添加当前领空到上一层的Children中
+					var parent = (ContainerCodeNode)Spaces[^1];
+					parent.Children.Add(currentSpaceNode);
 					//返回上一层领空
 					continue;
 				}
-			}
+				else if (currentSegment == SymbolSegments.DotSymbol)
+					//如果已经有名字了,并且之前的一部分是word而这一部分是 点号,那么就是名字的下一层
+					//如 namespace A.B , A是名字, 当前是点号, B是名字的下一层
+					//追加名字
+				{
+					if (currentSpaceNode is INamedCodeNode namedCodeNode)
+						if (currentSpaceNode is INameChainCodeNode nameChainCodeNode)
+						{
+							//不用操作,后面会调用:
+							//nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
+						}
+						else
+						{
+							namedCodeNode.Name += SymbolSegments.DotSymbol.Content;
+						}
+				}
+
+
 			//获取当前Segment可以用于修饰什么,根据可以修饰的类型缩小范围,如果有且只有一个类型的那就可以开辟领空了
+			if (currentSegment is ModifierSegment modifierSegment)
+				if (modifierSegment.UseForCodeNodeTypes.Count == 1)
+				{
+					var onlyOneType = modifierSegment.UseForCodeNodeTypes[0];
+					if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(onlyOneType))
+					{
+						//开辟领空
+						//根据onlyOneType开辟领空
+						//TODO
+						var newSpaceNode = (CodeNode)Activator.CreateInstance(onlyOneType)!;
+						Spaces.Add(newSpaceNode);
+					}
+				}
+
 			//获取当前Segment是什么类型名称,如果是类型名称的话就可以直接开辟领空了.
+			if (currentSegment is CodeNodeTypeSegment typeNameSegment)
+			{
+				var codeNodeType = typeNameSegment.CodeNodeType;
+				if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(codeNodeType))
+				{
+					//开辟领空
+					//根据codeNodeType开辟领空
+					//TODO
+					var newSpaceNode = (CodeNode)Activator.CreateInstance(codeNodeType)!;
+					Spaces.Add(newSpaceNode);
+				}
+			}
+
+			//其他的没有被解析的WordSegment,如果不是空的,则可能是名字,判断当前领空是否可以接受名字,如果可以,则设置当前领空的名字
+			if (currentSegment is WordSegment && !currentSegment.IsWhitespace)
+				if (currentSpaceNode is INamedCodeNode namedCodeNode)
+					if (currentSpaceNode is INameChainCodeNode nameChainCodeNode)
+						nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
+					else
+						namedCodeNode.Name += currentSegment.Content;
 		}
 
 		return null;
@@ -244,6 +307,7 @@ public class CsCodeParserV2
 		Console.ResetColor();
 
 
+		//正式解析segment的list到CodeFile对象
 		CsCodeParserV2 parser = new();
 		parser.Parse(newSegmentsList);
 	}
