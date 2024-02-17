@@ -1,3 +1,5 @@
+using CS2TS.Model.Words;
+
 namespace CS2TS.Model.Node;
 
 public interface ICodeNode
@@ -21,6 +23,11 @@ public abstract class CodeNode : ICodeNode
 	public string CodeBody { get; set; } = "";
 
 	public List<CodeNode> Children { get; } = new();
+
+	/// <summary>
+	///     代码节点类型的Segment表示
+	/// </summary>
+	public abstract Segment? CodeNodeTypeSegment { get; }
 
 	// /// <summary>
 	// /// 所有的标记信息
@@ -125,6 +132,42 @@ public abstract class CodeNode : ICodeNode
 			}
 		}
 	}
+}
+
+/// <summary>
+///     可以添加修饰符的CodeNode
+/// </summary>
+public interface IUseModifierCodeNode<T> where T : CodeNode
+{
+	/// <summary>
+	///     可用的修饰符
+	/// </summary>
+	List<ModifierSegment> AvailableModifiers => ModifierSegments.GetAvailableModifiers<T>();
+}
+
+/// <summary>
+///     命名的CodeNode,若非匿名则有名字,比如拉姆达表达式等就是匿名的,而函数等就是有名字的
+/// </summary>
+public interface INamedCodeNode
+{
+	/// <summary>
+	///     名字
+	/// </summary>
+	string Name { get; set; }
+}
+
+/// <summary>
+///     有名字的链的CodeNode,比如命名空间,类,接口等
+///     NameChain的链的最后一个名字就是这个CodeNode的名字
+///     INamedCodeNode的Name也是这个链的最后一个名字
+///     NameChain到String的转换是NameChain.ToString(),会得到类似A.B.C的字符串
+/// </summary>
+public interface INameChainCodeNode : INamedCodeNode
+{
+	/// <summary>
+	///     名字的链
+	/// </summary>
+	NameChain NameChain { get; set; }
 }
 
 /// <summary>

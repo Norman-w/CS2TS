@@ -32,7 +32,7 @@ public class AccessModifierSegments
 	/// </summary>
 	private static readonly List<Type> AccessModifierUseForCodeNodeTypes = new()
 	{
-		typeof(Class), typeof(Struct), typeof(Enum), typeof(Interface), typeof(Delegate), typeof(Record),
+		typeof(Class), typeof(Struct), typeof(EnumDefine), typeof(Interface), typeof(Delegate), typeof(Record),
 		typeof(Event), typeof(Property), typeof(Field), typeof(Method), typeof(Constructor), typeof(Operator)
 	};
 

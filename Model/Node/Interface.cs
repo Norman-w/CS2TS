@@ -1,29 +1,40 @@
 using CS2TS.Model;
+using CS2TS.Model.Node;
+using CS2TS.Model.Words;
 
 namespace CS2TS;
 
-public class Interface : VariableWithStructure,
-	IContainer4DefineInterface, IContainer4DefineFunction, IContainer4DefineVariable
+public class Interface :
+	ContainerCodeNode,
+	IUseModifierCodeNode<Interface>,
+	INamedCodeNode
 {
-	// public List<Function> GetFunctions()
-	// {
-	// return GetNodes<Function>();
-	// }
-
-	// public List<Variable> GetVariables()
-	// {
-	// return GetNodes<Variable>();
-	// }
-
-	public Interface(string name,
-		List<string> extends) : base(name, null, PermissionEnum.Public, null, null, null, null, null, extends, null,
-		null)
-	{
-	}
+	/// <summary>
+	///     继承的接口(若是类,则包含最多一个父类和0+个接口)
+	/// </summary>
+	public List<string> Extends { get; set; } = new();
 
 	public List<Function> Functions => Children.OfType<Function>().ToList();
 	public List<Interface> Interfaces => Children.OfType<Interface>().ToList();
 	public List<Variable> Variables => Children.OfType<Variable>().ToList();
+
+	public override Segment CodeNodeTypeSegment => CodeNodeTypeSegments.Interface;
+
+	/// <summary>
+	///     直接在这下面可容纳的子节点的类型
+	/// </summary>
+	public override List<Type> SonCodeNodeValidTypes => new()
+	{
+		typeof(Interface),
+		typeof(Function),
+		typeof(Field),
+		typeof(Property)
+	};
+
+	/// <summary>
+	///     接口的名称,若是类,则为类的名称
+	/// </summary>
+	public string Name { get; set; } = string.Empty;
 
 	public List<Interface> GetInterfaces()
 	{

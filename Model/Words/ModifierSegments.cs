@@ -13,6 +13,20 @@ namespace CS2TS.Model.Words;
 
 public class ModifierSegments
 {
+	#region 获取指定CodeNode类型可以应用的所有修饰符
+
+	/// <summary>
+	///     获取指定CodeNode类型可以应用的所有修饰符,比如传入Class,那么返回的就是public, private, protected, internal, static, sealed等
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
+	/// <returns></returns>
+	public static List<ModifierSegment> GetAvailableModifiers<T>() where T : CodeNode
+	{
+		return All.FindAll(segment => segment.UseForCodeNodeTypes.Contains(typeof(T)));
+	}
+
+	#endregion
+
 	#region 对外提供的对象 StaticSegments
 
 	private static List<ModifierSegment>? _all;

@@ -8,13 +8,25 @@ public class SymbolSegments
 	///     换行符,用于终止注释行.空格不算,因为空格只是断语义符.换行比较特殊,是本项目中才会用到的.
 	///     正常的CS代码中的换行符是不具备什么用途的,都可以完全被替换掉不会影响逻辑.
 	/// </summary>
-	public static readonly SymbolSegment LineBreakSymbol = new() { Content = "\n" };
+	public static readonly SymbolSegment LineBreakSymbol = new()
+	{
+		Content = "\n",
+		CanFinishCodeNodeTypes = new List<Type> { typeof(NotesLine) }
+	};
 
 	/// <summary> 逗号,连接参数符号 </summary>
 	public static SymbolSegment JoinParameterSymbol = new() { Content = "," };
 
 	/// <summary> 分号,用于终止语句 </summary>
-	public static SymbolSegment SemicolonSymbol = new() { Content = ";" };
+	public static SymbolSegment SemicolonSymbol = new()
+	{
+		Content = ";",
+		CanFinishCodeNodeTypes = new List<Type>
+		{
+			//在结束命名空间时,只能结束命名空间的头,闭合整个带body的命名空间的话需要用大括回
+			typeof(Namespace)
+		}
+	};
 
 	/// <summary> 大括号开始符号 </summary>
 	public static SymbolSegment BracesStartSymbol = new() { Content = "{" };
