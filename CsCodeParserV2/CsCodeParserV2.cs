@@ -96,9 +96,10 @@ public class CsCodeParserV2
 			var sonCodeNodeValidTypes = currentSpaceNode is ContainerCodeNode node
 				? node.SonCodeNodeValidTypes
 				: null;
-			//获取当前Segment是否可以结束当前的CodeNode
-			if (currentSegment is SymbolSegment symbolSegment)
-				if (symbolSegment.CanFinishCodeNodeTypes.Contains(currentSpaceNodeType))
+			switch (currentSegment)
+			{
+				//获取当前Segment是否可以结束当前的CodeNode
+				case SymbolSegment symbolSegment when symbolSegment.CanFinishCodeNodeTypes.Contains(currentSpaceNodeType):
 				{
 					//结束当前领空
 					Spaces.RemoveAt(Spaces.Count - 1);
@@ -108,52 +109,62 @@ public class CsCodeParserV2
 					//返回上一层领空
 					continue;
 				}
-				else if (currentSegment == SymbolSegments.DotSymbol)
-					//如果已经有名字了,并且之前的一部分是word而这一部分是 点号,那么就是名字的下一层
-					//如 namespace A.B , A是名字, 当前是点号, B是名字的下一层
-					//追加名字
+				case SymbolSegment symbolSegment:
 				{
-					if (currentSpaceNode is INamedCodeNode namedCodeNode)
-						if (currentSpaceNode is INameChainCodeNode nameChainCodeNode)
-						{
-							//不用操作,后面会调用:
-							//nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
-						}
-						else
-						{
-							namedCodeNode.Name += SymbolSegments.DotSymbol.Content;
-						}
+					if (currentSegment == SymbolSegments.DotSymbol)
+						//如果已经有名字了,并且之前的一部分是word而这一部分是 点号,那么就是名字的下一层
+						//如 namespace A.B , A是名字, 当前是点号, B是名字的下一层
+						//追加名字
+					{
+						if (currentSpaceNode is INamedCodeNode namedCodeNode)
+							if (currentSpaceNode is INameChainCodeNode nameChainCodeNode)
+							{
+								//不用操作,后面会调用:
+								//nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
+							}
+							else
+							{
+								namedCodeNode.Name += SymbolSegments.DotSymbol.Content;
+							}
+					}
+
+					break;
 				}
-
-
-			//获取当前Segment可以用于修饰什么,根据可以修饰的类型缩小范围,如果有且只有一个类型的那就可以开辟领空了
-			if (currentSegment is ModifierSegment modifierSegment)
-				if (modifierSegment.UseForCodeNodeTypes.Count == 1)
+				//获取当前Segment可以用于修饰什么,根据可以修饰的类型缩小范围,如果有且只有一个类型的那就可以开辟领空了
+				case ModifierSegment modifierSegment:
 				{
-					var onlyOneType = modifierSegment.UseForCodeNodeTypes[0];
-					if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(onlyOneType))
+					if (modifierSegment.UseForCodeNodeTypes.Count == 1)
+					{
+						var onlyOneType = modifierSegment.UseForCodeNodeTypes[0];
+						if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(onlyOneType))
+						{
+							//开辟领空
+							//根据onlyOneType开辟领空
+							//TODO
+							var newSpaceNode = (CodeNode)Activator.CreateInstance(onlyOneType)!;
+							Spaces.Add(newSpaceNode);
+						}
+					}
+
+					break;
+				}
+				//获取当前Segment是什么类型名称,如果是类型名称的话就可以直接开辟领空了.
+				case CodeNodeTypeSegment typeNameSegment:
+				{
+					var codeNodeType = typeNameSegment.CodeNodeType;
+					if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(codeNodeType))
 					{
 						//开辟领空
-						//根据onlyOneType开辟领空
+						//根据codeNodeType开辟领空
 						//TODO
-						var newSpaceNode = (CodeNode)Activator.CreateInstance(onlyOneType)!;
+						var newSpaceNode = (CodeNode)Activator.CreateInstance(codeNodeType)!;
 						Spaces.Add(newSpaceNode);
 					}
-				}
 
-			//获取当前Segment是什么类型名称,如果是类型名称的话就可以直接开辟领空了.
-			if (currentSegment is CodeNodeTypeSegment typeNameSegment)
-			{
-				var codeNodeType = typeNameSegment.CodeNodeType;
-				if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(codeNodeType))
-				{
-					//开辟领空
-					//根据codeNodeType开辟领空
-					//TODO
-					var newSpaceNode = (CodeNode)Activator.CreateInstance(codeNodeType)!;
-					Spaces.Add(newSpaceNode);
+					break;
 				}
 			}
+
 
 			//其他的没有被解析的WordSegment,如果不是空的,则可能是名字,判断当前领空是否可以接受名字,如果可以,则设置当前领空的名字
 			if (currentSegment is WordSegment && !currentSegment.IsWhitespace)
