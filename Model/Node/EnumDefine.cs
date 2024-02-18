@@ -9,7 +9,7 @@ public class EnumDefine : VariableWithStructure,
 	IContainer4DefineVariable
 {
 	public EnumDefine(string name,
-		PermissionEnum? permission,
+		AccessModifierPermissionEnum? permission,
 		List<string> extends,
 		Function getter,
 		Function setter) : base(name, null, permission, null, null, null, null, null, extends, getter, setter)

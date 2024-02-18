@@ -133,17 +133,49 @@ public abstract class CodeNode : ICodeNode
 		}
 	}
 }
+//
+// public interface IUseModifierCodeNode<T>
+// {
+// 	List<ModifierSegment> AvailableModifiers { get; }
+// }
 
 /// <summary>
-///     可以添加修饰符的CodeNode
+///     可以使用访问权限修饰符的CodeNode
 /// </summary>
-public interface IUseModifierCodeNode<T> where T : CodeNode
+public interface IUseAccessModifierCodeNode
 {
-	/// <summary>
-	///     可用的修饰符
-	/// </summary>
-	List<ModifierSegment> AvailableModifiers => ModifierSegments.GetAvailableModifiers<T>();
+	AccessModifierPermissionEnum AccessPermission { get; set; }
+
+	public void ApplyModifier(ModifierSegment modifier)
+	{
+		if (modifier is AccessModifierSegment accessModifierSegment)
+			AccessPermission = accessModifierSegment.ToAccessModifierPermissionEnum();
+	}
 }
+
+/// <summary>
+///     可以使用static修饰符的CodeNode
+/// </summary>
+public interface IUseStaticModifierCodeNode
+{
+	bool IsStatic { get; set; }
+
+	public void ApplyModifier(ModifierSegment modifier)
+	{
+		if (modifier == ModifierSegments.Static)
+			IsStatic = true;
+	}
+}
+//
+// //拓展CodeNode的方法,让codeNode对象可以调用ApplyModifier方法
+// public static class CodeNodeExtension
+// {
+// 	public static void ApplyModifier(this IUseStaticModifierCodeNode codeNode, ModifierSegment modifier)
+// 	{
+// 		if (modifier == ModifierSegments.Static)
+// 			codeNode.ApplyModifier(modifier);
+// 	}
+// }
 
 /// <summary>
 ///     命名的CodeNode,若非匿名则有名字,比如拉姆达表达式等就是匿名的,而函数等就是有名字的

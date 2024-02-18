@@ -10,7 +10,7 @@ public abstract class Variable : CodeNode
 {
 	public Variable(string name,
 		TypeDefine type,
-		PermissionEnum? permission,
+		AccessModifierPermissionEnum? permission,
 		bool? isStatic,
 		bool? isReadonly,
 		bool? isConst, bool?
@@ -30,10 +30,10 @@ public abstract class Variable : CodeNode
 	public string Name { get; set; }
 	public TypeDefine Type { get; set; }
 
-  /// <summary>
-  ///     参数的作用域 public private protected internal
-  /// </summary>
-  public PermissionEnum? Permission { get; set; }
+	/// <summary>
+	///     参数的作用域 public private protected internal
+	/// </summary>
+	public AccessModifierPermissionEnum? Permission { get; set; }
 
 	public bool? IsStatic { get; set; }
 
@@ -43,10 +43,10 @@ public abstract class Variable : CodeNode
 
 	public bool? IsOverride { get; set; }
 
-  /// <summary>
-  ///     参数的值是什么(字符串形式)
-  /// </summary>
-  public object Value { get; set; }
+	/// <summary>
+	///     参数的值是什么(字符串形式)
+	/// </summary>
+	public object Value { get; set; }
 
 	// /// <summary>
 	// /// 默认值是什么.
@@ -61,7 +61,7 @@ public class VariableNoStructure : Variable
 {
 	public VariableNoStructure(string name,
 		TypeDefine type,
-		PermissionEnum? permission,
+		AccessModifierPermissionEnum? permission,
 		bool? isStatic,
 		bool? isReadonly,
 		bool? isConst,
@@ -77,10 +77,10 @@ public class VariableNoStructure : Variable
 	/// </summary>
 	public override Segment? CodeNodeTypeSegment => null;
 
-  /// <summary>
-  ///     继承项的列表.比如 定义枚举时可继承自 uint,c#写做: enum xxx : uint
-  /// </summary>
-  public List<string> Extends { get; set; }
+	/// <summary>
+	///     继承项的列表.比如 定义枚举时可继承自 uint,c#写做: enum xxx : uint
+	/// </summary>
+	public List<string> Extends { get; set; }
 }
 
 /// <summary>
@@ -90,7 +90,7 @@ public class VariableWithStructure : VariableNoStructure
 {
 	public VariableWithStructure(string name,
 		TypeDefine type,
-		PermissionEnum? permission,
+		AccessModifierPermissionEnum? permission,
 		bool? isStatic,
 		bool? isReadonly,
 		bool? isConst, bool?
@@ -104,10 +104,10 @@ public class VariableWithStructure : VariableNoStructure
 		Setter = setter;
 	}
 
-  /// <summary>
-  ///     作为字段的时候的时候可以使用的获取器和设置其
-  /// </summary>
-  public Function Getter { get; set; }
+	/// <summary>
+	///     作为字段的时候的时候可以使用的获取器和设置其
+	/// </summary>
+	public Function Getter { get; set; }
 
 	public Function Setter { get; set; }
 }

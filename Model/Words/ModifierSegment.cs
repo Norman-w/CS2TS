@@ -22,4 +22,9 @@ public class ModifierSegment : WordSegment
 			_useForCodeNodeTypes = value;
 		}
 	}
+
+	/// <summary>
+	///     使用于哪个名称的字段,比如static可用于IsStatic
+	/// </summary>
+	public string UseForFieldOfCodeNode { get; set; } = string.Empty;
 }

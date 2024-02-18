@@ -89,6 +89,9 @@ public class CsCodeParserV2
 
 		foreach (var currentSegment in segments)
 		{
+			if (currentSegment == AccessModifierSegments.Public)
+				//TODO 测试代码
+				Console.WriteLine("public");
 			//获取当前领空
 			var currentSpaceNode = Spaces[^1];
 			var currentSpaceNodeType = currentSpaceNode.GetType();
@@ -99,7 +102,8 @@ public class CsCodeParserV2
 			switch (currentSegment)
 			{
 				//获取当前Segment是否可以结束当前的CodeNode
-				case SymbolSegment symbolSegment when symbolSegment.CanFinishCodeNodeTypes.Contains(currentSpaceNodeType):
+				case SymbolSegment symbolSegment
+					when symbolSegment.CanFinishCodeNodeTypes.Contains(currentSpaceNodeType):
 				{
 					//结束当前领空
 					Spaces.RemoveAt(Spaces.Count - 1);
@@ -115,7 +119,6 @@ public class CsCodeParserV2
 						//如果已经有名字了,并且之前的一部分是word而这一部分是 点号,那么就是名字的下一层
 						//如 namespace A.B , A是名字, 当前是点号, B是名字的下一层
 						//追加名字
-					{
 						if (currentSpaceNode is INamedCodeNode namedCodeNode)
 							if (currentSpaceNode is INameChainCodeNode nameChainCodeNode)
 							{
@@ -126,7 +129,6 @@ public class CsCodeParserV2
 							{
 								namedCodeNode.Name += SymbolSegments.DotSymbol.Content;
 							}
-					}
 
 					break;
 				}
@@ -142,8 +144,14 @@ public class CsCodeParserV2
 							//根据onlyOneType开辟领空
 							//TODO
 							var newSpaceNode = (CodeNode)Activator.CreateInstance(onlyOneType)!;
+							ClaimUnclaimedSegments(newSpaceNode, unclaimedSegments);
 							Spaces.Add(newSpaceNode);
 						}
+					}
+					else
+					{
+						//暂时不能确定,先放到待定集合中
+						unclaimedSegments.Add(modifierSegment);
 					}
 
 					break;
@@ -158,6 +166,7 @@ public class CsCodeParserV2
 						//根据codeNodeType开辟领空
 						//TODO
 						var newSpaceNode = (CodeNode)Activator.CreateInstance(codeNodeType)!;
+						ClaimUnclaimedSegments(newSpaceNode, unclaimedSegments);
 						Spaces.Add(newSpaceNode);
 					}
 
@@ -176,6 +185,29 @@ public class CsCodeParserV2
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	///     能开辟领空的时候,把未被认领的Segment集合中的Segment认领了,是什么修饰符就安排到这个新领空的对应的修饰符字段中去.
+	/// </summary>
+	private static void ClaimUnclaimedSegments(CodeNode newSpaceNode, List<Segment> unclaimedSegments)
+	{
+		foreach (var unclaimedSegment in unclaimedSegments)
+		{
+			//如果不是modifier,抛出异常
+			if (unclaimedSegment is not ModifierSegment)
+				throw new Exception($"未被认领的Segment集合中的Segment不是ModifierSegment类型,而是{unclaimedSegment.GetType()}类型");
+			//如果是modifier,那么就把他安排到新领空的对应的修饰符字段中去
+			if (unclaimedSegment is ModifierSegment segment)
+			{
+				if (newSpaceNode is IUseStaticModifierCodeNode useStaticModifierCodeNode)
+					useStaticModifierCodeNode.ApplyModifier(segment);
+				if (newSpaceNode is IUseAccessModifierCodeNode useAccessModifierCodeNode)
+					useAccessModifierCodeNode.ApplyModifier(segment);
+			}
+		}
+
+		unclaimedSegments.Clear();
 	}
 
 	public static void Test()

@@ -1,3 +1,9 @@
 namespace CS2TS.Model;
 
-public enum PermissionEnum { Public, Protected, Private, Internal }
+public enum AccessModifierPermissionEnum
+{
+	Public,
+	Protected,
+	Private,
+	Internal
+}

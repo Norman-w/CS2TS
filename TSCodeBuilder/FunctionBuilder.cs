@@ -24,12 +24,13 @@ public class FunctionBuilder
 
 	#region 把函数按照访问权限修饰符进行分组
 
-	public static Dictionary<PermissionEnum, List<Function>> GroupFunctionsByPermission(List<Function> list)
+	public static Dictionary<AccessModifierPermissionEnum, List<Function>> GroupFunctionsByPermission(
+		List<Function> list)
 	{
-		var ret = new Dictionary<PermissionEnum, List<Function>>();
+		var ret = new Dictionary<AccessModifierPermissionEnum, List<Function>>();
 		foreach (var f in list)
 		{
-			var realPermission = f.Permission == null ? PermissionEnum.Private : f.Permission.Value;
+			var realPermission = f.Permission == null ? AccessModifierPermissionEnum.Private : f.Permission.Value;
 			if (!ret.ContainsKey(realPermission)) ret.Add(realPermission, new List<Function>());
 			ret[realPermission].Add(f);
 		}
@@ -68,7 +69,7 @@ public class FunctionBuilder
 
 		//遍历参数多的那个，其他的函数如果没有这个参数，就标记为该参数可以为undefined
 		var maxParamsFunction = functions[0];
-		var permission = maxParamsFunction.Permission ?? PermissionEnum.Private;
+		var permission = maxParamsFunction.Permission ?? AccessModifierPermissionEnum.Private;
 		//每一行都有一个头定义，然后最后一行是对这些定义的总结 像下面这样
 		// public fiiFunc(sss:boolean):void;
 		// public fiiFunc(b: number) :void;
@@ -102,7 +103,8 @@ public class FunctionBuilder
 			));
 			//构建函数的真正结构.
 			functionStructureDefineStringBuilders.Add(new StringBuilder(
-					BuildFunctionCode(currentFunc, string.Format("_{0}", j), parent, tab, false, PermissionEnum.Private)
+					BuildFunctionCode(currentFunc, string.Format("_{0}", j), parent, tab, false,
+						AccessModifierPermissionEnum.Private)
 				)
 			);
 			//BuildFunctionCode会自动换行 所以这里不需要AppendLine
@@ -355,7 +357,7 @@ public class FunctionBuilder
 		ICodeNode parent,
 		string tab,
 		bool asFunctionHeader,
-		PermissionEnum? overridePermission
+		AccessModifierPermissionEnum? overridePermission
 	)
 	{
 		var functionCode = new StringBuilder(tab);

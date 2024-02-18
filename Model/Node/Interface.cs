@@ -6,7 +6,6 @@ namespace CS2TS;
 
 public class Interface :
 	ContainerCodeNode,
-	IUseModifierCodeNode<Interface>,
 	INamedCodeNode
 {
 	/// <summary>
@@ -30,6 +29,14 @@ public class Interface :
 		typeof(Field),
 		typeof(Property)
 	};
+
+	public AccessModifierPermissionEnum AccessPermission
+	{
+		get => AccessModifierPermissionEnum.Public;
+		set => throw new NotImplementedException("接口不支持设置访问权限,默认为public");
+	}
+
+	public List<ModifierSegment> AvailableModifiers => ModifierSegments.GetAvailableModifiers<Interface>();
 
 	/// <summary>
 	///     接口的名称,若是类,则为类的名称
