@@ -22,20 +22,19 @@ public class CsCodeParserV2
 {
 	private CsCodeParserV2()
 	{
-		Spaces.Add(new CodeFile());
 	}
 
 	/// <summary>
-	///     领空链.
+	///     代码节点的领空链.注意不是树状的,是表示路径的,用于当做游标.
 	/// </summary>
-	public List<CodeNode> Spaces { get; set; } = new();
+	private List<CodeNode> CodeNodeSpaces { get; } = new() { new CodeFile() };
 
 	/// <summary>
 	///     解析Cs代码文件到一个CodeFile对象.
 	/// </summary>
 	/// <param name="segments"></param>
 	/// <returns></returns>
-	public CodeFile? Parse(List<Segment> segments)
+	private CodeFile? Parse(List<Segment> segments)
 	{
 		/*
 
@@ -86,94 +85,23 @@ public class CsCodeParserV2
 
         */
 		List<Segment> unclaimedSegments = new();
+		StringBuilder codeBody = new();
 
 		foreach (var currentSegment in segments)
 		{
+			codeBody.Append(currentSegment.Content);
 			if (currentSegment == AccessModifierSegments.Public)
 				//TODO 测试代码
 				Console.WriteLine("public");
+			if (currentSegment == SymbolSegments.BracesEndSymbol)
+				//TODO 测试代码
+				Console.WriteLine("}");
 			//获取当前领空
-			var currentSpaceNode = Spaces[^1];
-			var currentSpaceNodeType = currentSpaceNode.GetType();
-			//获取当前领空下可以书写什么,比如不能再PropertyNode下面写一个namespace,namespace下可以写ClassNode等等
-			var sonCodeNodeValidTypes = currentSpaceNode is ContainerCodeNode node
-				? node.SonCodeNodeValidTypes
-				: null;
-			switch (currentSegment)
-			{
-				//获取当前Segment是否可以结束当前的CodeNode
-				case SymbolSegment symbolSegment
-					when symbolSegment.CanFinishCodeNodeTypes.Contains(currentSpaceNodeType):
-				{
-					//结束当前领空
-					Spaces.RemoveAt(Spaces.Count - 1);
-					//上一层一定是一个ContainerCodeNode,所以可以直接转换,然后添加当前领空到上一层的Children中
-					var parent = (ContainerCodeNode)Spaces[^1];
-					parent.Children.Add(currentSpaceNode);
-					//返回上一层领空
-					continue;
-				}
-				case SymbolSegment symbolSegment:
-				{
-					if (currentSegment == SymbolSegments.DotSymbol)
-						//如果已经有名字了,并且之前的一部分是word而这一部分是 点号,那么就是名字的下一层
-						//如 namespace A.B , A是名字, 当前是点号, B是名字的下一层
-						//追加名字
-						if (currentSpaceNode is INamedCodeNode namedCodeNode)
-							if (currentSpaceNode is INameChainCodeNode nameChainCodeNode)
-							{
-								//不用操作,后面会调用:
-								//nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
-							}
-							else
-							{
-								namedCodeNode.Name += SymbolSegments.DotSymbol.Content;
-							}
-
-					break;
-				}
-				//获取当前Segment可以用于修饰什么,根据可以修饰的类型缩小范围,如果有且只有一个类型的那就可以开辟领空了
-				case ModifierSegment modifierSegment:
-				{
-					if (modifierSegment.UseForCodeNodeTypes.Count == 1)
-					{
-						var onlyOneType = modifierSegment.UseForCodeNodeTypes[0];
-						if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(onlyOneType))
-						{
-							//开辟领空
-							//根据onlyOneType开辟领空
-							//TODO
-							var newSpaceNode = (CodeNode)Activator.CreateInstance(onlyOneType)!;
-							ClaimUnclaimedSegments(newSpaceNode, unclaimedSegments);
-							Spaces.Add(newSpaceNode);
-						}
-					}
-					else
-					{
-						//暂时不能确定,先放到待定集合中
-						unclaimedSegments.Add(modifierSegment);
-					}
-
-					break;
-				}
-				//获取当前Segment是什么类型名称,如果是类型名称的话就可以直接开辟领空了.
-				case CodeNodeTypeSegment typeNameSegment:
-				{
-					var codeNodeType = typeNameSegment.CodeNodeType;
-					if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(codeNodeType))
-					{
-						//开辟领空
-						//根据codeNodeType开辟领空
-						//TODO
-						var newSpaceNode = (CodeNode)Activator.CreateInstance(codeNodeType)!;
-						ClaimUnclaimedSegments(newSpaceNode, unclaimedSegments);
-						Spaces.Add(newSpaceNode);
-					}
-
-					break;
-				}
-			}
-
+			var currentSpaceNode = CodeNodeSpaces[^1];
+			var processSegmentResult =
+				ProcessSegment(currentSpaceNode, currentSegment, ref unclaimedSegments, ref codeBody);
+			if (processSegmentResult)
+				continue;
 
 			//其他的没有被解析的WordSegment,如果不是空的,则可能是名字,判断当前领空是否可以接受名字,如果可以,则设置当前领空的名字
 			if (currentSegment is WordSegment && !currentSegment.IsWhitespace)
@@ -184,14 +112,139 @@ public class CsCodeParserV2
 						namedCodeNode.Name += currentSegment.Content;
 		}
 
-		return null;
+		#region 所有的Segment都处理完以后
+
+		//看namespace是否只有一个并且是文件级的那种,就是以分号结束的那种.
+		//如果是的话,就把CodeFile下面的所有其他类型的CodeNode都移动到这个namespace下面,然后关闭namespace领空,把这个namespace领空移动到CodeFile下面
+		//如果不是的话,就把这个namespace领空移动到CodeFile下面
+		var namespaceList = CodeNodeSpaces[0].Children.OfType<Namespace>().ToList();
+		var namespaceCount = namespaceList.Count;
+		if (namespaceCount == 1)
+		{
+			var onlyNamespace = namespaceList[0];
+			if (onlyNamespace.IsFileLevelNamespace)
+			{
+				//把CodeFile下面的所有其他类型的CodeNode都移动到这个namespace下面
+				var codeFile = CodeNodeSpaces[0] as CodeFile;
+				var otherCodeNodes = codeFile!.Children.Where(x => x != onlyNamespace).ToList();
+				foreach (var otherCodeNode in otherCodeNodes)
+				{
+					codeFile.Children.Remove(otherCodeNode);
+					onlyNamespace.Children.Add(otherCodeNode);
+				}
+
+				//关闭namespace领空
+				CodeNodeSpaces.RemoveAt(CodeNodeSpaces.Count - 1);
+			}
+			// //把这个namespace领空移动到CodeFile下面
+			// if (CodeNodeSpaces[0] is CodeFile codeFile && !codeFile.Children.Contains(onlyNamespace))
+			// 	codeFile!.Children.Add(onlyNamespace);
+		}
+
+		#endregion
+
+		return CodeNodeSpaces[0] as CodeFile;
+	}
+
+	/// <summary>
+	///     处理当前Segment
+	/// </summary>
+	/// <param name="currentSpaceNode"></param>
+	/// <param name="currentSegment"></param>
+	/// <param name="unclaimedSegments"></param>
+	/// <param name="codeBody"></param>
+	/// <returns></returns>
+	private bool ProcessSegment(CodeNode currentSpaceNode, Segment currentSegment,
+		ref List<Segment> unclaimedSegments,
+		ref StringBuilder codeBody)
+	{
+		var currentSpaceNodeType = currentSpaceNode.GetType();
+		//获取当前领空下可以书写什么,比如不能再PropertyNode下面写一个namespace,namespace下可以写ClassNode等等
+		var sonCodeNodeValidTypes = currentSpaceNode is ContainerCodeNode node
+			? node.SonCodeNodeValidTypes
+			: null;
+		switch (currentSegment)
+		{
+			//获取当前Segment是否可以结束当前的CodeNode
+			case SymbolSegment symbolSegment
+				when symbolSegment.CanFinishCodeNodeTypes.Contains(currentSpaceNodeType):
+			{
+				FinishCurrentSpaceNode(currentSpaceNode, ref codeBody);
+				//如果成功当前Segment处理了,那么就跳过后面的代码,直接处理下一个Segment
+				return true; //continue;
+				//continue后不需要break了.直接返回到了foreach层继续处理下一个Segment
+			}
+			case SymbolSegment symbolSegment:
+			{
+				if (symbolSegment == SymbolSegments.DotSymbol)
+					//如果已经有名字了,并且之前的一部分是word而这一部分是 点号,那么就是名字的下一层
+					//如 namespace A.B , A是名字, 当前是点号, B是名字的下一层
+					//追加名字
+					if (currentSpaceNode is INamedCodeNode namedCodeNode)
+						if (currentSpaceNode is INameChainCodeNode) // nameChainCodeNode)
+						{
+							//不用操作,后面会调用:
+							//nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
+						}
+						else
+						{
+							namedCodeNode.Name += SymbolSegments.DotSymbol.Content;
+						}
+
+				break;
+			}
+			//获取当前Segment可以用于修饰什么,根据可以修饰的类型缩小范围,如果有且只有一个类型的那就可以开辟领空了
+			case ModifierSegment modifierSegment:
+			{
+				if (modifierSegment.UseForCodeNodeTypes.Count == 1)
+				{
+					var onlyOneType = modifierSegment.UseForCodeNodeTypes[0];
+					if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(onlyOneType))
+					{
+						//开辟领空
+						//根据onlyOneType开辟领空
+						//TODO
+						var newSpaceNode = (CodeNode)Activator.CreateInstance(onlyOneType)!;
+						ClaimUnclaimedSegments(newSpaceNode, ref unclaimedSegments);
+						CodeNodeSpaces.Add(newSpaceNode);
+					}
+				}
+				else
+				{
+					//暂时不能确定,先放到待定集合中
+					unclaimedSegments.Add(modifierSegment);
+				}
+
+				break;
+			}
+			//获取当前Segment是什么类型名称,如果是类型名称的话就可以直接开辟领空了.
+			case CodeNodeTypeSegment typeNameSegment:
+			{
+				var codeNodeType = typeNameSegment.CodeNodeType;
+				if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(codeNodeType))
+				{
+					//开辟领空
+					//根据codeNodeType开辟领空
+					//TODO
+					var newSpaceNode = (CodeNode)Activator.CreateInstance(codeNodeType)!;
+					ClaimUnclaimedSegments(newSpaceNode, ref unclaimedSegments);
+					CodeNodeSpaces.Add(newSpaceNode);
+				}
+
+				break;
+			}
+		}
+
+		return true;
 	}
 
 	/// <summary>
 	///     能开辟领空的时候,把未被认领的Segment集合中的Segment认领了,是什么修饰符就安排到这个新领空的对应的修饰符字段中去.
 	/// </summary>
-	private static void ClaimUnclaimedSegments(CodeNode newSpaceNode, List<Segment> unclaimedSegments)
+	private static void ClaimUnclaimedSegments(CodeNode newSpaceNode, ref List<Segment> unclaimedSegments)
 	{
+		//已经被认领的Segment集合
+		List<Segment> appliedSegments = new();
 		foreach (var unclaimedSegment in unclaimedSegments)
 		{
 			//如果不是modifier,抛出异常
@@ -201,13 +254,38 @@ public class CsCodeParserV2
 			if (unclaimedSegment is ModifierSegment segment)
 			{
 				if (newSpaceNode is IUseStaticModifierCodeNode useStaticModifierCodeNode)
+				{
 					useStaticModifierCodeNode.ApplyModifier(segment);
+					appliedSegments.Add(segment);
+				}
+
 				if (newSpaceNode is IUseAccessModifierCodeNode useAccessModifierCodeNode)
+				{
 					useAccessModifierCodeNode.ApplyModifier(segment);
+					appliedSegments.Add(segment);
+				}
 			}
 		}
 
-		unclaimedSegments.Clear();
+		//去掉已经被认领的Segment
+		foreach (var appliedSegment in appliedSegments) unclaimedSegments.Remove(appliedSegment);
+	}
+
+	/// <summary>
+	///     结束当前领空
+	///     结束领空时,会把codeBody中的内容赋值给当前领空的CodeBody,并且把当前领空添加到上一层领空的Children中
+	/// </summary>
+	/// <returns></returns>
+	private void FinishCurrentSpaceNode(CodeNode currentSpaceNode, ref StringBuilder codeBody)
+	{
+		//结束当前领空
+		CodeNodeSpaces.RemoveAt(CodeNodeSpaces.Count - 1);
+		//上一层一定是一个ContainerCodeNode,所以可以直接转换,然后添加当前领空到上一层的Children中
+		var parent = (ContainerCodeNode)CodeNodeSpaces[^1];
+		parent.Children.Add(currentSpaceNode);
+		currentSpaceNode.CodeBody = codeBody.ToString();
+		codeBody.Clear();
+		//返回上一层领空
 	}
 
 	public static void Test()
@@ -290,15 +368,11 @@ public class CsCodeParserV2
 		#region 修正每一个segment的index数据
 
 		//在当前行中,当前segment的序号,当遇到换行符,这个序号就会重置为0
-		var currentSegmentIndexOfLine = 0;
 		//在所有行中,当前segment的序号,一直递增
 		var currentSegmentIndexOfAllLines = 0;
 		//当前行的序号,一直递增,遇到一个换行符,这个序号就会递增1
-		var currentLineIndexOfAllLines = 0;
 		//第一个字符在当前行中的位置,在遇到换行符的时候,这个值会重置为0
-		var currentSegmentFirstCharIndexOfLine = 0;
 		//第一个字符在所有行中的位置,一直递增
-		var currentSegmentFirstCharIndexOfAllLines = 0;
 		//因为很多是从static中获取来的对象引用,所以这里要重新new一下,不然会影响到static中的数据
 		var newSegmentsList = new List<Segment>();
 		while (currentSegmentIndexOfAllLines < segments.Count)
@@ -324,19 +398,9 @@ public class CsCodeParserV2
 			// 	$"第{currentSegmentIndexOfAllLines}个segment,内容:{currentSegment.Content},在行中位置:{currentSegment.SegmentIndexOfLine},在所有行中位置:{currentSegment.SegmentIndexOfAllLines},在所有行中的行号:{currentSegment.LineIndexOfAllLines},在行中的第一个字符位置:{currentSegment.StartCharIndexOfLine},在所有行中的第一个字符位置:{currentSegment.StartCharIndexOfAllLines}");
 
 			currentSegmentIndexOfAllLines++;
-			currentSegmentIndexOfLine++;
 
 			if (currentSegment.IsLineBreak)
 			{
-				currentLineIndexOfAllLines++;
-				currentSegmentFirstCharIndexOfAllLines++;
-				currentSegmentFirstCharIndexOfLine = 0;
-				currentSegmentIndexOfLine = 0;
-			}
-			else
-			{
-				currentSegmentFirstCharIndexOfLine += currentSegment.Length;
-				currentSegmentFirstCharIndexOfAllLines += currentSegment.Length;
 			}
 		}
 

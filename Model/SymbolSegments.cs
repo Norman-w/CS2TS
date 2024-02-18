@@ -24,6 +24,8 @@ public class SymbolSegments
 		CanFinishCodeNodeTypes = new List<Type>
 		{
 			//在结束命名空间时,只能结束命名空间的头,闭合整个带body的命名空间的话需要用大括回
+			//但是如果就这样结束了的话,那文件里面 namespace A;下面又写了一个public class B{}; 这个class B的命名空间就不正确了.
+			//TODO, 要确认一下这种写法的namespace是不是要特殊处理,因为这种命名空间属于文件级别,所有下面的class,struct,enum,interface,delegate等都是他的子级
 			typeof(Namespace)
 		}
 	};
@@ -32,7 +34,24 @@ public class SymbolSegments
 	public static SymbolSegment BracesStartSymbol = new() { Content = "{" };
 
 	/// <summary> 大括号结束符号 </summary>
-	public static SymbolSegment BracesEndSymbol = new() { Content = "}" };
+	public static SymbolSegment BracesEndSymbol = new()
+	{
+		Content = "}",
+		CanFinishCodeNodeTypes = new List<Type>
+		{
+			//大括回结束那种老版本的命名空间
+			//TODO 尚未验证所有的类型
+			typeof(Namespace),
+			typeof(Class),
+			typeof(Struct),
+			typeof(EnumDefine),
+			typeof(Interface),
+			typeof(Delegate),
+			typeof(Method),
+			typeof(Property),
+			typeof(Record)
+		}
+	};
 
 	/// <summary> 方括号开始符号 </summary>
 	public static SymbolSegment SquareBracketsStartSymbol = new() { Content = "[" };

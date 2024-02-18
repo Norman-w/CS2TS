@@ -32,6 +32,12 @@ public class Namespace :
 	/// </summary>
 	public override Segment CodeNodeTypeSegment => CodeNodeTypeSegments.Namespace;
 
+	/// <summary>
+	///     TODO,这个实际上是需要通过分号来确认的,如果这一行是以分号结尾的,那么这个命名空间就是文件级别的命名空间
+	/// </summary>
+	// public bool IsFileLevelNamespace => Children.Count == 0;
+	public bool IsFileLevelNamespace => CodeBody.EndsWith(SymbolSegments.SemicolonSymbol.Content);
+
 	public List<Class> Classes => Children.OfType<Class>().ToList();
 	public List<EnumDefine> Enums => Children.OfType<EnumDefine>().ToList();
 	public List<Interface> Interfaces => Children.OfType<Interface>().ToList();
