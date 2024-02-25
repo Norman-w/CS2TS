@@ -133,6 +133,7 @@ public abstract class CodeNode : ICodeNode
 		}
 	}
 }
+
 //
 // public interface IUseModifierCodeNode<T>
 // {
@@ -146,10 +147,11 @@ public interface IUseAccessModifierCodeNode
 {
 	AccessModifierPermissionEnum AccessPermission { get; set; }
 
-	public void ApplyModifier(ModifierSegment modifier)
+	public bool ApplyModifier(ModifierSegment modifier)
 	{
-		if (modifier is AccessModifierSegment accessModifierSegment)
-			AccessPermission = accessModifierSegment.ToAccessModifierPermissionEnum();
+		if (modifier is not AccessModifierSegment accessModifierSegment) return false;
+		AccessPermission = accessModifierSegment.ToAccessModifierPermissionEnum();
+		return true;
 	}
 }
 
@@ -160,10 +162,11 @@ public interface IUseStaticModifierCodeNode
 {
 	bool IsStatic { get; set; }
 
-	public void ApplyModifier(ModifierSegment modifier)
+	public bool ApplyModifier(ModifierSegment modifier)
 	{
-		if (modifier == ModifierSegments.Static)
-			IsStatic = true;
+		if (modifier != ModifierSegments.Static) return false;
+		IsStatic = true;
+		return true;
 	}
 }
 //
@@ -212,4 +215,22 @@ public abstract class ContainerCodeNode : CodeNode
 	///     比如namespace下可以写class enum interface等但是不能写function等
 	/// </summary>
 	public abstract List<Type> SonCodeNodeValidTypes { get; }
+}
+
+//Node的拓展类,含CanUseModifier的拓展方法
+public static class CodeNodeExtension
+{
+	/// <summary>
+	///     当前领空是否可以使用当前ModifierSegment,比如在CodeFile中,我们先判断下面可以承载哪些类型.
+	///     比如在CodeFile中,我们可以承载UsingNamespaceNode, NamespaceNode, ClassNode, EnumNode, FunctionNode, UsingNode等等
+	///     然后看这个ModifierSegment可以修饰哪些类型,比如public可以修饰ClassNode, EnumNode, FunctionNode, UsingNode等等
+	///     最后看有没有交集,如果有交集,那么就可以使用这个ModifierSegment,如果没有交集,那么就不能使用这个ModifierSegment
+	/// </summary>
+	/// <returns></returns>
+	public static bool CanWriteModifierSegmentInside(this ContainerCodeNode codeNode, ModifierSegment modifier)
+	{
+		var validTypes = codeNode.SonCodeNodeValidTypes;
+		var canUseTypes = modifier.UseForCodeNodeTypes;
+		return validTypes.Any(validType => canUseTypes.Contains(validType));
+	}
 }

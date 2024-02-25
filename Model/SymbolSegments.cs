@@ -11,21 +11,39 @@ public class SymbolSegments
 	public static readonly SymbolSegment LineBreakSymbol = new()
 	{
 		Content = "\n",
-		CanFinishCodeNodeTypes = new List<Type> { typeof(NotesLine) }
+		CanFinishCodeNodeBodyTypes = new List<Type> { typeof(NotesLine) }
 	};
 
 	/// <summary> 逗号,连接参数符号 </summary>
 	public static SymbolSegment JoinParameterSymbol = new() { Content = "," };
 
 	/// <summary> 分号,用于终止语句 </summary>
-	public static SymbolSegment SemicolonSymbol = new()
+	public static readonly SymbolSegment SemicolonSymbol = new()
 	{
 		Content = ";",
-		CanFinishCodeNodeTypes = new List<Type>
+		CanFinishCodeNodeHeaderTypes = new List<Type>
 		{
 			//在结束命名空间时,只能结束命名空间的头,闭合整个带body的命名空间的话需要用大括回
 			//但是如果就这样结束了的话,那文件里面 namespace A;下面又写了一个public class B{}; 这个class B的命名空间就不正确了.
 			//TODO, 要确认一下这种写法的namespace是不是要特殊处理,因为这种命名空间属于文件级别,所有下面的class,struct,enum,interface,delegate等都是他的子级
+			typeof(Namespace)
+		},
+		CanStartCodeNodeBodyTypes = new List<Type>
+		{
+			//可以在命名空间的头,进入命名空间的体
+			typeof(Namespace)
+		}
+	};
+
+	/// <summary>
+	///     文件尾,用于终止文件,能终止不由{}开启的命名空间
+	/// </summary>
+	public static readonly SymbolSegment EofSymbol = new()
+	{
+		Content = "\0",
+		CanFinishCodeNodeBodyTypes = new List<Type>
+		{
+			//如果一个文件中只有一个分号结尾的命名空间,结束命名空间的方法就是文件尾
 			typeof(Namespace)
 		}
 	};
@@ -37,7 +55,7 @@ public class SymbolSegments
 	public static SymbolSegment BracesEndSymbol = new()
 	{
 		Content = "}",
-		CanFinishCodeNodeTypes = new List<Type>
+		CanFinishCodeNodeBodyTypes = new List<Type>
 		{
 			//大括回结束那种老版本的命名空间
 			//TODO 尚未验证所有的类型
