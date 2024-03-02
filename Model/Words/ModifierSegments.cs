@@ -59,7 +59,10 @@ public class ModifierSegments
 		{
 			typeof(Class),
 			//用于Operator的时候,是属于类似public static implicit operator 目标类型(源类型 变量名)这样的固定搭配
-			typeof(Operator)
+			typeof(Operator),
+			typeof(Field),
+			typeof(Property)
+			// 这里有问题, 还可以用于Field, Property, Method, Event上 加上了以后继续走foreach里面的static监测测试
 		}
 	};
 

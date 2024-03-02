@@ -128,14 +128,6 @@ public class CsCodeParserV2
 
 		foreach (var currentSegment in segments)
 		{
-			if (currentSegment.Content == "}")
-			{
-			}
-
-			if (currentSegment.Content == "public")
-			{
-			}
-
 			//获取当前领空
 			var currentSpaceNode = CodeNodeTerritoryChain[^1];
 			var beforeProcessSpaceNode = currentSpaceNode;
@@ -145,67 +137,10 @@ public class CsCodeParserV2
 			if (processSegmentResult)
 			{
 				if (newTerritoryDemarcationStatusFlag == null) throw new Exception("领空标志符没有被更新");
-				//如果标志符不是null,则更新标志符,在更新之前判断要执行什么样的操作.
-				//如果是从萌芽到类型确认,那就把这期间产生的Segment的content归算到新领空的CodeBody中
-				CodeNode? segmentOwnerCodeNode = null;
-				var oldTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlag;
-				if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.IntoUse
-				    && newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.ConfirmedType)
-				{
-					//如果是从体使用中到类型确认,那说明一上来就是一个类型,那就把这个类型的内容归算到新领空的CodeBody中
-					segmentOwnerCodeNode = currentSpaceNode;
-				}
-				else if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.ConfirmedType
-				         && newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.IntoUse)
-				{
-					//之前确认了类型,现在在里面使用了
-					segmentOwnerCodeNode = currentSpaceNode;
-				}
-				else if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.Bud
-				         && newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.ConfirmedType)
-				{
-					//如果是从萌芽到类型确认,那就把这期间产生的Segment的content归算到新领空的CodeBody中
-					segmentOwnerCodeNode = currentSpaceNode;
-				}
-				else if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.ConfirmedType)
-				{
-					//这就是类型已经确认了还在进行执行其他的操作,比如 namespace确定了类型,但是后面的A.B是装饰这个类型呢
-					segmentOwnerCodeNode = currentSpaceNode;
-				}
-				else if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.IntoUse
-				         && newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.Bud)
-				{
-					//从在body内到萌芽,也就是在body内部萌芽,目标code node 不能确定
-				}
-				else
-				{
-					if (newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.Escape)
-					{
-						//要在这里添加Content,FinishCurrentSpaceNode之后currentSpaceNode会变化的
-						FinishCurrentSpaceNode(ref currentSpaceNode, currentSegment);
-						segmentOwnerCodeNode = currentSpaceNode;
-					}
-				}
+				var segmentOwnerCodeNode = DecideSegmentOwnerCodeNode(newTerritoryDemarcationStatusFlag,
+					currentSpaceNode, currentSegment);
 
-				#region 添加code body
-
-				if (segmentOwnerCodeNode != null)
-				{
-					//把这期间产生的Segment的content归算到新领空的CodeBody中
-					StringBuilder codeString = new();
-					foreach (var seg in unclaimedSegments) codeString.Append(seg.Content);
-					//清空未被认领的Segment集合
-					unclaimedSegments.Clear();
-					segmentOwnerCodeNode.CodeBody += codeString;
-					if (currentSegment.Content != codeString.ToString())
-						segmentOwnerCodeNode.CodeBody += currentSegment.Content;
-				}
-				else
-				{
-					Console.WriteLine("谁拥有这段代码?" + currentSegment.Content);
-				}
-
-				#endregion
+				AddCodeBody(segmentOwnerCodeNode, unclaimedSegments, currentSegment);
 
 				//完事儿了以后,更新领空标志符
 				TerritoryDemarcationStatusFlag = newTerritoryDemarcationStatusFlag.Value;
@@ -223,6 +158,86 @@ public class CsCodeParserV2
 		}
 
 		return CodeNodeTerritoryChain[0] as CodeFile;
+	}
+
+	/// <summary>
+	///     决定Segment归哪个CodeNode
+	/// </summary>
+	/// <param name="newTerritoryDemarcationStatusFlag"></param>
+	/// <param name="currentSpaceNode"></param>
+	/// <param name="currentSegment"></param>
+	/// <returns></returns>
+	private CodeNode? DecideSegmentOwnerCodeNode(
+		TerritoryDemarcationStatusFlagEnum? newTerritoryDemarcationStatusFlag, CodeNode currentSpaceNode,
+		Segment currentSegment)
+	{
+		//如果标志符不是null,则更新标志符,在更新之前判断要执行什么样的操作.
+		//如果是从萌芽到类型确认,那就把这期间产生的Segment的content归算到新领空的CodeBody中
+		CodeNode? segmentOwnerCodeNode = null;
+		var oldTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlag;
+		if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.IntoUse
+		    && newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.ConfirmedType)
+		{
+			//如果是从体使用中到类型确认,那说明一上来就是一个类型,那就把这个类型的内容归算到新领空的CodeBody中
+			segmentOwnerCodeNode = currentSpaceNode;
+		}
+		else if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.ConfirmedType
+		         && newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.IntoUse)
+		{
+			//之前确认了类型,现在在里面使用了
+			segmentOwnerCodeNode = currentSpaceNode;
+		}
+		else if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.Bud
+		         && newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.ConfirmedType)
+		{
+			//如果是从萌芽到类型确认,那就把这期间产生的Segment的content归算到新领空的CodeBody中
+			segmentOwnerCodeNode = currentSpaceNode;
+		}
+		else if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.ConfirmedType)
+		{
+			//这就是类型已经确认了还在进行执行其他的操作,比如 namespace确定了类型,但是后面的A.B是装饰这个类型呢
+			segmentOwnerCodeNode = currentSpaceNode;
+		}
+		else if (oldTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.IntoUse
+		         && newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.Bud)
+		{
+			//从在body内到萌芽,也就是在body内部萌芽,目标code node 不能确定
+		}
+		else
+		{
+			if (newTerritoryDemarcationStatusFlag == TerritoryDemarcationStatusFlagEnum.Escape)
+			{
+				//要在这里添加Content,FinishCurrentSpaceNode之后currentSpaceNode会变化的
+				FinishCurrentSpaceNode(ref currentSpaceNode, currentSegment);
+				segmentOwnerCodeNode = currentSpaceNode;
+			}
+		}
+
+		return segmentOwnerCodeNode;
+	}
+
+	private static void AddCodeBody(CodeNode? segmentOwnerCodeNode, List<Segment> unclaimedSegments,
+		Segment currentSegment)
+	{
+		#region 添加code body
+
+		if (segmentOwnerCodeNode != null)
+		{
+			//把这期间产生的Segment的content归算到新领空的CodeBody中
+			StringBuilder codeString = new();
+			foreach (var seg in unclaimedSegments) codeString.Append(seg.Content);
+			//清空未被认领的Segment集合
+			unclaimedSegments.Clear();
+			segmentOwnerCodeNode.CodeBody += codeString;
+			if (currentSegment.Content != codeString.ToString())
+				segmentOwnerCodeNode.CodeBody += currentSegment.Content;
+		}
+		else
+		{
+			Console.WriteLine("谁拥有这段代码?" + currentSegment.Content);
+		}
+
+		#endregion
 	}
 
 	public ProcessSegmentResult ProcessSegmentV2(Segment currentSegment, CodeNode currentCodeNode)
@@ -319,6 +334,10 @@ public class CsCodeParserV2
 		ref List<Segment> unclaimedSegments,
 		out TerritoryDemarcationStatusFlagEnum? newTerritoryDemarcationStatusFlag)
 	{
+		if (currentSegment == ModifierSegments.Static)
+		{
+		}
+
 		newTerritoryDemarcationStatusFlag = null;
 		//处理这个词,我们得到了一个什么样的领空标志,默认是null,如果函数返回时候还是null,则报错
 		var currentSpaceNodeType = currentSpaceNode.GetType();
@@ -345,78 +364,27 @@ public class CsCodeParserV2
 			}
 			case SymbolSegment symbolSegment:
 			{
-				//点号,可能是名字的下一层
-				if (symbolSegment == SymbolSegments.DotSymbol)
-				{
-					//如果已经有名字了,并且之前的一部分是word而这一部分是 点号,那么就是名字的下一层
-					//如 namespace A.B , A是名字, 当前是点号, B是名字的下一层
-					//追加名字
-					if (currentSpaceNode is INamedCodeNode namedCodeNode)
-					{
-						if (currentSpaceNode is INameChainCodeNode) // nameChainCodeNode)
-						{
-							//不用操作,后面会调用:
-							//nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
-						}
-						else
-						{
-							namedCodeNode.Name += SymbolSegments.DotSymbol.Content;
-						}
-
-						newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlag;
-					}
-				}
-				//其他的符号,比如分号,逗号,括号,换行等等
-				else
-				{
-					unclaimedSegments.Add(currentSegment);
-					//不更改领空标志,继续使用之前的领空标志
-					newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlag;
-				}
+				ProcessSymbolSegment(currentSpaceNode, currentSegment, unclaimedSegments,
+					ref newTerritoryDemarcationStatusFlag, symbolSegment);
 
 				break;
 			}
 			//获取当前Segment可以用于修饰什么,根据可以修饰的类型缩小范围,如果有且只有一个类型的那就可以开辟领空了
 			case ModifierSegment modifierSegment:
 			{
-				if (modifierSegment.UseForCodeNodeTypes.Count == 1)
-				{
-					var onlyOneType = modifierSegment.UseForCodeNodeTypes[0];
-					if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(onlyOneType))
-						if (OpenNewSpaceNode(onlyOneType, out currentSpaceNode, ref unclaimedSegments, currentSegment))
-						{
-							newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlagEnum.IntoUse;
-							return true;
-						}
-				}
-				else
-				{
-					//暂时不能确定,先放到待定集合中
-					unclaimedSegments.Add(modifierSegment);
-					var isNotEscape = TerritoryDemarcationStatusFlag != TerritoryDemarcationStatusFlagEnum.Escape;
-					var containerCodeNode = currentSpaceNode as ContainerCodeNode;
-					var canWriteModifierSegmentInside =
-						containerCodeNode?.CanWriteModifierSegmentInside(modifierSegment) == true;
-					if (isNotEscape && !canWriteModifierSegmentInside)
-						throw new Exception("不是结束状态怎么能随便发芽呢?");
-					newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlagEnum.Bud;
-					return true;
-				}
-
+				if (ProcessModifierSegment(ref currentSpaceNode, currentSegment, ref unclaimedSegments,
+					    ref newTerritoryDemarcationStatusFlag, modifierSegment, sonCodeNodeValidTypes)) return true;
 				break;
 			}
 			//获取当前Segment是什么类型名称,如果是类型名称的话就可以直接开辟领空了.
 			case CodeNodeTypeSegment typeNameSegment:
 			{
-				var codeNodeType = typeNameSegment.CodeNodeType;
-				if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(codeNodeType))
-					if (OpenNewSpaceNode(codeNodeType, out currentSpaceNode, ref unclaimedSegments, currentSegment))
-					{
-						newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlagEnum.ConfirmedType;
-						return true;
-					}
-
-				break;
+				if (!ProcessCodeNodeTypeSegment(out var newCodeNode, currentSegment, ref unclaimedSegments,
+					    ref newTerritoryDemarcationStatusFlag, typeNameSegment, sonCodeNodeValidTypes))
+					throw new Exception("处理CodeNodeTypeSegment失败了");
+				currentSpaceNode = newCodeNode!;
+				return true;
+				// break;
 			}
 			default:
 				unclaimedSegments.Add(currentSegment);
@@ -429,6 +397,88 @@ public class CsCodeParserV2
 		}
 
 		return true;
+	}
+
+	private bool ProcessCodeNodeTypeSegment(out CodeNode? currentSpaceNode, Segment currentSegment,
+		ref List<Segment> unclaimedSegments, ref TerritoryDemarcationStatusFlagEnum? newTerritoryDemarcationStatusFlag,
+		CodeNodeTypeSegment typeNameSegment, List<Type>? sonCodeNodeValidTypes)
+	{
+		var codeNodeType = typeNameSegment.CodeNodeType;
+		if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(codeNodeType))
+			if (OpenNewSpaceNode(codeNodeType, out currentSpaceNode, ref unclaimedSegments, currentSegment))
+			{
+				newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlagEnum.ConfirmedType;
+				return true;
+			}
+
+		currentSpaceNode = null;
+		return false;
+	}
+
+	private bool ProcessModifierSegment(ref CodeNode currentSpaceNode, Segment currentSegment,
+		ref List<Segment> unclaimedSegments,
+		ref TerritoryDemarcationStatusFlagEnum? newTerritoryDemarcationStatusFlag, ModifierSegment modifierSegment,
+		List<Type>? sonCodeNodeValidTypes)
+	{
+		if (modifierSegment.UseForCodeNodeTypes.Count == 1)
+		{
+			var onlyOneType = modifierSegment.UseForCodeNodeTypes[0];
+			if (sonCodeNodeValidTypes != null && sonCodeNodeValidTypes.Contains(onlyOneType))
+				if (OpenNewSpaceNode(onlyOneType, out currentSpaceNode, ref unclaimedSegments, currentSegment))
+				{
+					newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlagEnum.IntoUse;
+					return true;
+				}
+		}
+		else
+		{
+			//暂时不能确定,先放到待定集合中
+			unclaimedSegments.Add(modifierSegment);
+			var isNotEscape = TerritoryDemarcationStatusFlag != TerritoryDemarcationStatusFlagEnum.Escape;
+			var containerCodeNode = currentSpaceNode as ContainerCodeNode;
+			var canWriteModifierSegmentInside =
+				containerCodeNode?.CanWriteModifierSegmentInside(modifierSegment) == true;
+			if (isNotEscape && !canWriteModifierSegmentInside)
+				throw new Exception("不是结束状态怎么能随便发芽呢?");
+			newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlagEnum.Bud;
+			return true;
+		}
+
+		return false;
+	}
+
+	private void ProcessSymbolSegment(CodeNode currentSpaceNode, Segment currentSegment,
+		List<Segment> unclaimedSegments,
+		ref TerritoryDemarcationStatusFlagEnum? newTerritoryDemarcationStatusFlag, SymbolSegment symbolSegment)
+	{
+		//点号,可能是名字的下一层
+		if (symbolSegment == SymbolSegments.DotSymbol)
+		{
+			//如果已经有名字了,并且之前的一部分是word而这一部分是 点号,那么就是名字的下一层
+			//如 namespace A.B , A是名字, 当前是点号, B是名字的下一层
+			//追加名字
+			if (currentSpaceNode is INamedCodeNode namedCodeNode)
+			{
+				if (currentSpaceNode is INameChainCodeNode) // nameChainCodeNode)
+				{
+					//不用操作,后面会调用:
+					//nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
+				}
+				else
+				{
+					namedCodeNode.Name += SymbolSegments.DotSymbol.Content;
+				}
+
+				newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlag;
+			}
+		}
+		//其他的符号,比如分号,逗号,括号,换行等等
+		else
+		{
+			unclaimedSegments.Add(currentSegment);
+			//不更改领空标志,继续使用之前的领空标志
+			newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlag;
+		}
 	}
 
 	/// <summary>
@@ -503,15 +553,10 @@ public class CsCodeParserV2
 		   }
 
         */
-		StringBuilder testCode = new();
-		testCode.AppendLine("namespace CS2TS.Test._1_InTestCSFiles;");
-		testCode.AppendLine();
-		testCode.AppendLine("public static class 为v2准备的简单类");
-		testCode.AppendLine("{");
-		testCode.AppendLine("}");
-		testCode.Append(SymbolSegments.EofSymbol.Content);
 
-		var csCodeString = testCode.ToString();
+		// var testFilePath = Environment.CurrentDirectory + "../../../Test/1_InTestCSFiles/为v2准备的简单类.cs";
+		var testFilePath = Path.Combine(Environment.CurrentDirectory, "../../../Test/_1_InTestCSFiles/为v2准备的简单类.cs");
+		var csCodeString = File.ReadAllText(testFilePath);
 
 		var segments = new List<Segment>();
 
