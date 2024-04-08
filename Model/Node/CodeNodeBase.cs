@@ -140,14 +140,26 @@ public abstract class CodeNode : ICodeNode
 // 	List<ModifierSegment> AvailableModifiers { get; }
 // }
 
+public interface IUseModifierCodeNode
+{
+	//继承的接口必须包含ModifierSegment
+	ModifierSegment ModifierSegment =>
+		throw new NotImplementedException("IUseXXXModifierCodeNode必须实现自己的ModifierSegment才能使用");
+
+	public bool ApplyModifier(ModifierSegment modifier)
+	{
+		throw new NotImplementedException("必须实现ApplyModifier");
+	}
+}
+
 /// <summary>
 ///     可以使用访问权限修饰符的CodeNode
 /// </summary>
-public interface IUseAccessModifierCodeNode
+public interface IUseAccessModifierCodeNode : IUseModifierCodeNode
 {
 	AccessModifierPermissionEnum AccessPermission { get; set; }
 
-	public bool ApplyModifier(ModifierSegment modifier)
+	public new bool ApplyModifier(ModifierSegment modifier)
 	{
 		if (modifier is not AccessModifierSegment accessModifierSegment) return false;
 		AccessPermission = accessModifierSegment.ToAccessModifierPermissionEnum();
@@ -158,11 +170,16 @@ public interface IUseAccessModifierCodeNode
 /// <summary>
 ///     可以使用static修饰符的CodeNode
 /// </summary>
-public interface IUseStaticModifierCodeNode
+public interface IUseStaticModifierCodeNode : IUseModifierCodeNode
 {
+	/// <summary>
+	///     可使用static修饰符的CodeNode类型的修饰符一定是static.
+	/// </summary>
+	new ModifierSegment ModifierSegment => ModifierSegments.Static;
+
 	bool IsStatic { get; set; }
 
-	public bool ApplyModifier(ModifierSegment modifier)
+	public new bool ApplyModifier(ModifierSegment modifier)
 	{
 		if (modifier != ModifierSegments.Static) return false;
 		IsStatic = true;

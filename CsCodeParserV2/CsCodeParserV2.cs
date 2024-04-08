@@ -60,7 +60,11 @@ public class CsCodeParserV2
 	/// <summary>
 	///     代码节点的领空链.注意不是树状的,是表示路径的,用于当做游标.
 	/// </summary>
-	private List<CodeNode> CodeNodeTerritoryChain { get; } = new() { new CodeFile() };
+	private SpaceChainIndicator SpaceChainIndicator { get; } =
+		new(new NodeInSpaceChain(
+				new CodeFile(), null
+			)
+		);
 
 	/// <summary>
 	///     领空的状态标志,全局只使用一个,光标在什么位置(到什么Segment)了,领空的状态是什么.
@@ -128,17 +132,16 @@ public class CsCodeParserV2
 
 		foreach (var currentSegment in segments)
 		{
-			//获取当前领空
-			var currentSpaceNode = CodeNodeTerritoryChain[^1];
-			var beforeProcessSpaceNode = currentSpaceNode;
 			var processSegmentResult =
-				ProcessSegment(ref currentSpaceNode, currentSegment, ref unclaimedSegments,
-					out var newTerritoryDemarcationStatusFlag);
+				ProcessSegment(currentSegment, ref unclaimedSegments,
+					out var newTerritoryDemarcationStatusFlag,
+					out var newSpaceNode
+				);
 			if (processSegmentResult)
 			{
 				if (newTerritoryDemarcationStatusFlag == null) throw new Exception("领空标志符没有被更新");
 				var segmentOwnerCodeNode = DecideSegmentOwnerCodeNode(newTerritoryDemarcationStatusFlag,
-					currentSpaceNode, currentSegment);
+					SpaceChainIndicator.Current.ConfirmedCodeNode, currentSegment);
 
 				AddCodeBody(segmentOwnerCodeNode, unclaimedSegments, currentSegment);
 
@@ -150,14 +153,14 @@ public class CsCodeParserV2
 
 			//其他的没有被解析的WordSegment,如果不是空的,则可能是名字,判断当前领空是否可以接受名字,如果可以,则设置当前领空的名字
 			if (currentSegment is WordSegment && !currentSegment.IsWhitespace)
-				if (currentSpaceNode is INamedCodeNode namedCodeNode)
-					if (currentSpaceNode is INameChainCodeNode nameChainCodeNode)
+				if (SpaceChainIndicator.Current.ConfirmedCodeNode is INamedCodeNode namedCodeNode)
+					if (SpaceChainIndicator.Current.ConfirmedCodeNode is INameChainCodeNode nameChainCodeNode)
 						nameChainCodeNode.NameChain.Names.Add(currentSegment.Content);
 					else
 						namedCodeNode.Name += currentSegment.Content;
 		}
 
-		return CodeNodeTerritoryChain[0] as CodeFile;
+		return SpaceChainIndicator.Root.ConfirmedCodeNode as CodeFile;
 	}
 
 	/// <summary>
@@ -329,39 +332,35 @@ public class CsCodeParserV2
 	/// <param name="currentSegment"></param>
 	/// <param name="unclaimedSegments"></param>
 	/// <param name="newTerritoryDemarcationStatusFlag"></param>
+	/// <param name="newSpaceNode">如果进入了新领空,则返回新的SpaceNode</param>
 	/// <returns></returns>
-	private bool ProcessSegment(ref CodeNode currentSpaceNode, Segment currentSegment,
+	private bool ProcessSegment(Segment currentSegment,
 		ref List<Segment> unclaimedSegments,
-		out TerritoryDemarcationStatusFlagEnum? newTerritoryDemarcationStatusFlag)
+		out TerritoryDemarcationStatusFlagEnum? newTerritoryDemarcationStatusFlag,
+		out NodeInSpaceChain? newSpaceNode
+	)
 	{
 		if (currentSegment == ModifierSegments.Static)
 		{
 		}
 
+		var currentSpaceNode = SpaceChainIndicator.Current.ConfirmedCodeNode;
 		newTerritoryDemarcationStatusFlag = null;
 		//处理这个词,我们得到了一个什么样的领空标志,默认是null,如果函数返回时候还是null,则报错
-		var currentSpaceNodeType = currentSpaceNode.GetType();
+		var currentSpaceNodeType = currentSpaceNode?.GetType();
 		//获取当前领空下可以书写什么,比如不能再PropertyNode下面写一个namespace,namespace下可以写ClassNode等等
 		var sonCodeNodeValidTypes = currentSpaceNode is ContainerCodeNode node
 			? node.SonCodeNodeValidTypes
 			: null;
+		var inputSegmentToNodeInSpaceChainResult = SpaceChainIndicator.Current.Input(currentSegment);
+		if (inputSegmentToNodeInSpaceChainResult.NewTerritoryDemarcationStatusFlag != null)
+		{
+			newSpaceNode = null;
+			return true;
+		}
+
 		switch (currentSegment)
 		{
-			//获取当前Segment是否可以结束当前的CodeNode
-			case SymbolSegment symbolSegment
-				when symbolSegment.CanFinishCodeNodeBodyTypes.Contains(currentSpaceNodeType):
-			{
-				//如果成功当前Segment处理了,那么就跳过后面的代码,直接处理下一个Segment
-				newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlagEnum.Escape;
-				return true; //continue;
-				//continue后不需要break了.直接返回到了foreach层继续处理下一个Segment
-			}
-			case SymbolSegment symbolSegment
-				when symbolSegment.CanStartCodeNodeBodyTypes.Contains(currentSpaceNodeType):
-			{
-				newTerritoryDemarcationStatusFlag = TerritoryDemarcationStatusFlagEnum.IntoUse;
-				return true;
-			}
 			case SymbolSegment symbolSegment:
 			{
 				ProcessSymbolSegment(currentSpaceNode, currentSegment, unclaimedSegments,
@@ -373,7 +372,12 @@ public class CsCodeParserV2
 			case ModifierSegment modifierSegment:
 			{
 				if (ProcessModifierSegment(ref currentSpaceNode, currentSegment, ref unclaimedSegments,
-					    ref newTerritoryDemarcationStatusFlag, modifierSegment, sonCodeNodeValidTypes)) return true;
+					    ref newTerritoryDemarcationStatusFlag, modifierSegment, sonCodeNodeValidTypes))
+				{
+					newSpaceNode = null;
+					return true;
+				}
+
 				break;
 			}
 			//获取当前Segment是什么类型名称,如果是类型名称的话就可以直接开辟领空了.
@@ -383,7 +387,10 @@ public class CsCodeParserV2
 					    ref newTerritoryDemarcationStatusFlag, typeNameSegment, sonCodeNodeValidTypes))
 					throw new Exception("处理CodeNodeTypeSegment失败了");
 				currentSpaceNode = newCodeNode!;
-				return true;
+				{
+					newSpaceNode = new NodeInSpaceChain(newCodeNode, SpaceChainIndicator.Current);
+					return true;
+				}
 				// break;
 			}
 			default:
@@ -396,7 +403,10 @@ public class CsCodeParserV2
 				break;
 		}
 
-		return true;
+		{
+			newSpaceNode = null;
+			return true;
+		}
 	}
 
 	private bool ProcessCodeNodeTypeSegment(out CodeNode? currentSpaceNode, Segment currentSegment,
@@ -492,7 +502,11 @@ public class CsCodeParserV2
 		//TODO
 		newSpaceNode = (CodeNode)Activator.CreateInstance(codeNodeType)!;
 		ClaimUnclaimedSegments(newSpaceNode, ref unclaimedSegments);
-		CodeNodeTerritoryChain.Add(newSpaceNode);
+
+		//CodeNodeTerritoryChain.Add(newSpaceNode);
+		//上面一句转换成下面两句了
+		SpaceChainIndicator.NewBranch();
+		SpaceChainIndicator.Current.ConfirmedCodeNode = newSpaceNode;
 		return true;
 	}
 
@@ -533,13 +547,20 @@ public class CsCodeParserV2
 	/// <returns></returns>
 	private void FinishCurrentSpaceNode(ref CodeNode currentSpaceNode, Segment currentSegment)
 	{
-		//结束当前领空
-		CodeNodeTerritoryChain.RemoveAt(CodeNodeTerritoryChain.Count - 1);
-		//上一层一定是一个ContainerCodeNode,所以可以直接转换,然后添加当前领空到上一层的Children中
-		var parent = (ContainerCodeNode)CodeNodeTerritoryChain[^1];
+		// // //结束当前领空
+		// CodeNodeTerritoryChain.RemoveAt(CodeNodeTerritoryChain.Count - 1);
+		// //上一层一定是一个ContainerCodeNode,所以可以直接转换,然后添加当前领空到上一层的Children中
+		// var parent = (ContainerCodeNode)CodeNodeTerritoryChain[^1];
+		// parent.Children.Add(currentSpaceNode);
+		// //返回上一层领空
+		// currentSpaceNode = CodeNodeTerritoryChain[^1];
+
+		SpaceChainIndicator.GoBack();
+		var parent = SpaceChainIndicator.Current.ConfirmedCodeNode as ContainerCodeNode;
+		if (parent == null)
+			throw new Exception("结束领空时,上一层领空不是ContainerCodeNode类型");
 		parent.Children.Add(currentSpaceNode);
-		//返回上一层领空
-		currentSpaceNode = CodeNodeTerritoryChain[^1];
+		currentSpaceNode = SpaceChainIndicator.Current.ConfirmedCodeNode;
 	}
 
 	public static void Test()
