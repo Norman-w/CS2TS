@@ -348,16 +348,17 @@ public class CsCodeParserV2
 		newTerritoryDemarcationStatusFlag = null;
 		//处理这个词,我们得到了一个什么样的领空标志,默认是null,如果函数返回时候还是null,则报错
 		var currentSpaceNodeType = currentSpaceNode?.GetType();
-		//获取当前领空下可以书写什么,比如不能再PropertyNode下面写一个namespace,namespace下可以写ClassNode等等
+		//获取当前领空下可以书写什么,比如不能在PropertyNode下面写一个namespace,namespace下可以写ClassNode等等
 		var sonCodeNodeValidTypes = currentSpaceNode is ContainerCodeNode node
 			? node.SonCodeNodeValidTypes
 			: null;
 		var inputSegmentToNodeInSpaceChainResult = SpaceChainIndicator.Current.Input(currentSegment);
-		if (inputSegmentToNodeInSpaceChainResult.NewTerritoryDemarcationStatusFlag != null)
+		if (inputSegmentToNodeInSpaceChainResult is { Success: true, NewTerritoryDemarcationStatusFlag: not null })
 		{
 			newSpaceNode = null;
 			return true;
 		}
+		//如果没输入成功,那么就是当前领空不能接受这个Segment,就要把这个Segment放到待定集合中
 
 		switch (currentSegment)
 		{

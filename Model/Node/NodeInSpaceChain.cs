@@ -130,6 +130,11 @@ public partial class NodeInSpaceChain
 		}
 	}
 
+	/// <summary>
+	/// 处理修饰符语义段
+	/// </summary>
+	/// <param name="modifierSegment"></param>
+	/// <exception cref="Exception"></exception>
 	private void HandleModifierSegment(ModifierSegment modifierSegment)
 	{
 		if (IsANodeTypeConfirmedNode)
